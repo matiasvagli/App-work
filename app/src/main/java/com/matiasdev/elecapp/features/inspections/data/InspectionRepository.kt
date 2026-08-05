@@ -1,0 +1,41 @@
+package com.matiasdev.elecapp.features.inspections.data
+
+import com.matiasdev.elecapp.features.clients.domain.Client
+import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
+import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
+import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
+import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
+import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
+import com.matiasdev.elecapp.features.visits.domain.Visit
+import kotlinx.coroutines.flow.Flow
+
+interface InspectionRepository {
+    fun observeInspectionList(status: InspectionStatus?, query: String): Flow<List<InspectionListItem>>
+
+    fun observeDraftInspectionCount(): Flow<Int>
+
+    fun observeActiveInspectionForVisit(visitId: String): Flow<ElectricalInspection?>
+
+    fun observeAggregate(inspectionId: String): Flow<InspectionAggregate?>
+
+    suspend fun findAggregate(inspectionId: String): InspectionAggregate?
+
+    suspend fun findActiveInspectionForVisit(visitId: String): ElectricalInspection?
+
+    suspend fun startOrGetInspection(visit: Visit, client: Client): ElectricalInspection
+
+    suspend fun saveInspection(inspection: ElectricalInspection)
+
+    suspend fun savePillar(pillar: PillarInspection)
+
+    suspend fun saveMainPanel(mainPanel: MainPanelInspection)
+
+    suspend fun saveFinding(finding: InspectionFinding)
+
+    suspend fun softDeleteFinding(id: String)
+
+    suspend fun saveUnverifiedItems(inspectionId: String, items: List<InspectionUnverifiedItem>)
+}
