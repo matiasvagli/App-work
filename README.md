@@ -1,6 +1,6 @@
 # ElecApp
 
-MVP Android nativo offline para gestionar clientes, visitas, agenda, recordatorios locales, relevamientos eléctricos, presupuestos de mano de obra y listas de materiales de un electricista.
+MVP Android nativo offline para gestionar clientes, visitas, sesiones de trabajo, agenda, recordatorios locales, relevamientos eléctricos, presupuestos de mano de obra y listas de materiales de un electricista.
 
 ## Requisitos
 
@@ -35,9 +35,11 @@ Visitas:
 - Crear, editar, eliminar y cambiar estado.
 - Estados: pendiente, confirmada, realizada y cancelada.
 - Estados operativos: pendiente, confirmada, en curso, realizada y cancelada.
-- Iniciar visita desde el detalle guarda `startedAt`, cambia a `IN_PROGRESS` y cancela recordatorios futuros.
-- Una visita en curso se muestra primero en Home con acceso “Continuar visita”.
-- Finalizar visita guarda `completedAt`, trabajo realizado y pendientes.
+- Iniciar visita desde el detalle guarda `startedAt`, cambia a `IN_PROGRESS`, crea una sesión `RUNNING` y cancela recordatorios futuros.
+- Una visita en curso se muestra primero en Home con acceso “Continuar visita” y tiempo trabajado aproximado.
+- Pausar trabajo cierra la sesión activa como `PAUSED`; reanudar crea una nueva sesión `RUNNING`.
+- Finalizar visita cierra la sesión activa, guarda `completedAt`, trabajo realizado y pendientes.
+- El registro manual permite agregar una sesión cerrada para trabajo ya realizado, con validación de rango, futuro y superposición.
 - Agregar al calendario mediante Intent, sin sincronización.
 - Recordatorios locales: ninguno, uno o dos por visita.
 - Desde el detalle de visita se puede iniciar, continuar o ver un relevamiento eléctrico.
@@ -123,6 +125,7 @@ Versiones:
 - v5: agrega campos operativos de cierre a `visits`: `started_at`, `completed_at`, `completion_notes` y `pending_work_notes`.
 - v6: agrega presupuestos y listas de materiales.
 - v7: agrega `technical_calculations` para herramientas eléctricas.
+- v8: agrega `visit_work_sessions` para sesiones reales de trabajo de visitas.
 
 Tablas de v4:
 
@@ -147,7 +150,15 @@ Columnas principales: `id`, `type`, `source`, `client_id`, `visit_id`, `inspecti
 
 Índices: `type`, `client_id`, `visit_id`, `inspection_id`, `created_at`, `classification` e `is_deleted`. No se agregan foreign keys físicas para mantener el patrón de borrado lógico.
 
-No se usa `fallbackToDestructiveMigration`. La migración `3 -> 4` solo crea tablas e índices nuevos. La migración `4 -> 5` solo agrega columnas nullable a `visits`. La migración `5 -> 6` solo crea tablas e índices nuevos. La migración `6 -> 7` solo crea `technical_calculations` e índices, por lo que clientes, visitas, recordatorios, relevamientos, presupuestos y materiales existentes siguen intactos.
+Tabla de v8:
+
+- `visit_work_sessions`.
+
+Columnas: `id`, `visit_id`, `started_at`, `ended_at`, `status`, `notes`, `created_at`, `updated_at`, `is_deleted`.
+
+Índices: `visit_id`, `status`, `started_at` e `is_deleted`. No se agregan foreign keys físicas para mantener el patrón de borrado lógico.
+
+No se usa `fallbackToDestructiveMigration`. La migración `3 -> 4` solo crea tablas e índices nuevos. La migración `4 -> 5` solo agrega columnas nullable a `visits`. La migración `5 -> 6` solo crea tablas e índices nuevos. La migración `6 -> 7` solo crea `technical_calculations` e índices. La migración `7 -> 8` solo crea `visit_work_sessions` e índices, por lo que clientes, visitas, recordatorios, relevamientos, presupuestos, materiales y cálculos existentes siguen intactos.
 
 Las secciones pilar y tablero son tablas separadas 1 a 1 con `inspection_id` como clave primaria. Se eligió esa forma porque cada sección tiene campos propios y puede crecer sin agrandar `electrical_inspections` con columnas opcionales. No se usan foreign keys para no acoplar el modelo a borrado físico; el proyecto usa borrado lógico.
 
@@ -264,12 +275,46 @@ Visita agendada:
 2. Confirmarla si corresponde.
 3. Al llegar al domicilio, abrir el detalle y tocar “Iniciar visita”.
 4. La visita pasa a `IN_PROGRESS`, guarda hora de inicio y cancela recordatorios futuros.
+5. Se crea una sesión `RUNNING` si no existe una activa para esa visita.
 
 Visita en curso:
 
 1. Home prioriza la tarjeta “Visita en curso”.
-2. Desde el detalle se muestran cliente, domicilio, motivo, hora de inicio y tiempo transcurrido aproximado.
-3. Acciones rápidas: iniciar/continuar/ver relevamiento, crear/ver presupuesto, crear/ver lista de materiales, WhatsApp, llamar, Maps y finalizar visita.
+2. Desde el detalle se muestran cliente, domicilio, motivo, hora de inicio, sesiones y tiempo trabajado.
+3. Si hay sesión `RUNNING`, la acción principal es “Pausar trabajo”.
+4. Si la visita sigue `IN_PROGRESS` pero no hay sesión activa, la acción principal es “Reanudar trabajo”.
+5. Acciones rápidas: iniciar/continuar/ver relevamiento, crear/ver presupuesto, crear/ver lista de materiales, herramientas, WhatsApp, llamar, Maps y finalizar visita.
+
+Sesiones de trabajo:
+
+1. Una visita puede tener varias sesiones.
+2. Una visita no debe tener más de una sesión `RUNNING`.
+3. Una sesión `RUNNING` tiene `endedAt = null`.
+4. Pausar guarda `endedAt` y deja la sesión como `PAUSED`.
+5. Reanudar crea una sesión nueva; no modifica la anterior.
+6. Finalizar visita cierra cualquier sesión `RUNNING` como `COMPLETED`.
+7. Las notas de sesión se pueden editar, pero los timestamps históricos no se editan en este MVP.
+8. El tiempo trabajado se calcula como la suma de sesiones cerradas más la sesión activa hasta `now`.
+9. El tiempo transcurrido se calcula desde `Visit.startedAt` hasta `completedAt` o `now`.
+10. El tiempo pausado es `transcurrido - trabajado`, nunca negativo.
+11. El tiempo total queda expuesto como `totalWorkedDuration` y `totalWorkedMinutes` para futuros reportes o presupuestos por hora, sin tarifas todavía.
+
+Persistencia y temporizador:
+
+- El tiempo no depende de un contador en memoria.
+- La fuente de verdad son timestamps persistidos en Room.
+- No se usa `Service`, `ForegroundService`, `AlarmManager` ni `WorkManager` para mostrar el cronómetro.
+- El detalle actualiza la visualización cada segundo solo mientras la pantalla está visible.
+- Al cerrar o reabrir la app, el tiempo se recalcula desde Room.
+- Las operaciones inicio, pausa, reanudación y finalización se ejecutan con transacciones Room desde el repositorio de sesiones.
+
+Registro manual:
+
+1. En el menú del detalle tocar “Registrar tiempo manual”.
+2. Ingresar inicio y fin con formato `dd/MM/yyyy HH:mm`.
+3. El fin debe ser posterior al inicio.
+4. No se guardan sesiones futuras ni superpuestas en esta primera versión.
+5. La sesión manual queda guardada como `COMPLETED`.
 
 Relevamiento desde la visita:
 
@@ -290,6 +335,7 @@ Finalizar visita:
 2. Revisar el estado del relevamiento, presupuesto y lista de materiales.
 3. Completar “Trabajo realizado” y “Trabajos o verificaciones pendientes”.
 4. Confirmar. La visita pasa a `COMPLETED`, guarda cierre y cancela recordatorios.
+5. Si había sesión activa, queda cerrada automáticamente y el resumen muestra inicio, fin, tiempo trabajado, pausas y sesiones.
 
 Presupuesto desde distintos puntos:
 
@@ -349,6 +395,10 @@ Reinicio:
 - DAO -> interfaz de queries locales.
 - Repository -> capa de acceso a datos consumida por ViewModels.
 - ViewModel + StateFlow -> store/hooks con ciclo de vida Android.
+- Timestamps persistidos -> fuente de verdad para timers que sobreviven cierre o rotación.
+- LaunchedEffect -> timer visual mientras la pantalla está visible.
+- Lifecycle-aware collect -> observar Flow sin consumir recursos fuera de la pantalla.
+- Room transaction -> operación atómica equivalente a una mutación local consistente.
 - SavedStateHandle -> parámetros persistidos del destino de navegación.
 - ClipboardManager -> clipboard nativo.
 - Android Sharesheet -> compartir `text/plain`.
@@ -362,6 +412,8 @@ Reinicio:
 - Sin backend, login, Firebase, Google Drive, backups ni sincronización.
 - Sin API de OpenAI; el resumen solo se copia o comparte.
 - Sin Google Calendar API; solo Intent de creación de evento.
+- Sin servicio de cronómetro en segundo plano; el tiempo se deriva de timestamps.
+- Sin tarifa horaria ni facturación por tiempo trabajado.
 - Sin alarmas exactas garantizadas.
 - Sin notificaciones con acciones rápidas; tocar la notificación abre el detalle de visita.
 - Sin tests instrumented de migración; los schemas Room quedan exportados.

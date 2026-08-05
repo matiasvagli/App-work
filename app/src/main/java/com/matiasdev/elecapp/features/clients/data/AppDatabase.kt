@@ -20,6 +20,8 @@ import com.matiasdev.elecapp.features.reminders.data.VisitReminderDao
 import com.matiasdev.elecapp.features.reminders.data.VisitReminderEntity
 import com.matiasdev.elecapp.features.visits.data.VisitDao
 import com.matiasdev.elecapp.features.visits.data.VisitEntity
+import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionDao
+import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionEntity
 
 @Database(
     entities = [
@@ -36,8 +38,9 @@ import com.matiasdev.elecapp.features.visits.data.VisitEntity
         MaterialListEntity::class,
         MaterialItemEntity::class,
         TechnicalCalculationEntity::class,
+        VisitWorkSessionEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -54,4 +57,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun materialDao(): MaterialDao
 
     abstract fun technicalCalculationDao(): TechnicalCalculationDao
+
+    abstract fun visitWorkSessionDao(): VisitWorkSessionDao
 }

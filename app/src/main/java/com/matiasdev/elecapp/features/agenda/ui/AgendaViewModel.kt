@@ -11,7 +11,10 @@ import com.matiasdev.elecapp.features.agenda.domain.visitsForDate
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
+import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.domain.Visit
+import com.matiasdev.elecapp.features.visits.domain.VisitWorkSession
+import com.matiasdev.elecapp.features.visits.domain.VisitWorkSessionDurations
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
@@ -33,6 +36,7 @@ import kotlinx.coroutines.withContext
 class AgendaViewModel(
     private val clientRepository: ClientRepository,
     private val visitRepository: VisitRepository,
+    private val workSessionRepository: VisitWorkSessionRepository,
     private val inspectionRepository: InspectionRepository,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
@@ -58,8 +62,8 @@ class AgendaViewModel(
                 )
             }
 
-            combine(todayFlow, upcomingFlow, calendarFlow, month) { today, upcoming, calendar, visibleMonth ->
-                buildState(today, upcoming, calendar, visibleMonth)
+            combine(todayFlow, upcomingFlow, calendarFlow, month, workSessionRepository.observeAllActive()) { today, upcoming, calendar, visibleMonth, sessions ->
+                buildState(today, upcoming, calendar, visibleMonth, sessions)
             }.catch { error ->
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = error.message ?: "No se pudo cargar la agenda")
@@ -91,11 +95,13 @@ class AgendaViewModel(
         upcoming: List<Visit>,
         calendar: List<Visit>,
         visibleMonth: YearMonth,
+        sessions: List<VisitWorkSession>,
     ): AgendaUiState {
-        val todayItems = todayVisits.toAgendaItems()
+        val sessionsByVisitId = sessions.groupBy { it.visitId }
+        val todayItems = todayVisits.toAgendaItems(sessionsByVisitId)
         val sections = todaySections(todayVisits)
         val upcomingFiltered = upcomingVisits(upcoming)
-        val upcomingItems = upcomingFiltered.toAgendaItems()
+        val upcomingItems = upcomingFiltered.toAgendaItems(sessionsByVisitId)
         return _uiState.value.copy(
             isLoading = false,
             visibleMonth = visibleMonth,
@@ -103,18 +109,20 @@ class AgendaViewModel(
             todayDoneOrPast = todayItems.filter { item -> item.visit in sections.doneOrPast },
             upcomingGroups = groupUpcomingVisits(upcomingFiltered),
             upcomingItemsByVisitId = upcomingItems.associateBy { it.visit.id },
-            calendarItems = calendar.toAgendaItems(),
+            calendarItems = calendar.toAgendaItems(sessionsByVisitId),
             errorMessage = null,
         )
     }
 
-    private suspend fun List<Visit>.toAgendaItems(): List<VisitAgendaItem> {
+    private suspend fun List<Visit>.toAgendaItems(sessionsByVisitId: Map<String, List<VisitWorkSession>>): List<VisitAgendaItem> {
+        val now = Instant.now()
         return withContext(ioDispatcher) {
             map { visit ->
                 VisitAgendaItem(
                     visit = visit,
                     client = clientRepository.findById(visit.clientId)?.takeUnless { it.isDeleted },
                     inspectionStatus = inspectionRepository.findActiveInspectionForVisit(visit.id)?.status,
+                    workedDuration = VisitWorkSessionDurations.summarize(visit, sessionsByVisitId[visit.id].orEmpty(), now).totalWorkedDuration,
                 )
             }
         }
@@ -124,10 +132,11 @@ class AgendaViewModel(
 class AgendaViewModelFactory(
     private val clientRepository: ClientRepository,
     private val visitRepository: VisitRepository,
+    private val workSessionRepository: VisitWorkSessionRepository,
     private val inspectionRepository: InspectionRepository,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return AgendaViewModel(clientRepository, visitRepository, inspectionRepository) as T
+        return AgendaViewModel(clientRepository, visitRepository, workSessionRepository, inspectionRepository) as T
     }
 }

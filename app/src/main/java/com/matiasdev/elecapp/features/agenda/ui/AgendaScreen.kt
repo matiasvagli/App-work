@@ -40,6 +40,9 @@ import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
+import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
+import com.matiasdev.elecapp.features.visits.domain.VisitStatus
+import com.matiasdev.elecapp.features.visits.ui.formatCompactDuration
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -50,13 +53,14 @@ import java.time.format.DateTimeFormatter
 fun AgendaScreen(
     clientRepository: ClientRepository,
     visitRepository: VisitRepository,
+    workSessionRepository: VisitWorkSessionRepository,
     inspectionRepository: InspectionRepository,
     onBackClick: () -> Unit,
     onCreateVisitClick: () -> Unit,
     onVisitClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AgendaViewModel = viewModel(
-        factory = AgendaViewModelFactory(clientRepository, visitRepository, inspectionRepository),
+        factory = AgendaViewModelFactory(clientRepository, visitRepository, workSessionRepository, inspectionRepository),
     ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -220,6 +224,9 @@ private fun VisitRow(item: VisitAgendaItem, onVisitClick: (String) -> Unit) {
                     "Relevamiento: ${item.inspectionStatus.labelForAgenda()}",
                 ).filter(String::isNotBlank).joinToString(" · "),
             )
+            if (item.visit.status == VisitStatus.IN_PROGRESS) {
+                item.workedDuration?.let { Text("En curso · ${it.formatCompactDuration()} trabajados") }
+            }
         },
         trailingContent = { VisitStatusChip(item.visit) },
         modifier = Modifier.clickable { onVisitClick(item.visit.id) },

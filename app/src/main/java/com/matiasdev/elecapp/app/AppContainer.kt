@@ -10,6 +10,7 @@ import com.matiasdev.elecapp.features.clients.data.MIGRATION_3_4
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_4_5
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_5_6
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_6_7
+import com.matiasdev.elecapp.features.clients.data.MIGRATION_7_8
 import com.matiasdev.elecapp.features.clients.data.RoomClientRepository
 import com.matiasdev.elecapp.features.electricaltools.data.RoomTechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
@@ -26,7 +27,9 @@ import com.matiasdev.elecapp.features.reminders.scheduling.ReminderCoordinator
 import com.matiasdev.elecapp.features.settings.data.DataStoreReminderSettingsRepository
 import com.matiasdev.elecapp.features.settings.data.ReminderSettingsRepository
 import com.matiasdev.elecapp.features.visits.data.RoomVisitRepository
+import com.matiasdev.elecapp.features.visits.data.RoomVisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
+import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 
 class AppContainer(context: Context) {
     private val database: AppDatabase = Room.databaseBuilder(
@@ -40,6 +43,7 @@ class AppContainer(context: Context) {
         MIGRATION_4_5,
         MIGRATION_5_6,
         MIGRATION_6_7,
+        MIGRATION_7_8,
     ).build()
 
     val clientRepository: ClientRepository = RoomClientRepository(
@@ -48,6 +52,12 @@ class AppContainer(context: Context) {
 
     val visitRepository: VisitRepository = RoomVisitRepository(
         visitDao = database.visitDao(),
+    )
+
+    val visitWorkSessionRepository: VisitWorkSessionRepository = RoomVisitWorkSessionRepository(
+        database = database,
+        visitDao = database.visitDao(),
+        sessionDao = database.visitWorkSessionDao(),
     )
 
     val reminderRepository: VisitReminderRepository = RoomVisitReminderRepository(

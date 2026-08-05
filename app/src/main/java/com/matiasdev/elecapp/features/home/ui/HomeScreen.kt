@@ -47,12 +47,15 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
+import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.ui.formatVisitDateTime
+import com.matiasdev.elecapp.features.visits.ui.formatCompactDuration
 
 @Composable
 fun HomeScreen(
     clientRepository: ClientRepository,
     visitRepository: VisitRepository,
+    workSessionRepository: VisitWorkSessionRepository,
     inspectionRepository: InspectionRepository,
     quoteRepository: QuoteRepository,
     materialRepository: MaterialRepository,
@@ -70,6 +73,7 @@ fun HomeScreen(
         factory = HomeViewModelFactory(
             clientRepository,
             visitRepository,
+            workSessionRepository,
             inspectionRepository,
             quoteRepository,
             materialRepository,
@@ -148,6 +152,7 @@ private fun HomeSummary(uiState: HomeUiState, onNewVisitClick: () -> Unit, onVis
                     Text("Visita en curso", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text("${uiState.currentVisit.clientName} · ${uiState.currentVisit.visit.reason}")
                     Text(uiState.currentVisit.location)
+                    uiState.currentVisit.workedDuration?.let { Text("Tiempo trabajado: ${it.formatCompactDuration()}") }
                     Text("Relevamiento: ${uiState.currentVisit.inspectionStatus.homeLabel()}")
                     Button(onClick = { onVisitClick(uiState.currentVisit.visit.id) }, modifier = Modifier.fillMaxWidth()) {
                         Text("Continuar visita")

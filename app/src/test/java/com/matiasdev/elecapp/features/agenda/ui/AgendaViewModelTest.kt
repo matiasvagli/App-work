@@ -7,6 +7,7 @@ import com.matiasdev.elecapp.features.inspections.data.FakeInspectionRepository
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
 import com.matiasdev.elecapp.features.visits.ui.FakeVisitRepository
+import com.matiasdev.elecapp.features.visits.ui.FakeVisitWorkSessionRepository
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -31,6 +32,7 @@ class AgendaViewModelTest {
                     visit("1", client.id, Instant.now().plusSeconds(3600)),
                 ),
             ),
+            workSessionRepository = FakeVisitWorkSessionRepository(),
             inspectionRepository = FakeInspectionRepository(),
             ioDispatcher = UnconfinedTestDispatcher(),
         )

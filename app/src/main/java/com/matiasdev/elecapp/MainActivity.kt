@@ -25,6 +25,7 @@ class MainActivity : ComponentActivity() {
                     ElecNavHost(
                         clientRepository = appContainer.clientRepository,
                         visitRepository = appContainer.visitRepository,
+                        workSessionRepository = appContainer.visitWorkSessionRepository,
                         inspectionRepository = appContainer.inspectionRepository,
                         quoteRepository = appContainer.quoteRepository,
                         materialRepository = appContainer.materialRepository,

@@ -32,6 +32,18 @@ class AgendaFiltersTest {
         assertEquals(listOf("1", "2"), result.map { it.id })
     }
 
+    @Test
+    fun `today sections keep in progress visit as operative even when scheduled time passed`() {
+        val now = Instant.parse("2026-08-04T15:00:00Z")
+        val inProgress = visit("current", "2026-08-04T12:00:00Z").copy(status = VisitStatus.IN_PROGRESS)
+        val completed = visit("done", "2026-08-04T13:00:00Z").copy(status = VisitStatus.COMPLETED)
+
+        val result = todaySections(listOf(inProgress, completed), now)
+
+        assertEquals(listOf("current"), result.upcoming.map { it.id })
+        assertEquals(listOf("done"), result.doneOrPast.map { it.id })
+    }
+
     private fun visit(id: String, scheduledAt: String): Visit {
         val now = Instant.parse("2026-01-01T00:00:00Z")
         return Visit(id, "client", Instant.parse(scheduledAt), null, "Motivo", null, VisitStatus.PENDING, now, now, false)

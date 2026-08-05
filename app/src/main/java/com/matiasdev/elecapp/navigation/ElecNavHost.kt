@@ -37,6 +37,7 @@ import com.matiasdev.elecapp.features.reminders.scheduling.ReminderCoordinator
 import com.matiasdev.elecapp.features.settings.data.ReminderSettingsRepository
 import com.matiasdev.elecapp.features.settings.ui.SettingsScreen
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
+import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.ui.ClientVisitsScreen
 import com.matiasdev.elecapp.features.visits.ui.VisitDetailScreen
 import com.matiasdev.elecapp.features.visits.ui.VisitFormScreen
@@ -45,6 +46,7 @@ import com.matiasdev.elecapp.features.visits.ui.VisitFormScreen
 fun ElecNavHost(
     clientRepository: ClientRepository,
     visitRepository: VisitRepository,
+    workSessionRepository: VisitWorkSessionRepository,
     inspectionRepository: InspectionRepository,
     quoteRepository: QuoteRepository,
     materialRepository: MaterialRepository,
@@ -86,6 +88,7 @@ fun ElecNavHost(
             HomeScreen(
                 clientRepository = clientRepository,
                 visitRepository = visitRepository,
+                workSessionRepository = workSessionRepository,
                 inspectionRepository = inspectionRepository,
                 quoteRepository = quoteRepository,
                 materialRepository = materialRepository,
@@ -104,6 +107,7 @@ fun ElecNavHost(
             AgendaScreen(
                 clientRepository = clientRepository,
                 visitRepository = visitRepository,
+                workSessionRepository = workSessionRepository,
                 inspectionRepository = inspectionRepository,
                 onBackClick = { navController.navigateUp() },
                 onCreateVisitClick = { navController.navigate(AppRoutes.visitCreate()) },
@@ -244,6 +248,7 @@ fun ElecNavHost(
             VisitDetailScreen(
                 clientRepository = clientRepository,
                 visitRepository = visitRepository,
+                workSessionRepository = workSessionRepository,
                 inspectionRepository = inspectionRepository,
                 quoteRepository = quoteRepository,
                 materialRepository = materialRepository,

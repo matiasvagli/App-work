@@ -26,10 +26,10 @@ fun upcomingVisits(visits: List<Visit>, now: Instant = Instant.now()): List<Visi
 fun todaySections(visits: List<Visit>, now: Instant = Instant.now()): TodayVisitSections {
     return TodayVisitSections(
         upcoming = visits
-            .filter { it.scheduledAt >= now && it.status != VisitStatus.COMPLETED }
+            .filter { it.status == VisitStatus.IN_PROGRESS || (it.scheduledAt >= now && it.status != VisitStatus.COMPLETED) }
             .sortedBy { it.scheduledAt },
         doneOrPast = visits
-            .filter { it.scheduledAt < now || it.status == VisitStatus.COMPLETED }
+            .filter { it.status != VisitStatus.IN_PROGRESS && (it.scheduledAt < now || it.status == VisitStatus.COMPLETED) }
             .sortedBy { it.scheduledAt },
     )
 }

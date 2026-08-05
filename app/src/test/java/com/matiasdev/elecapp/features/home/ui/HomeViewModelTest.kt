@@ -9,6 +9,7 @@ import com.matiasdev.elecapp.features.quotes.data.FakeQuoteRepository
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
 import com.matiasdev.elecapp.features.visits.ui.FakeVisitRepository
+import com.matiasdev.elecapp.features.visits.ui.FakeVisitWorkSessionRepository
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -34,6 +35,7 @@ class HomeViewModelTest {
                     visit("next", VisitStatus.CONFIRMED, Instant.now().plusSeconds(3600)),
                 ),
             ),
+            workSessionRepository = FakeVisitWorkSessionRepository(),
             inspectionRepository = FakeInspectionRepository(),
             quoteRepository = FakeQuoteRepository(),
             materialRepository = FakeMaterialRepository(),

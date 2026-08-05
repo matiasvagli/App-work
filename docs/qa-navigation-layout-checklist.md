@@ -23,6 +23,17 @@ Visitas:
 
 - Agenda -> detalle -> atrás: vuelve a agenda.
 - Detalle -> iniciar: permanece en detalle actualizado.
+- Detalle -> iniciar con doble toque: debe existir una sola sesión `RUNNING`.
+- Detalle en curso con sesión activa: muestra “Pausar trabajo” y “Finalizar visita”.
+- Pausar trabajo: permanece en detalle, muestra snackbar y la acción cambia a “Reanudar trabajo”.
+- Esperar con visita pausada: el tiempo trabajado no debe crecer.
+- Reanudar trabajo: crea una nueva sesión `RUNNING` y vuelve a mostrar “Pausar trabajo”.
+- Finalizar visita con sesión activa: cierra la sesión, guarda cierre y no muestra iniciar/pausar/reanudar.
+- Cerrar app y abrir durante sesión activa: el timer se recalcula desde Room.
+- Girar pantalla: el timer no se reinicia desde cero.
+- Bloquear/desbloquear emulador: el tiempo se recalcula desde timestamps persistidos.
+- Registrar tiempo manual inválido o superpuesto: muestra error y no guarda.
+- Registrar tiempo manual válido: vuelve al detalle y aparece en “Registro de trabajo”.
 - Detalle -> editar -> guardar: vuelve a detalle.
 - Finalizar visita: permanece en flujo de detalle con estado actualizado.
 
@@ -61,6 +72,7 @@ Herramientas:
 Layout mínimo:
 
 - Revisar ancho 320 dp en detalle de materiales.
+- Revisar ancho 320 dp en detalle de visita con acciones y sesiones.
 - Ningún botón debe quedar vertical.
 - Filtros y chips deben envolver línea.
 - TopAppBar no debe invadir status bar.

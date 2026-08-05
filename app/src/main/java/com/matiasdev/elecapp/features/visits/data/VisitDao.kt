@@ -79,7 +79,15 @@ interface VisitDao {
     @Query("UPDATE visits SET status = :status, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateStatus(id: String, status: String, updatedAt: Long)
 
-    @Query("UPDATE visits SET status = 'IN_PROGRESS', started_at = :startedAt, updated_at = :updatedAt WHERE id = :id")
+    @Query(
+        """
+        UPDATE visits
+        SET status = 'IN_PROGRESS',
+            started_at = COALESCE(started_at, :startedAt),
+            updated_at = :updatedAt
+        WHERE id = :id AND is_deleted = 0 AND status NOT IN ('COMPLETED', 'CANCELLED')
+        """,
+    )
     suspend fun startVisit(id: String, startedAt: Long, updatedAt: Long)
 
     @Query(

@@ -10,6 +10,8 @@ import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
+import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
+import com.matiasdev.elecapp.features.visits.domain.VisitWorkSessionDurations
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.CoroutineDispatcher
@@ -25,6 +27,7 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     private val clientRepository: ClientRepository,
     private val visitRepository: VisitRepository,
+    private val workSessionRepository: VisitWorkSessionRepository,
     private val inspectionRepository: InspectionRepository,
     private val quoteRepository: QuoteRepository,
     private val materialRepository: MaterialRepository,
@@ -38,7 +41,7 @@ class HomeViewModel(
             val today = LocalDate.now()
             val todayBounds = localDayBounds(today)
             val tomorrowBounds = localDayBounds(today.plusDays(1))
-            val agendaState = combine(
+            val visitSnapshot = combine(
                 visitRepository.observeCurrentInProgressVisit(),
                 visitRepository.observeNextFutureVisit(Instant.now().toEpochMilli()),
                 visitRepository.observeActiveVisitsInRange(
@@ -51,25 +54,31 @@ class HomeViewModel(
                 ),
                 inspectionRepository.observeDraftInspectionCount(),
             ) { current, next, todayVisits, tomorrowVisits, draftInspectionCount ->
+                HomeVisitSnapshot(current, next, todayVisits.size, tomorrowVisits.size, draftInspectionCount)
+            }
+            val agendaState = combine(visitSnapshot, workSessionRepository.observeAllActive()) { snapshot, sessions ->
+                val now = Instant.now()
+                val sessionsByVisitId = sessions.groupBy { it.visitId }
                 HomeUiState(
                     isLoading = false,
-                    currentVisit = current?.let {
+                    currentVisit = snapshot.current?.let {
+                        VisitAgendaItem(
+                            visit = it,
+                            client = clientRepository.findById(it.clientId)?.takeUnless { client -> client.isDeleted },
+                            inspectionStatus = inspectionRepository.findActiveInspectionForVisit(it.id)?.status,
+                            workedDuration = VisitWorkSessionDurations.summarize(it, sessionsByVisitId[it.id].orEmpty(), now).totalWorkedDuration,
+                        )
+                    },
+                    nextVisit = snapshot.next?.let {
                         VisitAgendaItem(
                             visit = it,
                             client = clientRepository.findById(it.clientId)?.takeUnless { client -> client.isDeleted },
                             inspectionStatus = inspectionRepository.findActiveInspectionForVisit(it.id)?.status,
                         )
                     },
-                    nextVisit = next?.let {
-                        VisitAgendaItem(
-                            visit = it,
-                            client = clientRepository.findById(it.clientId)?.takeUnless { client -> client.isDeleted },
-                            inspectionStatus = inspectionRepository.findActiveInspectionForVisit(it.id)?.status,
-                        )
-                    },
-                    todayCount = todayVisits.size,
-                    tomorrowCount = tomorrowVisits.size,
-                    draftInspectionCount = draftInspectionCount,
+                    todayCount = snapshot.todayCount,
+                    tomorrowCount = snapshot.tomorrowCount,
+                    draftInspectionCount = snapshot.draftInspectionCount,
                 )
             }
             combine(
@@ -92,9 +101,18 @@ class HomeViewModel(
     }
 }
 
+private data class HomeVisitSnapshot(
+    val current: com.matiasdev.elecapp.features.visits.domain.Visit?,
+    val next: com.matiasdev.elecapp.features.visits.domain.Visit?,
+    val todayCount: Int,
+    val tomorrowCount: Int,
+    val draftInspectionCount: Int,
+)
+
 class HomeViewModelFactory(
     private val clientRepository: ClientRepository,
     private val visitRepository: VisitRepository,
+    private val workSessionRepository: VisitWorkSessionRepository,
     private val inspectionRepository: InspectionRepository,
     private val quoteRepository: QuoteRepository,
     private val materialRepository: MaterialRepository,
@@ -104,6 +122,7 @@ class HomeViewModelFactory(
         return HomeViewModel(
             clientRepository,
             visitRepository,
+            workSessionRepository,
             inspectionRepository,
             quoteRepository,
             materialRepository,

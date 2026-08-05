@@ -3,6 +3,7 @@ package com.matiasdev.elecapp.features.visits.ui
 import com.matiasdev.elecapp.features.clients.domain.Client
 import com.matiasdev.elecapp.features.clients.ui.FakeClientRepository
 import com.matiasdev.elecapp.features.clients.ui.MainDispatcherRule
+import com.matiasdev.elecapp.core.time.TimeProvider
 import com.matiasdev.elecapp.features.inspections.data.FakeInspectionRepository
 import com.matiasdev.elecapp.features.materials.data.FakeMaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.FakeQuoteRepository
@@ -12,6 +13,7 @@ import com.matiasdev.elecapp.features.reminders.scheduling.FakeReminderScheduler
 import com.matiasdev.elecapp.features.reminders.scheduling.ReminderCoordinator
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
+import com.matiasdev.elecapp.features.visits.domain.VisitWorkSessionStatus
 import java.time.Instant
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -34,7 +36,13 @@ class VisitOperationalViewModelTest {
         val reminder = VisitReminder("reminder", "visit", 30, true, now, now)
         val scheduler = FakeReminderScheduler()
         val visitRepository = FakeVisitRepository(listOf(visit(VisitStatus.CONFIRMED)))
-        val viewModel = viewModel(visitRepository, FakeVisitReminderRepository(listOf(reminder)), scheduler)
+        val workRepository = FakeVisitWorkSessionRepository(visitRepository = visitRepository)
+        val viewModel = viewModel(
+            visitRepository = visitRepository,
+            workSessionRepository = workRepository,
+            reminderRepository = FakeVisitReminderRepository(listOf(reminder)),
+            scheduler = scheduler,
+        )
 
         viewModel.requestStartVisit()
         viewModel.confirmStartVisit()
@@ -42,6 +50,8 @@ class VisitOperationalViewModelTest {
         val updated = visitRepository.currentVisits().first()
         assertEquals(VisitStatus.IN_PROGRESS, updated.status)
         assertNotNull(updated.startedAt)
+        assertEquals(1, workRepository.currentSessions().size)
+        assertEquals(VisitWorkSessionStatus.RUNNING, workRepository.currentSessions().first().status)
         assertEquals(listOf("reminder"), scheduler.cancelledReminderIds)
     }
 
@@ -59,9 +69,39 @@ class VisitOperationalViewModelTest {
     }
 
     @Test
+    fun `starting twice keeps one running session`() = runTest(dispatcher) {
+        val visitRepository = FakeVisitRepository(listOf(visit(VisitStatus.CONFIRMED)))
+        val workRepository = FakeVisitWorkSessionRepository(visitRepository = visitRepository)
+        val viewModel = viewModel(visitRepository, workSessionRepository = workRepository)
+
+        viewModel.requestStartVisit()
+        viewModel.confirmStartVisit()
+        viewModel.confirmStartVisit()
+
+        assertEquals(1, workRepository.currentSessions().count { it.status == VisitWorkSessionStatus.RUNNING })
+    }
+
+    @Test
+    fun `pause and resume creates a new running session`() = runTest(dispatcher) {
+        val visitRepository = FakeVisitRepository(listOf(visit(VisitStatus.IN_PROGRESS).copy(startedAt = now)))
+        val workRepository = FakeVisitWorkSessionRepository(visitRepository = visitRepository)
+        workRepository.startVisitWork("visit")
+        val viewModel = viewModel(visitRepository, workSessionRepository = workRepository)
+
+        viewModel.pauseWork()
+        viewModel.resumeWork()
+
+        assertEquals(2, workRepository.currentSessions().size)
+        assertEquals(1, workRepository.currentSessions().count { it.status == VisitWorkSessionStatus.PAUSED })
+        assertEquals(1, workRepository.currentSessions().count { it.status == VisitWorkSessionStatus.RUNNING })
+    }
+
+    @Test
     fun `completing visit stores closing notes`() = runTest(dispatcher) {
         val visitRepository = FakeVisitRepository(listOf(visit(VisitStatus.IN_PROGRESS).copy(startedAt = now)))
-        val viewModel = viewModel(visitRepository)
+        val workRepository = FakeVisitWorkSessionRepository(visitRepository = visitRepository)
+        workRepository.startVisitWork("visit")
+        val viewModel = viewModel(visitRepository, workSessionRepository = workRepository)
 
         viewModel.requestCompleteVisit()
         viewModel.onCompletionNotesChange("Se revisó tablero")
@@ -73,6 +113,7 @@ class VisitOperationalViewModelTest {
         assertNotNull(updated.completedAt)
         assertEquals("Se revisó tablero", updated.completionNotes)
         assertEquals("Queda identificar circuitos", updated.pendingWorkNotes)
+        assertEquals(VisitWorkSessionStatus.COMPLETED, workRepository.currentSessions().first().status)
     }
 
     @Test
@@ -89,8 +130,29 @@ class VisitOperationalViewModelTest {
         assertTrue(opened.distinct().size == 1)
     }
 
+    @Test
+    fun `manual session with overlap remains editable and is not saved`() = runTest(dispatcher) {
+        val visitRepository = FakeVisitRepository(listOf(visit(VisitStatus.IN_PROGRESS).copy(startedAt = now)))
+        val workRepository = FakeVisitWorkSessionRepository(
+            visitRepository = visitRepository,
+            timeProvider = TimeProvider { now.plusSeconds(10800) },
+        )
+        workRepository.addManualSession("visit", now.minusSeconds(3600), now, null)
+        val viewModel = viewModel(visitRepository, workSessionRepository = workRepository)
+
+        viewModel.requestManualSession()
+        viewModel.onManualStartChange("04/08/2026 08:30")
+        viewModel.onManualEndChange("04/08/2026 09:30")
+        viewModel.confirmManualSession()
+
+        assertEquals(1, workRepository.currentSessions().size)
+        assertTrue(viewModel.uiState.value.showManualSessionDialog)
+        assertNotNull(viewModel.uiState.value.manualSessionError)
+    }
+
     private fun viewModel(
         visitRepository: FakeVisitRepository,
+        workSessionRepository: FakeVisitWorkSessionRepository = FakeVisitWorkSessionRepository(visitRepository = visitRepository),
         reminderRepository: FakeVisitReminderRepository = FakeVisitReminderRepository(),
         scheduler: FakeReminderScheduler = FakeReminderScheduler(),
         inspectionRepository: FakeInspectionRepository = FakeInspectionRepository(),
@@ -99,6 +161,7 @@ class VisitOperationalViewModelTest {
         return VisitDetailViewModel(
             clientRepository = clientRepository,
             visitRepository = visitRepository,
+            workSessionRepository = workSessionRepository,
             inspectionRepository = inspectionRepository,
             quoteRepository = FakeQuoteRepository(),
             materialRepository = FakeMaterialRepository(),

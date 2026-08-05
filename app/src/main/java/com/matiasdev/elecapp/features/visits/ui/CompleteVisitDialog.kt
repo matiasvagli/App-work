@@ -27,6 +27,13 @@ fun CompleteVisitDialog(uiState: VisitDetailUiState, viewModel: VisitDetailViewM
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("$clientName · ${visit.reason}")
+                visit.startedAt?.let { Text("Inicio: ${it.formatVisitDateTime()}") }
+                Text("Fin: ahora")
+                uiState.workSummary?.let { summary ->
+                    Text("Tiempo trabajado: ${summary.totalWorkedDuration.formatCompactDuration()}")
+                    Text("Pausas: ${summary.totalPausedDuration.formatCompactDuration()}")
+                    Text("Sesiones: ${summary.sessionCount}")
+                }
                 Text("Relevamiento: $inspectionStatus")
                 if (uiState.inspection == null) Text("Advertencia: no existe relevamiento asociado.")
                 if (uiState.inspection?.status == InspectionStatus.DRAFT) Text("Advertencia: el relevamiento está en borrador.")
