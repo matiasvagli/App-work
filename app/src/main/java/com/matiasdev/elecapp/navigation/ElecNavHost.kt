@@ -89,15 +89,15 @@ fun ElecNavHost(
                 inspectionRepository = inspectionRepository,
                 quoteRepository = quoteRepository,
                 materialRepository = materialRepository,
-                onElectricalToolsClick = { navController.navigate(AppRoutes.ELECTRICAL_TOOLS) },
-                onClientsClick = { navController.navigate(AppRoutes.CLIENTS) },
-                onAgendaClick = { navController.navigate(AppRoutes.AGENDA) },
-                onInspectionsClick = { navController.navigate(AppRoutes.INSPECTIONS) },
-                onQuotesClick = { navController.navigate(AppRoutes.QUOTES) },
-                onMaterialsClick = { navController.navigate(AppRoutes.MATERIALS) },
+                onElectricalToolsClick = { navController.navigateSingleTop(AppRoutes.ELECTRICAL_TOOLS) },
+                onClientsClick = { navController.navigateSingleTop(AppRoutes.CLIENTS) },
+                onAgendaClick = { navController.navigateSingleTop(AppRoutes.AGENDA) },
+                onInspectionsClick = { navController.navigateSingleTop(AppRoutes.INSPECTIONS) },
+                onQuotesClick = { navController.navigateSingleTop(AppRoutes.QUOTES) },
+                onMaterialsClick = { navController.navigateSingleTop(AppRoutes.MATERIALS) },
                 onNewVisitClick = { navController.navigate(AppRoutes.visitCreate()) },
-                onVisitClick = { navController.navigate(AppRoutes.visitDetail(it)) },
-                onSettingsClick = { navController.navigate(AppRoutes.SETTINGS) },
+                onVisitClick = { navController.navigateSingleTop(AppRoutes.visitDetail(it)) },
+                onSettingsClick = { navController.navigateSingleTop(AppRoutes.SETTINGS) },
             )
         }
         composable(AppRoutes.AGENDA) {
@@ -107,14 +107,14 @@ fun ElecNavHost(
                 inspectionRepository = inspectionRepository,
                 onBackClick = { navController.navigateUp() },
                 onCreateVisitClick = { navController.navigate(AppRoutes.visitCreate()) },
-                onVisitClick = { navController.navigate(AppRoutes.visitDetail(it)) },
+                onVisitClick = { navController.navigateSingleTop(AppRoutes.visitDetail(it)) },
             )
         }
         composable(AppRoutes.INSPECTIONS) {
             InspectionsListScreen(
                 repository = inspectionRepository,
                 onBackClick = { navController.navigateUp() },
-                onInspectionClick = { navController.navigate(AppRoutes.inspectionOverview(it)) },
+                onInspectionClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(it)) },
             )
         }
         electricalToolsRoutes(navController, clientRepository, visitRepository, inspectionRepository, technicalCalculationRepository)
@@ -130,7 +130,7 @@ fun ElecNavHost(
                 repository = clientRepository,
                 onBackClick = { navController.navigateUp() },
                 onAddClick = { navController.navigate(AppRoutes.clientCreate()) },
-                onClientClick = { clientId -> navController.navigate(AppRoutes.clientDetail(clientId)) },
+                onClientClick = { clientId -> navController.navigateSingleTop(AppRoutes.clientDetail(clientId)) },
                 onEditClick = { clientId -> navController.navigate(AppRoutes.clientEdit(clientId)) },
             )
         }
@@ -192,7 +192,7 @@ fun ElecNavHost(
                 onViewVisitsClick = { navController.navigate(AppRoutes.clientVisits(it)) },
                 onCreateQuoteClick = { navController.navigate(AppRoutes.quoteCreate(clientId = it)) },
                 onCreateMaterialClick = { navController.navigate(AppRoutes.materialCreate(clientId = it)) },
-                onVisitClick = { navController.navigate(AppRoutes.visitDetail(it)) },
+                onVisitClick = { navController.navigateSingleTop(AppRoutes.visitDetail(it)) },
             )
         }
         composable(
@@ -251,18 +251,17 @@ fun ElecNavHost(
                 visitId = backStackEntry.arguments?.getString(AppRoutes.VISIT_ID).orEmpty(),
                 onBackClick = { navController.navigateUp() },
                 onEditClick = { navController.navigate(AppRoutes.visitEdit(it)) },
-                onInspectionClick = { navController.navigate(AppRoutes.inspectionOverview(it)) },
+                onInspectionClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(it)) },
                 onCreateQuoteClick = { visitId, clientId ->
                     navController.navigate(AppRoutes.quoteCreate(clientId = clientId, visitId = visitId))
                 },
-                onQuoteClick = { navController.navigate(AppRoutes.quoteDetail(it)) },
+                onQuoteClick = { navController.navigateSingleTop(AppRoutes.quoteDetail(it)) },
                 onCreateMaterialClick = { visitId, clientId ->
                     navController.navigate(AppRoutes.materialCreate(clientId = clientId, visitId = visitId))
                 },
-                onMaterialClick = { navController.navigate(AppRoutes.materialDetail(it)) },
+                onMaterialClick = { navController.navigateSingleTop(AppRoutes.materialDetail(it)) },
                 onElectricalToolsClick = { visitId, clientId ->
-                    navController.navigate(AppRoutes.ELECTRICAL_TOOLS)
-                    navController.navigate(AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId))
+                    navController.navigateSingleTop(AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId))
                 },
             )
         }
@@ -297,7 +296,7 @@ fun ElecNavHost(
                 inspectionId = inspectionId,
                 onBackClick = { navController.navigateUp() },
                 onSectionClick = { section ->
-                    navController.navigate(inspectionSectionRoute(inspectionId, section))
+                    navController.navigateSingleTop(inspectionSectionRoute(inspectionId, section))
                 },
                 onCreateQuoteClick = { clientId, visitId ->
                     navController.navigate(AppRoutes.quoteCreate(clientId = clientId, visitId = visitId, inspectionId = inspectionId))
@@ -308,7 +307,7 @@ fun ElecNavHost(
                 onAddCalculationClick = { clientId, visitId, currentInspectionId ->
                     navController.navigate(AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId, inspectionId = currentInspectionId))
                 },
-                onCalculationClick = { navController.navigate(AppRoutes.technicalCalculationDetail(it)) },
+                onCalculationClick = { navController.navigateSingleTop(AppRoutes.technicalCalculationDetail(it)) },
             )
         }
         composable(AppRoutes.INSPECTION_GENERAL, AppRoutes.inspectionIdArguments) { backStackEntry ->
@@ -355,4 +354,8 @@ private fun inspectionSectionRoute(inspectionId: String, section: InspectionSect
         InspectionSection.TECHNICAL_COMMENT -> AppRoutes.inspectionTechnicalComment(inspectionId)
         InspectionSection.FINAL_REPORT -> AppRoutes.inspectionFinalReport(inspectionId)
     }
+}
+
+private fun androidx.navigation.NavHostController.navigateSingleTop(route: String) {
+    navigate(route) { launchSingleTop = true }
 }

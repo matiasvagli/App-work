@@ -1,0 +1,67 @@
+# QA navegación y layouts
+
+Fecha base: 2026-08-05.
+
+## Contrato aplicado
+
+- Listado -> detalle: abrir con `launchSingleTop`; volver usa `navigateUp`.
+- Detalle -> editar: guardar elimina el formulario actual del back stack y reusa el detalle.
+- Crear documento: guardar elimina el formulario y abre el detalle; atrás vuelve al origen anterior.
+- Cambios de estado en documentos: permanecen en detalle salvo cancelación, que vuelve al listado.
+- Cancelación de presupuestos/materiales: acción secundaria con confirmación.
+- Herramientas desde visita: abre una sola ruta asociada, sin intercalar destinos duplicados.
+
+## Checklist manual
+
+Clientes:
+
+- Lista -> detalle -> atrás: vuelve a lista.
+- Detalle -> editar -> guardar: vuelve a detalle actualizado.
+- Detalle -> eliminar: vuelve a lista, sin pantalla apuntando al cliente eliminado.
+
+Visitas:
+
+- Agenda -> detalle -> atrás: vuelve a agenda.
+- Detalle -> iniciar: permanece en detalle actualizado.
+- Detalle -> editar -> guardar: vuelve a detalle.
+- Finalizar visita: permanece en flujo de detalle con estado actualizado.
+
+Relevamientos:
+
+- Listado -> overview -> atrás: vuelve a listado.
+- Visita -> relevamiento -> atrás: vuelve a visita.
+- Sección -> guardar -> overview: vuelve al overview.
+
+Presupuestos:
+
+- Listado -> detalle -> atrás: vuelve a listado.
+- Detalle -> editar -> guardar: vuelve a detalle, no al formulario.
+- DRAFT -> READY: permanece en detalle y muestra solo siguiente acción.
+- READY -> SENT: permanece en detalle y muestra solo acciones válidas.
+- SENT -> APPROVED/REJECTED: permanece en detalle y cierra acciones de avance.
+- Cancelar: confirma y vuelve al listado.
+
+Materiales:
+
+- Listado -> detalle -> atrás: vuelve a listado.
+- Detalle -> editar -> guardar: vuelve a detalle, no al formulario.
+- DRAFT -> READY: permanece en detalle.
+- READY -> DELIVERED: permanece en detalle.
+- DELIVERED -> PURCHASED: permanece en detalle y muestra “Volver a materiales”.
+- Cancelar: confirma y vuelve al listado.
+- Compartir/copiar: no desborda en ancho de 320 dp.
+
+Herramientas:
+
+- Herramientas -> calculadora -> atrás: vuelve a herramientas.
+- Visita -> herramientas: abre cálculo asociado y atrás vuelve a visita.
+- Relevamiento -> agregar cálculo -> atrás: vuelve al relevamiento.
+- Historial -> detalle -> atrás: vuelve al historial.
+
+Layout mínimo:
+
+- Revisar ancho 320 dp en detalle de materiales.
+- Ningún botón debe quedar vertical.
+- Filtros y chips deben envolver línea.
+- TopAppBar no debe invadir status bar.
+- Contenido debe quedar debajo de top bar y ser desplazable.

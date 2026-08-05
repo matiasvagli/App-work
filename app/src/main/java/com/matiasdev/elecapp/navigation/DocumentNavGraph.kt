@@ -29,7 +29,7 @@ fun NavGraphBuilder.documentRoutes(
             repository = quoteRepository,
             onBackClick = { navController.navigateUp() },
             onCreateClick = { navController.navigate(AppRoutes.quoteCreate()) },
-            onQuoteClick = { navController.navigate(AppRoutes.quoteDetail(it)) },
+            onQuoteClick = { navController.navigateSingleTop(AppRoutes.quoteDetail(it)) },
         )
     }
     composable(AppRoutes.MATERIALS) {
@@ -37,7 +37,7 @@ fun NavGraphBuilder.documentRoutes(
             repository = materialRepository,
             onBackClick = { navController.navigateUp() },
             onCreateClick = { navController.navigate(AppRoutes.materialCreate()) },
-            onListClick = { navController.navigate(AppRoutes.materialDetail(it)) },
+            onListClick = { navController.navigateSingleTop(AppRoutes.materialDetail(it)) },
         )
     }
     composable(AppRoutes.QUOTE_CREATE, AppRoutes.quoteCreateArguments) { backStackEntry ->
@@ -51,7 +51,7 @@ fun NavGraphBuilder.documentRoutes(
             visitId = backStackEntry.optionalArg(AppRoutes.VISIT_ID),
             inspectionId = backStackEntry.optionalArg(AppRoutes.INSPECTION_ID),
             onBackClick = { navController.navigateUp() },
-            onSaved = { navController.navigate(AppRoutes.quoteDetail(it)) },
+            onSaved = { navController.navigateReplacingCurrent(backStackEntry, AppRoutes.quoteDetail(it)) },
         )
     }
     composable(AppRoutes.QUOTE_DETAIL, AppRoutes.quoteIdArguments) { backStackEntry ->
@@ -64,6 +64,7 @@ fun NavGraphBuilder.documentRoutes(
             onBackClick = { navController.navigateUp() },
             onEditClick = { navController.navigate(AppRoutes.quoteEdit(it)) },
             onCreateMaterialClick = { navController.navigate(AppRoutes.materialCreate(quoteId = it)) },
+            onCancelled = { navController.navigateQuotesList() },
         )
     }
     composable(AppRoutes.QUOTE_EDIT, AppRoutes.quoteIdArguments) { backStackEntry ->
@@ -78,7 +79,7 @@ fun NavGraphBuilder.documentRoutes(
             visitId = null,
             inspectionId = null,
             onBackClick = { navController.navigateUp() },
-            onSaved = { navController.navigate(AppRoutes.quoteDetail(it)) },
+            onSaved = { navController.navigateReplacingCurrent(backStackEntry, AppRoutes.quoteDetail(it)) },
         )
     }
     composable(AppRoutes.MATERIAL_CREATE, AppRoutes.materialCreateArguments) { backStackEntry ->
@@ -94,7 +95,7 @@ fun NavGraphBuilder.documentRoutes(
             inspectionId = backStackEntry.optionalArg(AppRoutes.INSPECTION_ID),
             quoteId = backStackEntry.optionalArg(AppRoutes.QUOTE_ID),
             onBackClick = { navController.navigateUp() },
-            onSaved = { navController.navigate(AppRoutes.materialDetail(it)) },
+            onSaved = { navController.navigateReplacingCurrent(backStackEntry, AppRoutes.materialDetail(it)) },
         )
     }
     composable(AppRoutes.MATERIAL_DETAIL, AppRoutes.materialListIdArguments) { backStackEntry ->
@@ -106,6 +107,8 @@ fun NavGraphBuilder.documentRoutes(
             listId = listId,
             onBackClick = { navController.navigateUp() },
             onEditClick = { navController.navigate(AppRoutes.materialEdit(it)) },
+            onCancelled = { navController.navigateMaterialsList() },
+            onMaterialsListClick = { navController.navigateMaterialsList() },
         )
     }
     composable(AppRoutes.MATERIAL_EDIT, AppRoutes.materialListIdArguments) { backStackEntry ->
@@ -122,11 +125,36 @@ fun NavGraphBuilder.documentRoutes(
             inspectionId = null,
             quoteId = null,
             onBackClick = { navController.navigateUp() },
-            onSaved = { navController.navigate(AppRoutes.materialDetail(it)) },
+            onSaved = { navController.navigateReplacingCurrent(backStackEntry, AppRoutes.materialDetail(it)) },
         )
     }
 }
 
 private fun NavBackStackEntry.optionalArg(name: String): String? {
     return arguments?.getString(name)?.takeIf { it.isNotBlank() }
+}
+
+private fun NavHostController.navigateReplacingCurrent(backStackEntry: NavBackStackEntry, route: String) {
+    navigate(route) {
+        popUpTo(backStackEntry.destination.id) { inclusive = true }
+        launchSingleTop = true
+    }
+}
+
+private fun NavHostController.navigateSingleTop(route: String) {
+    navigate(route) { launchSingleTop = true }
+}
+
+private fun NavHostController.navigateMaterialsList() {
+    navigate(AppRoutes.MATERIALS) {
+        popUpTo(AppRoutes.HOME)
+        launchSingleTop = true
+    }
+}
+
+private fun NavHostController.navigateQuotesList() {
+    navigate(AppRoutes.QUOTES) {
+        popUpTo(AppRoutes.HOME)
+        launchSingleTop = true
+    }
 }

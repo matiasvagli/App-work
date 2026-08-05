@@ -1,7 +1,10 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.matiasdev.elecapp.features.materials.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -58,14 +61,12 @@ fun MaterialListFields(uiState: MaterialListFormUiState, viewModel: MaterialList
 fun MaterialTemplateButtons(viewModel: MaterialListFormViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Plantillas rápidas", fontWeight = FontWeight.SemiBold)
-        MaterialTemplates.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                row.forEach { template ->
-                    OutlinedButton(onClick = { viewModel.addItem(template) }) { Text(template.title) }
-                }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            MaterialTemplates.forEach { template ->
+                OutlinedButton(onClick = { viewModel.addItem(template) }) { Text(template.title) }
             }
         }
-        OutlinedButton(onClick = { viewModel.addItem() }) { Text("Agregar material") }
+        OutlinedButton(onClick = { viewModel.addItem() }, modifier = Modifier.fillMaxWidth()) { Text("Agregar material") }
     }
 }
 
@@ -75,7 +76,7 @@ fun MaterialItemEditor(item: MaterialItemFormState, viewModel: MaterialListFormV
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(item.description, { value -> viewModel.updateItem(item.id) { it.copy(description = value) } }, label = { Text("Material") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(item.quantity, { value -> viewModel.updateItem(item.id) { it.copy(quantity = value) } }, label = { Text("Cantidad") }, modifier = Modifier.fillMaxWidth())
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(MaterialUnit.UNIT, MaterialUnit.METER, MaterialUnit.ROLL, MaterialUnit.BOX, MaterialUnit.PACK).forEach { unit ->
                     FilterChip(item.unit == unit, { viewModel.updateItem(item.id) { it.copy(unit = unit) } }, label = { Text(unit.label()) })
                 }
@@ -95,7 +96,7 @@ fun MaterialItemEditor(item: MaterialItemFormState, viewModel: MaterialListFormV
                 OutlinedTextField(item.actualUnitPriceInput, { value -> viewModel.updateItem(item.id) { it.copy(actualUnitPriceInput = value) } }, label = { Text("Precio real") }, modifier = Modifier.fillMaxWidth())
             }
             OutlinedTextField(item.notes, { value -> viewModel.updateItem(item.id) { it.copy(notes = value) } }, label = { Text("Notas") }, modifier = Modifier.fillMaxWidth())
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton({ viewModel.moveItem(item.id, -1) }) { Text("Subir") }
                 TextButton({ viewModel.moveItem(item.id, 1) }) { Text("Bajar") }
                 TextButton({ viewModel.duplicateItem(item.id) }) { Text("Duplicar") }

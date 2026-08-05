@@ -128,6 +128,10 @@ class MaterialListFormViewModel(
         }
     }
 
+    fun clearSavedEvent() {
+        _uiState.update { it.copy(savedListId = null) }
+    }
+
     private suspend fun loadInitialContext(clientId: String?, visitId: String?, inspectionId: String?, quoteId: String?) {
         if (listId != null) {
             loadList(listId)

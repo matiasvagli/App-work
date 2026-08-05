@@ -24,18 +24,18 @@ fun NavGraphBuilder.electricalToolsRoutes(
     composable(AppRoutes.ELECTRICAL_TOOLS) {
         ElectricalToolsHomeScreen(
             onBackClick = { navController.navigateUp() },
-            onPowerClick = { navController.navigate(AppRoutes.electricalToolsPower()) },
-            onVoltageDropClick = { navController.navigate(AppRoutes.electricalToolsVoltageDrop()) },
-            onHistoryClick = { navController.navigate(AppRoutes.ELECTRICAL_TOOLS_HISTORY) },
+            onPowerClick = { navController.navigateSingleTop(AppRoutes.electricalToolsPower()) },
+            onVoltageDropClick = { navController.navigateSingleTop(AppRoutes.electricalToolsVoltageDrop()) },
+            onHistoryClick = { navController.navigateSingleTop(AppRoutes.ELECTRICAL_TOOLS_HISTORY) },
         )
     }
     composable(AppRoutes.ELECTRICAL_TOOLS_HISTORY) {
         ElectricalToolsHistoryScreen(
             repository = technicalCalculationRepository,
             onBackClick = { navController.navigateUp() },
-            onDetailClick = { navController.navigate(AppRoutes.technicalCalculationDetail(it)) },
-            onDuplicatePower = { navController.navigate(AppRoutes.electricalToolsPower(duplicateId = it)) },
-            onDuplicateVoltageDrop = { navController.navigate(AppRoutes.electricalToolsVoltageDrop(duplicateId = it)) },
+            onDetailClick = { navController.navigateSingleTop(AppRoutes.technicalCalculationDetail(it)) },
+            onDuplicatePower = { navController.navigateSingleTop(AppRoutes.electricalToolsPower(duplicateId = it)) },
+            onDuplicateVoltageDrop = { navController.navigateSingleTop(AppRoutes.electricalToolsVoltageDrop(duplicateId = it)) },
         )
     }
     composable(AppRoutes.ELECTRICAL_TOOLS_POWER, AppRoutes.electricalToolArguments) { backStackEntry ->
@@ -78,4 +78,8 @@ fun NavGraphBuilder.electricalToolsRoutes(
 
 private fun NavBackStackEntry.optionalArg(name: String): String? {
     return arguments?.getString(name)?.takeIf { it.isNotBlank() }
+}
+
+private fun NavHostController.navigateSingleTop(route: String) {
+    navigate(route) { launchSingleTop = true }
 }

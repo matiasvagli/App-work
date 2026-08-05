@@ -11,10 +11,13 @@ import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
 import com.matiasdev.elecapp.features.quotes.domain.Quote
 import com.matiasdev.elecapp.features.quotes.domain.QuoteItem
 import com.matiasdev.elecapp.features.quotes.domain.QuoteStatus
+import com.matiasdev.elecapp.features.quotes.domain.QuoteStatusActions
 import com.matiasdev.elecapp.features.quotes.summary.QuoteSummaryContext
 import com.matiasdev.elecapp.features.quotes.summary.QuoteSummaryGenerator
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -34,6 +37,9 @@ class QuoteDetailViewModel(
     materialRepository: MaterialRepository,
     private val quoteId: String,
 ) : ViewModel() {
+    private val _events = MutableSharedFlow<QuoteDetailEvent>()
+    val events = _events.asSharedFlow()
+
     val uiState: StateFlow<QuoteDetailUiState> = combine(
         quoteRepository.observeById(quoteId),
         quoteRepository.observeItems(quoteId),
@@ -59,8 +65,30 @@ class QuoteDetailViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), QuoteDetailUiState())
 
     fun changeStatus(status: QuoteStatus) {
-        viewModelScope.launch { quoteRepository.updateStatus(quoteId, status, Instant.now()) }
+        val current = uiState.value.quote?.status ?: return
+        if (status != QuoteStatus.CANCELLED && status !in QuoteStatusActions.primaryTransitions(current)) return
+        if (status == QuoteStatus.CANCELLED && !QuoteStatusActions.canCancel(current)) return
+        viewModelScope.launch {
+            quoteRepository.updateStatus(quoteId, status, Instant.now())
+            _events.emit(if (status == QuoteStatus.CANCELLED) QuoteDetailEvent.Cancelled else QuoteDetailEvent.Message(status.confirmationMessage()))
+        }
     }
+}
+
+sealed interface QuoteDetailEvent {
+    data class Message(val text: String) : QuoteDetailEvent
+    data object Cancelled : QuoteDetailEvent
+}
+
+private fun QuoteStatus.confirmationMessage(): String = when (this) {
+    QuoteStatus.READY -> "Presupuesto listo"
+    QuoteStatus.SENT -> "Presupuesto enviado"
+    QuoteStatus.APPROVED -> "Presupuesto aprobado"
+    QuoteStatus.REJECTED -> "Presupuesto rechazado"
+    QuoteStatus.CANCELLED -> "Presupuesto cancelado"
+    QuoteStatus.DRAFT,
+    QuoteStatus.EXPIRED,
+    -> "Presupuesto actualizado"
 }
 
 class QuoteDetailViewModelFactory(

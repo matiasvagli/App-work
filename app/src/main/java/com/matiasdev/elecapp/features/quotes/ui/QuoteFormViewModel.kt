@@ -140,6 +140,10 @@ class QuoteFormViewModel(
         }
     }
 
+    fun clearSavedEvent() {
+        _uiState.update { it.copy(savedQuoteId = null) }
+    }
+
     private suspend fun loadInitialContext(clientId: String?, visitId: String?, inspectionId: String?) {
         if (quoteId != null) {
             loadQuote(quoteId)
