@@ -9,7 +9,10 @@ import com.matiasdev.elecapp.features.clients.data.MIGRATION_2_3
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_3_4
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_4_5
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_5_6
+import com.matiasdev.elecapp.features.clients.data.MIGRATION_6_7
 import com.matiasdev.elecapp.features.clients.data.RoomClientRepository
+import com.matiasdev.elecapp.features.electricaltools.data.RoomTechnicalCalculationRepository
+import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.data.RoomInspectionRepository
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
@@ -36,6 +39,7 @@ class AppContainer(context: Context) {
         MIGRATION_3_4,
         MIGRATION_4_5,
         MIGRATION_5_6,
+        MIGRATION_6_7,
     ).build()
 
     val clientRepository: ClientRepository = RoomClientRepository(
@@ -60,6 +64,10 @@ class AppContainer(context: Context) {
 
     val materialRepository: MaterialRepository = RoomMaterialRepository(
         dao = database.materialDao(),
+    )
+
+    val technicalCalculationRepository: TechnicalCalculationRepository = RoomTechnicalCalculationRepository(
+        dao = database.technicalCalculationDao(),
     )
 
     val reminderSettingsRepository: ReminderSettingsRepository = DataStoreReminderSettingsRepository(

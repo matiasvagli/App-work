@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -60,6 +61,7 @@ fun HomeScreen(
     onInspectionsClick: () -> Unit,
     onQuotesClick: () -> Unit,
     onMaterialsClick: () -> Unit,
+    onElectricalToolsClick: () -> Unit,
     onNewVisitClick: () -> Unit,
     onVisitClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
@@ -99,6 +101,7 @@ fun HomeScreen(
             enabled = true,
             action = onMaterialsClick,
         ),
+        HomeCard("Herramientas eléctricas", "Activo", Icons.Default.Bolt, enabled = true, action = onElectricalToolsClick),
     )
 
     Scaffold(

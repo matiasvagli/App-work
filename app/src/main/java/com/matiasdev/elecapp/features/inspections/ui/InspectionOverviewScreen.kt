@@ -43,6 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
+import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
+import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
+import com.matiasdev.elecapp.features.electricaltools.ui.primaryResultText
+import com.matiasdev.elecapp.features.electricaltools.summary.label
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.summary.InspectionSummaryGenerator
@@ -55,14 +59,22 @@ import com.matiasdev.elecapp.features.visits.ui.formatVisitDateTime
 fun InspectionOverviewScreen(
     inspectionRepository: InspectionRepository,
     visitRepository: VisitRepository,
+    technicalCalculationRepository: TechnicalCalculationRepository,
     inspectionId: String,
     onBackClick: () -> Unit,
     onSectionClick: (InspectionSection) -> Unit,
     onCreateQuoteClick: (String, String) -> Unit,
     onCreateMaterialClick: (String, String) -> Unit,
+    onAddCalculationClick: (String, String, String) -> Unit,
+    onCalculationClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InspectionOverviewViewModel = viewModel(
-        factory = InspectionOverviewViewModelFactory(inspectionRepository, visitRepository, inspectionId),
+        factory = InspectionOverviewViewModelFactory(
+            inspectionRepository = inspectionRepository,
+            visitRepository = visitRepository,
+            inspectionId = inspectionId,
+            technicalCalculationRepository = technicalCalculationRepository,
+        ),
     ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -98,14 +110,14 @@ fun InspectionOverviewScreen(
             onReopenClick = viewModel::requestReopen,
             onCopySummary = {
                 val summary = uiState.aggregate?.let {
-                    InspectionSummaryGenerator.generate(it, uiState.visit)
+                    InspectionSummaryGenerator.generate(it, uiState.visit, calculations = uiState.calculations)
                 }.orEmpty()
                 clipboard.setText(AnnotatedString(summary))
                 viewModel.notifySummaryCopied()
             },
             onShareSummary = {
                 val summary = uiState.aggregate?.let {
-                    InspectionSummaryGenerator.generate(it, uiState.visit)
+                    InspectionSummaryGenerator.generate(it, uiState.visit, calculations = uiState.calculations)
                 }.orEmpty()
                 context.sharePlainText(summary)
             },
@@ -117,6 +129,11 @@ fun InspectionOverviewScreen(
                 val visit = uiState.visit
                 if (visit != null) onCreateMaterialClick(visit.clientId, visit.id)
             },
+            onAddCalculationClick = {
+                val visit = uiState.visit
+                if (visit != null) onAddCalculationClick(visit.clientId, visit.id, inspectionId)
+            },
+            onCalculationClick = onCalculationClick,
             modifier = Modifier.padding(padding),
         )
     }
@@ -165,6 +182,8 @@ private fun InspectionOverviewContent(
     onShareSummary: () -> Unit,
     onCreateQuoteClick: () -> Unit,
     onCreateMaterialClick: () -> Unit,
+    onAddCalculationClick: () -> Unit,
+    onCalculationClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val aggregate = uiState.aggregate
@@ -192,6 +211,7 @@ private fun InspectionOverviewContent(
                     }
                 }
             }
+            InspectionCalculationsSection(uiState.calculations, onAddCalculationClick, onCalculationClick)
             SummaryActions(onCopySummary, onShareSummary)
             if (uiState.visit != null) {
                 OutlinedButton(onClick = onCreateQuoteClick, modifier = Modifier.fillMaxWidth()) {
@@ -206,6 +226,32 @@ private fun InspectionOverviewContent(
             } else {
                 OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Guardar borrador") }
                 Button(onClick = onCompleteClick, modifier = Modifier.fillMaxWidth()) { Text("Finalizar relevamiento") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InspectionCalculationsSection(
+    calculations: List<TechnicalCalculation>,
+    onAddCalculationClick: () -> Unit,
+    onCalculationClick: (String) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Mediciones y cálculos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("${calculations.size} registro(s)")
+            calculations.take(3).forEach { calculation ->
+                Card(onClick = { onCalculationClick(calculation.id) }, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("[${calculation.source.label().uppercase()}] ${calculation.type.label()}", fontWeight = FontWeight.SemiBold)
+                        Text(calculation.primaryResultText())
+                        Text(calculation.classification.label(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+            Button(onClick = onAddCalculationClick, modifier = Modifier.fillMaxWidth()) {
+                Text("Agregar cálculo")
             }
         }
     }

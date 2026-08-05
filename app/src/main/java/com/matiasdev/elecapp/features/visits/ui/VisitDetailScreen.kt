@@ -73,6 +73,7 @@ fun VisitDetailScreen(
     onQuoteClick: (String) -> Unit,
     onCreateMaterialClick: (String, String) -> Unit,
     onMaterialClick: (String) -> Unit,
+    onElectricalToolsClick: (String, String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: VisitDetailViewModel = viewModel(
         factory = VisitDetailViewModelFactory(
@@ -88,7 +89,6 @@ fun VisitDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -137,14 +137,17 @@ fun VisitDetailScreen(
                 val client = uiState.client
                 if (list != null) onMaterialClick(list.id) else if (visit != null && client != null) onCreateMaterialClick(visit.id, client.id)
             },
+            onElectricalToolsClick = {
+                val visit = uiState.visit
+                val client = uiState.client
+                if (visit != null && client != null) onElectricalToolsClick(visit.id, client.id)
+            },
             onStartVisitClick = viewModel::requestStartVisit,
             onCompleteVisitClick = viewModel::requestCompleteVisit,
             onStatusClick = viewModel::askStatusChange,
-            onDeleteClick = viewModel::askDelete,
-            modifier = Modifier.padding(padding),
+            onDeleteClick = viewModel::askDelete, modifier = Modifier.padding(padding),
         )
     }
-
     uiState.statusPendingChange?.let { status ->
         AlertDialog(
             onDismissRequest = viewModel::dismissStatusChange,
@@ -206,6 +209,7 @@ private fun VisitDetailContent(
     onInspectionClick: () -> Unit,
     onQuoteClick: () -> Unit,
     onMaterialClick: () -> Unit,
+    onElectricalToolsClick: () -> Unit,
     onStartVisitClick: () -> Unit,
     onCompleteVisitClick: () -> Unit,
     onStatusClick: (VisitStatus) -> Unit,
@@ -225,7 +229,7 @@ private fun VisitDetailContent(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (visit.status == VisitStatus.IN_PROGRESS) {
-                InProgressHeader(uiState, onInspectionClick, onQuoteClick, onMaterialClick, onCompleteVisitClick)
+                InProgressHeader(uiState, onInspectionClick, onQuoteClick, onMaterialClick, onElectricalToolsClick, onCompleteVisitClick)
             }
             Text(visit.reason, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             DetailLine("Cliente", client?.fullName ?: "Cliente no encontrado")
@@ -246,6 +250,9 @@ private fun VisitDetailContent(
             if (visit.status != VisitStatus.IN_PROGRESS) {
                 InspectionButton(uiState, onInspectionClick)
                 VisitDocumentsSection(uiState, onQuoteClick, onMaterialClick)
+                OutlinedButton(onClick = onElectricalToolsClick, modifier = Modifier.fillMaxWidth()) {
+                    Text("Herramientas")
+                }
             }
             OutlinedButton(onClick = { onEditClick(visit.id) }, modifier = Modifier.fillMaxWidth()) {
                 Text("Editar")
@@ -264,6 +271,7 @@ private fun InProgressHeader(
     onInspectionClick: () -> Unit,
     onQuoteClick: () -> Unit,
     onMaterialClick: () -> Unit,
+    onElectricalToolsClick: () -> Unit,
     onCompleteVisitClick: () -> Unit,
 ) {
     val visit = uiState.visit ?: return
@@ -281,6 +289,9 @@ private fun InProgressHeader(
         Text("Motivo: ${visit.reason}")
         InspectionButton(uiState, onInspectionClick)
         VisitDocumentsSection(uiState, onQuoteClick, onMaterialClick)
+        OutlinedButton(onClick = onElectricalToolsClick, modifier = Modifier.fillMaxWidth()) {
+            Text("Herramientas")
+        }
         QuickContactActions(uiState)
         Button(onClick = onCompleteVisitClick, modifier = Modifier.fillMaxWidth()) {
             Text("Finalizar visita")
@@ -376,10 +387,7 @@ private fun StatusButtons(allowedStatuses: List<VisitStatus>, onStatusClick: (Vi
 
 @Composable
 private fun DetailLine(label: String, value: String) {
-    Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyLarge)
-    }
+    Column { Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant); Text(value, style = MaterialTheme.typography.bodyLarge) }
 }
 
 private fun elapsedText(startedAt: Instant): String {

@@ -307,3 +307,41 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         )
     }
 }
+
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS technical_calculations (
+                id TEXT NOT NULL,
+                type TEXT NOT NULL,
+                source TEXT NOT NULL,
+                client_id TEXT,
+                visit_id TEXT,
+                inspection_id TEXT,
+                title TEXT NOT NULL,
+                description TEXT,
+                input_data_json TEXT NOT NULL,
+                result_data_json TEXT NOT NULL,
+                primary_result_value REAL,
+                primary_result_unit TEXT,
+                classification TEXT NOT NULL,
+                technician_conclusion TEXT NOT NULL,
+                technician_notes TEXT,
+                formula_version TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                is_deleted INTEGER NOT NULL,
+                PRIMARY KEY(id)
+            )
+            """.trimIndent(),
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_technical_calculations_type ON technical_calculations(type)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_technical_calculations_client_id ON technical_calculations(client_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_technical_calculations_visit_id ON technical_calculations(visit_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_technical_calculations_inspection_id ON technical_calculations(inspection_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_technical_calculations_created_at ON technical_calculations(created_at)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_technical_calculations_classification ON technical_calculations(classification)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_technical_calculations_is_deleted ON technical_calculations(is_deleted)")
+    }
+}

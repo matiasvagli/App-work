@@ -75,6 +75,19 @@ Listas de materiales:
 - Precios opcionales ocultos por defecto y excluidos del texto salvo indicación explícita.
 - Plantillas rápidas editables para materiales comunes.
 
+Herramientas eléctricas:
+
+- Sección accesible desde Home como “Herramientas eléctricas”.
+- Primeras herramientas: potencia/corriente/tensión y caída de tensión.
+- Historial y detalle de cálculos guardados.
+- Cada cálculo puede guardarse suelto o asociarse opcionalmente a cliente, visita y relevamiento.
+- El origen se registra y muestra como `MEASURED`, `CALCULATED` o `ESTIMATED`: medido con instrumento/referencia opcional, calculado desde entradas concretas o estimado con supuestos.
+- Los resultados guardan entradas y resultados numéricos/enums en JSON estable con `schemaVersion`; los textos compartibles se generan después.
+- Los cálculos asociados a un relevamiento aparecen en “Mediciones y cálculos” y se incluyen en el resumen estructurado.
+- Desde caída de tensión con clasificación de revisión se puede crear un hallazgo sugerido vinculado al relevamiento, con criterio técnico separado del cálculo original.
+- Copiar y compartir usan texto determinístico local. No hay IA, backend, PDF, fotos ni sincronización.
+- Herramientas marcadas como “Próximamente”: sección orientativa de conductor, luminotecnia, capacitancia, corrección de factor de potencia, consumo energético, protecciones y tablas técnicas.
+
 Agenda:
 
 - Hoy: visitas del día, separando próximas y realizadas/vencidas.
@@ -91,6 +104,7 @@ Arquitectura simple por feature:
 - `features/inspections`: dominio, Room, repository, ViewModels, pantallas de relevamiento y generador de resumen.
 - `features/quotes`: dominio, Room, repository, ViewModels, pantallas y generador de texto de presupuestos.
 - `features/materials`: dominio, Room, repository, ViewModels, pantallas y generador de texto de listas.
+- `features/electricaltools`: dominio, Room, repository, calculadoras puras, ViewModels, pantallas, previews y generadores de texto.
 - `features/reminders`: entidad Room, reglas testeables, scheduler y receivers.
 - `features/settings`: preferencias locales de recordatorios con DataStore.
 - `core/external`: Intents externos, contactos y texto compartido.
@@ -108,6 +122,7 @@ Versiones:
 - v4: agrega relevamientos eléctricos.
 - v5: agrega campos operativos de cierre a `visits`: `started_at`, `completed_at`, `completion_notes` y `pending_work_notes`.
 - v6: agrega presupuestos y listas de materiales.
+- v7: agrega `technical_calculations` para herramientas eléctricas.
 
 Tablas de v4:
 
@@ -124,7 +139,15 @@ Tablas de v6:
 - `material_lists`.
 - `material_items`.
 
-No se usa `fallbackToDestructiveMigration`. La migración `3 -> 4` solo crea tablas e índices nuevos. La migración `4 -> 5` solo agrega columnas nullable a `visits`. La migración `5 -> 6` solo crea tablas e índices nuevos, por lo que clientes, visitas, recordatorios y relevamientos existentes siguen intactos.
+Tabla de v7:
+
+- `technical_calculations`.
+
+Columnas principales: `id`, `type`, `source`, `client_id`, `visit_id`, `inspection_id`, `title`, `description`, `input_data_json`, `result_data_json`, `primary_result_value`, `primary_result_unit`, `classification`, `technician_conclusion`, `technician_notes`, `formula_version`, `created_at`, `updated_at`, `is_deleted`.
+
+Índices: `type`, `client_id`, `visit_id`, `inspection_id`, `created_at`, `classification` e `is_deleted`. No se agregan foreign keys físicas para mantener el patrón de borrado lógico.
+
+No se usa `fallbackToDestructiveMigration`. La migración `3 -> 4` solo crea tablas e índices nuevos. La migración `4 -> 5` solo agrega columnas nullable a `visits`. La migración `5 -> 6` solo crea tablas e índices nuevos. La migración `6 -> 7` solo crea `technical_calculations` e índices, por lo que clientes, visitas, recordatorios, relevamientos, presupuestos y materiales existentes siguen intactos.
 
 Las secciones pilar y tablero son tablas separadas 1 a 1 con `inspection_id` como clave primaria. Se eligió esa forma porque cada sección tiene campos propios y puede crecer sin agrandar `electrical_inspections` con columnas opcionales. No se usan foreign keys para no acoplar el modelo a borrado físico; el proyecto usa borrado lógico.
 
@@ -134,7 +157,7 @@ Estrategia futura de migraciones: seguir usando migraciones explícitas reversib
 
 ## Resumen para ChatGPT e informe
 
-El resumen estructurado se genera localmente en español. Omite campos vacíos, no inventa valores y conserva exactamente el comentario original del técnico. Desde el overview se puede:
+El resumen estructurado se genera localmente en español. Omite campos vacíos, no inventa valores y conserva exactamente el comentario original del técnico. Si existen cálculos asociados, agrega “MEDICIONES Y CÁLCULOS” diferenciando origen medido, calculado o estimado, supuestos, clasificación orientativa y conclusión técnica cuando exista. Desde el overview se puede:
 
 1. Copiar para ChatGPT.
 2. Compartir resumen con `text/plain`.
@@ -142,6 +165,49 @@ El resumen estructurado se genera localmente en español. Omite campos vacíos, 
 4. Guardar, copiar o compartir el informe final.
 
 Todo el flujo es offline. ChatGPT se abre fuera de la app solo si el usuario lo decide manualmente.
+
+## Fórmulas de herramientas eléctricas
+
+Potencia, corriente y tensión:
+
+- DC: `P = V x I`.
+- AC monofásico: `P = V x I x cosφ x η`.
+- AC trifásico: `P = √3 x V x I x cosφ x η`.
+- Se despejan potencia, corriente o tensión según la variable elegida.
+- Unidades base: W, A y V. La UI permite ingresar potencia en W o kW y convierte internamente a W.
+- En AC no se asume factor de potencia salvo cálculo estimado con supuesto visible. Eficiencia vacía se muestra y guarda como supuesto de 100%.
+
+Caída de tensión:
+
+- Fórmula resistiva simplificada versionada `voltage-drop-resistive-v1`.
+- DC y monofásico: `ΔV = 2 x L x I x ρ / S`.
+- Trifásico: `ΔV = √3 x L x I x ρ / S`.
+- Porcentaje: `ΔV% = ΔV / Vnominal x 100`.
+- En DC/monofásico la longitud ingresada representa distancia de ida y la fórmula contempla ida y vuelta. En trifásico se usa el factor correspondiente sin duplicar recorrido.
+- Resistividad a 20 °C: cobre `0.017241 Ω·mm²/m`, aluminio `0.028264 Ω·mm²/m`.
+- Corrección opcional por temperatura: `ρT = ρ20 x [1 + α x (T - 20)]`, con α cobre `0.00393` y α aluminio `0.00403`.
+- Si la corriente se deriva desde potencia, se reutiliza la calculadora de potencia/corriente/tensión.
+
+Clasificación orientativa:
+
+- Configuración interna versionada `voltage-drop-orientative-thresholds-v1`.
+- `ACCEPTABLE` hasta 3%.
+- `REQUIRES_REVIEW` hasta 5%.
+- `CRITICAL_REVIEW` por encima de 5%.
+- La clasificación automática no afirma cumplimiento reglamentario. La conclusión del técnico se guarda aparte como `NOT_REVIEWED`, `CONFIRMED_OK`, `CONFIRMED_REQUIRES_ACTION` o `DISCARDED`.
+
+Limitaciones:
+
+- Los cálculos son herramientas de apoyo.
+- No reemplazan mediciones ni certifican una instalación.
+- No determinan automáticamente cumplimiento normativo.
+- El técnico debe validar datos, supuestos, condiciones reales y conclusiones.
+- La caída de tensión inicial no modela reactancia, armónicos, agrupamiento, método de instalación ni otras correcciones que no estén representadas explícitamente.
+
+Previews:
+
+- Las pantallas nuevas separan `Screen` conectada a ViewModel y `Content` presentacional.
+- Hay previews para home de herramientas, formularios vacíos/con datos, resultados y detalle/historial, sin conectar Room ni `AppContainer`.
 
 ## Recordatorios
 

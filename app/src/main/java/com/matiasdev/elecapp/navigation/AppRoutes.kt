@@ -11,6 +11,11 @@ object AppRoutes {
     const val INSPECTIONS = "inspections"
     const val QUOTES = "quotes"
     const val MATERIALS = "materials"
+    const val ELECTRICAL_TOOLS = "tools/electrical"
+    const val ELECTRICAL_TOOLS_POWER = "tools/electrical/power?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}&duplicateId={duplicateId}"
+    const val ELECTRICAL_TOOLS_VOLTAGE_DROP = "tools/electrical/voltage-drop?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}&duplicateId={duplicateId}"
+    const val ELECTRICAL_TOOLS_HISTORY = "tools/electrical/history"
+    const val TECHNICAL_CALCULATION_DETAIL = "tools/electrical/calculations/{calculationId}"
     const val CLIENT_CREATE = "clients/new?notes={notes}&phone={phone}&source={source}"
     const val CLIENT_DETAIL = "clients/{clientId}"
     const val CLIENT_EDIT = "clients/{clientId}/edit"
@@ -37,6 +42,8 @@ object AppRoutes {
     const val INSPECTION_ID = "inspectionId"
     const val QUOTE_ID = "quoteId"
     const val MATERIAL_LIST_ID = "materialListId"
+    const val CALCULATION_ID = "calculationId"
+    const val DUPLICATE_ID = "duplicateId"
     const val NOTES = "notes"
     const val PHONE = "phone"
     const val SOURCE = "source"
@@ -59,6 +66,8 @@ object AppRoutes {
     val quoteIdArguments = listOf(navArgument(QUOTE_ID) { type = NavType.StringType })
 
     val materialListIdArguments = listOf(navArgument(MATERIAL_LIST_ID) { type = NavType.StringType })
+
+    val technicalCalculationIdArguments = listOf(navArgument(CALCULATION_ID) { type = NavType.StringType })
 
     val clientCreateArguments = listOf(
         navArgument(NOTES) {
@@ -97,6 +106,13 @@ object AppRoutes {
         optionalStringArgument(VISIT_ID),
         optionalStringArgument(INSPECTION_ID),
         optionalStringArgument(QUOTE_ID),
+    )
+
+    val electricalToolArguments = listOf(
+        optionalStringArgument(CLIENT_ID),
+        optionalStringArgument(VISIT_ID),
+        optionalStringArgument(INSPECTION_ID),
+        optionalStringArgument(DUPLICATE_ID),
     )
 
     fun clientCreate(notes: String? = null, phone: String? = null, source: String? = null): String {
@@ -151,6 +167,16 @@ object AppRoutes {
     fun materialDetail(materialListId: String): String = "materials/$materialListId"
 
     fun materialEdit(materialListId: String): String = "materials/$materialListId/edit"
+
+    fun electricalToolsPower(clientId: String? = null, visitId: String? = null, inspectionId: String? = null, duplicateId: String? = null): String {
+        return "tools/electrical/power?clientId=${clientId.orEmpty()}&visitId=${visitId.orEmpty()}&inspectionId=${inspectionId.orEmpty()}&duplicateId=${duplicateId.orEmpty()}"
+    }
+
+    fun electricalToolsVoltageDrop(clientId: String? = null, visitId: String? = null, inspectionId: String? = null, duplicateId: String? = null): String {
+        return "tools/electrical/voltage-drop?clientId=${clientId.orEmpty()}&visitId=${visitId.orEmpty()}&inspectionId=${inspectionId.orEmpty()}&duplicateId=${duplicateId.orEmpty()}"
+    }
+
+    fun technicalCalculationDetail(calculationId: String): String = "tools/electrical/calculations/$calculationId"
 
     private fun optionalStringArgument(name: String) = navArgument(name) {
         type = NavType.StringType

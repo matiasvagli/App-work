@@ -2,6 +2,8 @@ package com.matiasdev.elecapp.features.clients.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationDao
+import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationEntity
 import com.matiasdev.elecapp.features.inspections.data.ElectricalInspectionEntity
 import com.matiasdev.elecapp.features.inspections.data.InspectionDao
 import com.matiasdev.elecapp.features.inspections.data.InspectionFindingEntity
@@ -33,8 +35,9 @@ import com.matiasdev.elecapp.features.visits.data.VisitEntity
         QuoteItemEntity::class,
         MaterialListEntity::class,
         MaterialItemEntity::class,
+        TechnicalCalculationEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -49,4 +52,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun quoteDao(): QuoteDao
 
     abstract fun materialDao(): MaterialDao
+
+    abstract fun technicalCalculationDao(): TechnicalCalculationDao
 }

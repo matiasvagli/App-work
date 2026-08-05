@@ -28,6 +28,7 @@ class MainActivity : ComponentActivity() {
                         inspectionRepository = appContainer.inspectionRepository,
                         quoteRepository = appContainer.quoteRepository,
                         materialRepository = appContainer.materialRepository,
+                        technicalCalculationRepository = appContainer.technicalCalculationRepository,
                         reminderRepository = appContainer.reminderRepository,
                         settingsRepository = appContainer.reminderSettingsRepository,
                         reminderCoordinator = appContainer.reminderCoordinator,

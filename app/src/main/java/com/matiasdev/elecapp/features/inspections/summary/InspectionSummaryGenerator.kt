@@ -1,6 +1,8 @@
 package com.matiasdev.elecapp.features.inspections.summary
 
 import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
+import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
+import com.matiasdev.elecapp.features.electricaltools.summary.TechnicalCalculationTextGenerator
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
@@ -12,7 +14,12 @@ import java.time.format.DateTimeFormatter
 object InspectionSummaryGenerator {
     private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-    fun generate(aggregate: InspectionAggregate, visit: Visit?, zoneId: ZoneId = ZoneId.systemDefault()): String {
+    fun generate(
+        aggregate: InspectionAggregate,
+        visit: Visit?,
+        zoneId: ZoneId = ZoneId.systemDefault(),
+        calculations: List<TechnicalCalculation> = aggregate.calculations,
+    ): String {
         val inspection = aggregate.inspection
         return buildString {
             appendHeader(inspection, visit, zoneId)
@@ -22,6 +29,7 @@ object InspectionSummaryGenerator {
             appendGeneralData(inspection)
             appendPillar(aggregate.pillar)
             appendMainPanel(aggregate.mainPanel)
+            appendCalculations(calculations)
             appendFindings(aggregate)
             appendUnverified(aggregate)
             appendTechnicalComment(inspection)
@@ -118,6 +126,20 @@ object InspectionSummaryGenerator {
             appendLine("Categoría: ${finding.category.label()}")
             appendLine("Descripción: ${finding.description}")
             appendLineIfNotBlank("Recomendación", finding.recommendation)
+            appendLine()
+        }
+    }
+
+    private fun StringBuilder.appendCalculations(calculations: List<TechnicalCalculation>) {
+        appendLine()
+        appendLine("MEDICIONES Y CÁLCULOS")
+        val activeCalculations = calculations.filterNot { it.isDeleted }.sortedBy { it.createdAt }
+        if (activeCalculations.isEmpty()) {
+            appendLine("- Sin mediciones ni cálculos asociados")
+            return
+        }
+        activeCalculations.forEach { calculation ->
+            appendLine(TechnicalCalculationTextGenerator.generate(calculation).prependIndent(""))
             appendLine()
         }
     }

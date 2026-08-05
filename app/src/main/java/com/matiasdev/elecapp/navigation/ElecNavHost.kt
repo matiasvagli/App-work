@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.matiasdev.elecapp.features.agenda.ui.AgendaScreen
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
+import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.clients.ui.ClientDetailScreen
 import com.matiasdev.elecapp.features.clients.ui.ClientFormDraft
 import com.matiasdev.elecapp.features.clients.ui.ClientFormScreen
@@ -47,6 +48,7 @@ fun ElecNavHost(
     inspectionRepository: InspectionRepository,
     quoteRepository: QuoteRepository,
     materialRepository: MaterialRepository,
+    technicalCalculationRepository: TechnicalCalculationRepository,
     reminderRepository: VisitReminderRepository,
     settingsRepository: ReminderSettingsRepository,
     reminderCoordinator: ReminderCoordinator,
@@ -87,6 +89,7 @@ fun ElecNavHost(
                 inspectionRepository = inspectionRepository,
                 quoteRepository = quoteRepository,
                 materialRepository = materialRepository,
+                onElectricalToolsClick = { navController.navigate(AppRoutes.ELECTRICAL_TOOLS) },
                 onClientsClick = { navController.navigate(AppRoutes.CLIENTS) },
                 onAgendaClick = { navController.navigate(AppRoutes.AGENDA) },
                 onInspectionsClick = { navController.navigate(AppRoutes.INSPECTIONS) },
@@ -114,6 +117,7 @@ fun ElecNavHost(
                 onInspectionClick = { navController.navigate(AppRoutes.inspectionOverview(it)) },
             )
         }
+        electricalToolsRoutes(navController, clientRepository, visitRepository, inspectionRepository, technicalCalculationRepository)
         documentRoutes(navController, clientRepository, visitRepository, inspectionRepository, quoteRepository, materialRepository)
         composable(AppRoutes.SETTINGS) {
             SettingsScreen(
@@ -256,6 +260,10 @@ fun ElecNavHost(
                     navController.navigate(AppRoutes.materialCreate(clientId = clientId, visitId = visitId))
                 },
                 onMaterialClick = { navController.navigate(AppRoutes.materialDetail(it)) },
+                onElectricalToolsClick = { visitId, clientId ->
+                    navController.navigate(AppRoutes.ELECTRICAL_TOOLS)
+                    navController.navigate(AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId))
+                },
             )
         }
         composable(
@@ -285,6 +293,7 @@ fun ElecNavHost(
             InspectionOverviewScreen(
                 inspectionRepository = inspectionRepository,
                 visitRepository = visitRepository,
+                technicalCalculationRepository = technicalCalculationRepository,
                 inspectionId = inspectionId,
                 onBackClick = { navController.navigateUp() },
                 onSectionClick = { section ->
@@ -296,6 +305,10 @@ fun ElecNavHost(
                 onCreateMaterialClick = { clientId, visitId ->
                     navController.navigate(AppRoutes.materialCreate(clientId = clientId, visitId = visitId, inspectionId = inspectionId))
                 },
+                onAddCalculationClick = { clientId, visitId, currentInspectionId ->
+                    navController.navigate(AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId, inspectionId = currentInspectionId))
+                },
+                onCalculationClick = { navController.navigate(AppRoutes.technicalCalculationDetail(it)) },
             )
         }
         composable(AppRoutes.INSPECTION_GENERAL, AppRoutes.inspectionIdArguments) { backStackEntry ->
@@ -323,7 +336,7 @@ fun ElecNavHost(
             InspectionTechnicalCommentScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
         }
         composable(AppRoutes.INSPECTION_FINAL_REPORT, AppRoutes.inspectionIdArguments) { backStackEntry ->
-            InspectionFinalReportScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
+            InspectionFinalReportScreen(inspectionRepository, technicalCalculationRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
         }
     }
 }
