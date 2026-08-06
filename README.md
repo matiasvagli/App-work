@@ -55,11 +55,11 @@ Relevamientos eléctricos:
 - Estados: `DRAFT` y `COMPLETED`.
 - Secciones MVP: datos generales, pilar y acometida, tablero principal, hallazgos, sectores no verificados, observación técnica e informe final del cliente.
 - Guarda snapshots mínimos de cliente, dirección, localidad y motivo de visita para mantener consistencia histórica si el cliente cambia después.
-- Permite guardar borrador, finalizar, reabrir con confirmación, copiar resumen para ChatGPT y compartirlo con Android Sharesheet.
+- Permite guardar borrador, finalizar, reabrir con confirmación, copiar el resumen estructurado y compartirlo con Android Sharesheet.
 - Home tiene acceso al listado de relevamientos con filtros En borrador, Finalizados y Todos.
 - El listado permite buscar por cliente, domicilio, localidad o motivo de visita. No permite crear relevamientos sueltos; siempre siguen vinculados a una visita.
 - El informe final del cliente se pega o redacta manualmente y se guarda en `finalClientReport`; no reemplaza el comentario técnico original.
-- No usa OpenAI API ni envía información a internet.
+- No envía información a internet.
 
 Presupuestos:
 
@@ -223,16 +223,16 @@ La regla de un relevamiento activo por visita se aplica en el repository con `st
 
 Estrategia futura de migraciones: seguir usando migraciones explícitas reversibles conceptualmente, crear tablas nuevas para secciones grandes y agregar índices cuando una consulta lo justifique. No borrar datos críticos sin confirmación.
 
-## Resumen para ChatGPT e informe
+## Resumen estructurado e informe
 
 El resumen estructurado se genera localmente en español. Omite campos vacíos, no inventa valores y conserva exactamente el comentario original del técnico. Si existen cálculos asociados, agrega “MEDICIONES Y CÁLCULOS” diferenciando origen medido, calculado o estimado, supuestos, clasificación orientativa y conclusión técnica cuando exista. Desde el overview se puede:
 
-1. Copiar para ChatGPT.
+1. Copiar el resumen estructurado.
 2. Compartir resumen con `text/plain`.
 3. Pegar luego el informe redactado manualmente.
 4. Guardar, copiar o compartir el informe final.
 
-Todo el flujo es offline. ChatGPT se abre fuera de la app solo si el usuario lo decide manualmente.
+Todo el flujo es offline y el usuario decide manualmente qué hacer con el texto copiado o compartido.
 
 ## Fórmulas de herramientas eléctricas
 
@@ -507,7 +507,7 @@ Reinicio:
 ## Limitaciones actuales
 
 - Sin backend, login, Firebase, Google Drive, backups ni sincronización.
-- Sin API de OpenAI; el resumen solo se copia o comparte.
+- Sin integración con servicios externos de red; el resumen solo se copia o comparte.
 - Sin Google Calendar API; solo Intent de creación de evento.
 - Sin servicio de cronómetro en segundo plano; el tiempo se deriva de timestamps.
 - Sin tarifa horaria ni facturación por tiempo trabajado.
