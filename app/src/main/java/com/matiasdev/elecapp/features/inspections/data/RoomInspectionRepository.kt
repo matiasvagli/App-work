@@ -6,6 +6,7 @@ import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
 import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
@@ -77,17 +78,25 @@ class RoomInspectionRepository(
         return dao.findActiveInspectionForVisit(visitId)?.toDomain()
     }
 
-    override suspend fun startOrGetInspection(visit: Visit, client: Client): ElectricalInspection {
+    override suspend fun startOrGetInspection(
+        visit: Visit,
+        client: Client,
+        scope: InspectionScope,
+    ): ElectricalInspection {
         dao.findActiveInspectionForVisit(visit.id)?.let { return it.toDomain() }
         val now = Instant.now()
         val inspection = ElectricalInspection(
             id = UUID.randomUUID().toString(),
             visitId = visit.id,
             status = InspectionStatus.DRAFT,
+            scope = scope,
             inspectionType = InspectionType.VISUAL,
             generalCondition = GeneralCondition.NOT_ASSESSED,
             supplyType = SupplyType.UNKNOWN,
-            propertyType = PropertyType.HOUSE,
+            propertyType = if (scope == InspectionScope.VISUAL_INSPECTION) PropertyType.UNKNOWN else PropertyType.HOUSE,
+            reviewReason = visit.reason.takeIf(String::isNotBlank).takeIf { scope == InspectionScope.VISUAL_INSPECTION },
+            reviewedElement = null,
+            taskDescription = null,
             visitReasonSnapshot = visit.reason,
             clientNameSnapshot = client.fullName,
             addressSnapshot = client.address.orEmpty(),

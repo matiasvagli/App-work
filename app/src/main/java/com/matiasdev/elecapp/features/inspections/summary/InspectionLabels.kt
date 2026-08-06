@@ -9,6 +9,8 @@ import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.PropertyType
@@ -28,6 +30,18 @@ fun InspectionType.label(): String = when (this) {
     InspectionType.VISUAL_AND_MEASUREMENTS -> "Inspección visual y mediciones"
 }
 
+fun InspectionScope.label(): String = when (this) {
+    InspectionScope.VISUAL_INSPECTION -> "Inspección visual"
+    InspectionScope.SECTOR_ASSESSMENT -> "Relevamiento por sector"
+    InspectionScope.GENERAL_ASSESSMENT -> "Relevamiento general"
+}
+
+fun InspectionScope.description(): String = when (this) {
+    InspectionScope.VISUAL_INSPECTION -> "Revisión rápida y puntual, limitada a los elementos visibles y verificaciones registradas."
+    InspectionScope.SECTOR_ASSESSMENT -> "Evaluación detallada de una zona, equipo o circuito específico."
+    InspectionScope.GENERAL_ASSESSMENT -> "Evaluación general de los componentes accesibles de la instalación."
+}
+
 fun GeneralCondition.label(): String = when (this) {
     GeneralCondition.GOOD -> "Bueno"
     GeneralCondition.FAIR -> "Regular"
@@ -43,6 +57,7 @@ fun SupplyType.label(): String = when (this) {
 }
 
 fun PropertyType.label(): String = when (this) {
+    PropertyType.UNKNOWN -> "No verificado"
     PropertyType.HOUSE -> "Casa"
     PropertyType.APARTMENT -> "Departamento"
     PropertyType.COMMERCIAL -> "Comercial"
@@ -50,6 +65,7 @@ fun PropertyType.label(): String = when (this) {
 }
 
 fun AccessStatus.label(): String = when (this) {
+    AccessStatus.UNKNOWN -> "No verificado"
     AccessStatus.YES -> "Sí"
     AccessStatus.NO -> "No"
     AccessStatus.PARTIAL -> "Parcial"
@@ -92,7 +108,7 @@ fun ProtectionCompatibility.label(): String = when (this) {
 fun DifferentialTestResult.label(): String = when (this) {
     DifferentialTestResult.PASSED -> "Correcta"
     DifferentialTestResult.FAILED -> "Fallida"
-    DifferentialTestResult.NOT_TESTED -> "No probada"
+    DifferentialTestResult.NOT_TESTED -> "No realizada"
     DifferentialTestResult.NOT_APPLICABLE -> "No aplicable"
 }
 
@@ -114,8 +130,18 @@ fun UnverifiedItemType.label(): String = when (this) {
     UnverifiedItemType.INSULATION_RESISTANCE -> "Resistencia de aislación"
     UnverifiedItemType.HIDDEN_WIRING -> "Conductores ocultos"
     UnverifiedItemType.INACCESSIBLE_AREA -> "Sector inaccesible"
+    UnverifiedItemType.PANEL_NOT_OPENED -> "Tablero no abierto"
+    UnverifiedItemType.PILLAR_NOT_ACCESSIBLE -> "Pilar no accesible"
+    UnverifiedItemType.CIRCUIT_OUT_OF_SERVICE -> "Circuito fuera de servicio"
+    UnverifiedItemType.NO_MEASUREMENTS -> "No se realizaron mediciones"
     UnverifiedItemType.INDIVIDUAL_CIRCUITS -> "Circuitos individuales"
     UnverifiedItemType.OTHER -> "Otro"
+}
+
+fun InspectionSectionReviewStatus.label(): String = when (this) {
+    InspectionSectionReviewStatus.REVIEWED -> "Sí"
+    InspectionSectionReviewStatus.NOT_APPLICABLE -> "No corresponde"
+    InspectionSectionReviewStatus.NOT_VERIFIED -> "No se verificó"
 }
 
 fun InspectionSection.label(): String = when (this) {
@@ -124,6 +150,7 @@ fun InspectionSection.label(): String = when (this) {
     InspectionSection.MAIN_PANEL -> "Tablero principal"
     InspectionSection.FINDINGS -> "Hallazgos"
     InspectionSection.UNVERIFIED -> "Sectores no verificados"
+    InspectionSection.VISUAL_COMPLEMENTARY -> "Observaciones y no verificados"
     InspectionSection.TECHNICAL_COMMENT -> "Observación técnica"
     InspectionSection.FINAL_REPORT -> "Informe final del cliente"
 }

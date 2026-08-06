@@ -37,17 +37,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.matiasdev.elecapp.R
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
 import com.matiasdev.elecapp.features.electricaltools.ui.primaryResultText
 import com.matiasdev.elecapp.features.electricaltools.summary.label
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.summary.InspectionSummaryGenerator
 import com.matiasdev.elecapp.features.inspections.summary.label
@@ -94,7 +97,7 @@ fun InspectionOverviewScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Relevamiento eléctrico") },
+                title = { Text(uiState.aggregate?.inspection?.scope?.label() ?: "Relevamiento eléctrico") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -197,21 +200,27 @@ private fun InspectionOverviewContent(
             Text(aggregate.inspection.clientNameSnapshot, style = MaterialTheme.typography.headlineSmall)
             Text(listOf(aggregate.inspection.addressSnapshot, aggregate.inspection.localitySnapshot).filter(String::isNotBlank).joinToString(", "))
             uiState.visit?.let { Text("Visita: ${it.scheduledAt.formatVisitDateTime()}") }
+            Text("${stringResource(R.string.inspection_scope_header_label)}: ${aggregate.inspection.scope.label()}")
             Text("Estado: ${aggregate.inspection.status.label()}", fontWeight = FontWeight.Bold)
             ProgressBlock(uiState)
-            uiState.progress?.sections.orEmpty().forEach { section ->
-                Card(onClick = { onSectionClick(section.section) }, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(section.status.symbol())
-                            Text(section.section.label(), fontWeight = FontWeight.SemiBold)
-                        }
-                        Text(section.status.label(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        if (section.summary.isNotBlank()) Text(section.summary)
+            if (aggregate.inspection.scope == InspectionScope.VISUAL_INSPECTION) {
+                uiState.progress?.sections.orEmpty().forEach { section ->
+                    SectionProgressCard(section, onSectionClick)
+                    if (section.section == InspectionSection.MAIN_PANEL) {
+                        InspectionCalculationsSection(
+                            calculations = uiState.calculations,
+                            onAddCalculationClick = onAddCalculationClick,
+                            onCalculationClick = onCalculationClick,
+                            isVisualInspection = true,
+                        )
                     }
                 }
+            } else {
+                uiState.progress?.sections.orEmpty().forEach { section ->
+                    SectionProgressCard(section, onSectionClick)
+                }
+                InspectionCalculationsSection(uiState.calculations, onAddCalculationClick, onCalculationClick)
             }
-            InspectionCalculationsSection(uiState.calculations, onAddCalculationClick, onCalculationClick)
             SummaryActions(onCopySummary, onShareSummary)
             if (uiState.visit != null) {
                 OutlinedButton(onClick = onCreateQuoteClick, modifier = Modifier.fillMaxWidth()) {
@@ -232,15 +241,37 @@ private fun InspectionOverviewContent(
 }
 
 @Composable
+private fun SectionProgressCard(
+    section: com.matiasdev.elecapp.features.inspections.domain.InspectionSectionProgress,
+    onSectionClick: (InspectionSection) -> Unit,
+) {
+    Card(onClick = { onSectionClick(section.section) }, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(section.status.symbol())
+                Text(section.section.label(), fontWeight = FontWeight.SemiBold)
+            }
+            Text(section.status.label(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (section.summary.isNotBlank()) Text(section.summary)
+        }
+    }
+}
+
+@Composable
 private fun InspectionCalculationsSection(
     calculations: List<TechnicalCalculation>,
     onAddCalculationClick: () -> Unit,
     onCalculationClick: (String) -> Unit,
+    isVisualInspection: Boolean = false,
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Mediciones y cálculos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text("${calculations.size} registro(s)")
+            if (isVisualInspection) {
+                Text("Agregá únicamente las mediciones o cálculos realizados durante esta revisión.")
+            } else {
+                Text("${calculations.size} registro(s)")
+            }
             calculations.take(3).forEach { calculation ->
                 Card(onClick = { onCalculationClick(calculation.id) }, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -251,7 +282,7 @@ private fun InspectionCalculationsSection(
                 }
             }
             Button(onClick = onAddCalculationClick, modifier = Modifier.fillMaxWidth()) {
-                Text("Agregar cálculo")
+                Text(if (isVisualInspection) "Agregar medición o cálculo" else "Agregar cálculo")
             }
         }
     }

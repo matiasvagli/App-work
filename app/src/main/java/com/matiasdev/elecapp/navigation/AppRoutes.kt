@@ -29,12 +29,14 @@ object AppRoutes {
     const val VISIT_CREATE = "visits/new?clientId={clientId}"
     const val VISIT_DETAIL = "visits/{visitId}"
     const val VISIT_EDIT = "visits/{visitId}/edit"
+    const val VISIT_INSPECTION_SCOPE = "visits/{visitId}/inspection-scope"
     const val INSPECTION_OVERVIEW = "inspections/{inspectionId}"
     const val INSPECTION_GENERAL = "inspections/{inspectionId}/general"
     const val INSPECTION_PILLAR = "inspections/{inspectionId}/pillar"
     const val INSPECTION_MAIN_PANEL = "inspections/{inspectionId}/main-panel"
     const val INSPECTION_FINDINGS = "inspections/{inspectionId}/findings"
     const val INSPECTION_UNVERIFIED = "inspections/{inspectionId}/unverified"
+    const val INSPECTION_VISUAL_COMPLEMENTARY = "inspections/{inspectionId}/visual-complementary"
     const val INSPECTION_TECHNICAL_COMMENT = "inspections/{inspectionId}/technical-comment"
     const val INSPECTION_FINAL_REPORT = "inspections/{inspectionId}/final-report"
     const val QUOTE_CREATE = "quotes/new?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}"
@@ -150,6 +152,8 @@ object AppRoutes {
 
     fun visitEdit(visitId: String): String = "visits/$visitId/edit"
 
+    fun visitInspectionScope(visitId: String): String = "visits/$visitId/inspection-scope"
+
     fun visitClose(visitId: String): String = "visits/$visitId/close"
 
     fun serviceReceipts(clientId: String? = null): String = "finance/receipts?clientId=${clientId.orEmpty()}"
@@ -171,6 +175,8 @@ object AppRoutes {
     fun inspectionFindings(inspectionId: String): String = "inspections/$inspectionId/findings"
 
     fun inspectionUnverified(inspectionId: String): String = "inspections/$inspectionId/unverified"
+
+    fun inspectionVisualComplementary(inspectionId: String): String = "inspections/$inspectionId/visual-complementary"
 
     fun inspectionTechnicalComment(inspectionId: String): String = "inspections/$inspectionId/technical-comment"
 

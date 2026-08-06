@@ -13,7 +13,9 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
 import com.matiasdev.elecapp.features.inspections.domain.InspectionProgress
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionProgress
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
@@ -31,10 +33,14 @@ fun ElectricalInspectionEntity.toDomain(): ElectricalInspection = ElectricalInsp
     id = id,
     visitId = visitId,
     status = enumValue(status, InspectionStatus.DRAFT),
+    scope = enumValue(scope, InspectionScope.GENERAL_ASSESSMENT),
     inspectionType = enumValue(inspectionType, InspectionType.VISUAL),
     generalCondition = enumValue(generalCondition, GeneralCondition.NOT_ASSESSED),
     supplyType = enumValue(supplyType, SupplyType.UNKNOWN),
     propertyType = enumValue(propertyType, PropertyType.HOUSE),
+    reviewReason = reviewReason,
+    reviewedElement = reviewedElement,
+    taskDescription = taskDescription,
     visitReasonSnapshot = visitReasonSnapshot,
     clientNameSnapshot = clientNameSnapshot,
     addressSnapshot = addressSnapshot,
@@ -54,10 +60,14 @@ fun ElectricalInspection.toEntity(): ElectricalInspectionEntity = ElectricalInsp
     id = id,
     visitId = visitId,
     status = status.name,
+    scope = scope.name,
     inspectionType = inspectionType.name,
     generalCondition = generalCondition.name,
     supplyType = supplyType.name,
     propertyType = propertyType.name,
+    reviewReason = reviewReason,
+    reviewedElement = reviewedElement,
+    taskDescription = taskDescription,
     visitReasonSnapshot = visitReasonSnapshot,
     clientNameSnapshot = clientNameSnapshot,
     addressSnapshot = addressSnapshot,
@@ -75,6 +85,7 @@ fun ElectricalInspection.toEntity(): ElectricalInspectionEntity = ElectricalInsp
 
 fun PillarInspectionEntity.toDomain(): PillarInspection = PillarInspection(
     inspectionId = inspectionId,
+    reviewStatus = enumValue(reviewStatus, InspectionSectionReviewStatus.REVIEWED),
     exists = exists,
     accessible = enumValue(accessible, AccessStatus.NO),
     generalCondition = enumValue(generalCondition, GeneralCondition.NOT_ASSESSED),
@@ -93,6 +104,7 @@ fun PillarInspectionEntity.toDomain(): PillarInspection = PillarInspection(
 
 fun PillarInspection.toEntity(): PillarInspectionEntity = PillarInspectionEntity(
     inspectionId = inspectionId,
+    reviewStatus = reviewStatus.name,
     exists = exists,
     accessible = accessible.name,
     generalCondition = generalCondition.name,
@@ -111,6 +123,7 @@ fun PillarInspection.toEntity(): PillarInspectionEntity = PillarInspectionEntity
 
 fun MainPanelInspectionEntity.toDomain(): MainPanelInspection = MainPanelInspection(
     inspectionId = inspectionId,
+    reviewStatus = enumValue(reviewStatus, InspectionSectionReviewStatus.REVIEWED),
     accessible = enumValue(accessible, AccessStatus.NO),
     generalCondition = enumValue(generalCondition, GeneralCondition.NOT_ASSESSED),
     differentialPresent = enumValue(differentialPresent, YesNoUnknown.UNKNOWN),
@@ -133,6 +146,7 @@ fun MainPanelInspectionEntity.toDomain(): MainPanelInspection = MainPanelInspect
 
 fun MainPanelInspection.toEntity(): MainPanelInspectionEntity = MainPanelInspectionEntity(
     inspectionId = inspectionId,
+    reviewStatus = reviewStatus.name,
     accessible = accessible.name,
     generalCondition = generalCondition.name,
     differentialPresent = differentialPresent.name,

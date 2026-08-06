@@ -4,6 +4,7 @@ import java.time.Instant
 
 data class PillarInspection(
     val inspectionId: String,
+    val reviewStatus: InspectionSectionReviewStatus,
     val exists: Boolean?,
     val accessible: AccessStatus,
     val generalCondition: GeneralCondition,

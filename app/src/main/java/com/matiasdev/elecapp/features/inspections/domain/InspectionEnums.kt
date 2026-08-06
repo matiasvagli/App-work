@@ -10,6 +10,18 @@ enum class InspectionType {
     VISUAL_AND_MEASUREMENTS,
 }
 
+enum class InspectionScope {
+    VISUAL_INSPECTION,
+    SECTOR_ASSESSMENT,
+    GENERAL_ASSESSMENT,
+}
+
+enum class InspectionSectionReviewStatus {
+    REVIEWED,
+    NOT_APPLICABLE,
+    NOT_VERIFIED,
+}
+
 enum class GeneralCondition {
     GOOD,
     FAIR,
@@ -25,6 +37,7 @@ enum class SupplyType {
 }
 
 enum class PropertyType {
+    UNKNOWN,
     HOUSE,
     APARTMENT,
     COMMERCIAL,
@@ -32,6 +45,7 @@ enum class PropertyType {
 }
 
 enum class AccessStatus {
+    UNKNOWN,
     YES,
     NO,
     PARTIAL,
@@ -96,6 +110,10 @@ enum class UnverifiedItemType {
     INSULATION_RESISTANCE,
     HIDDEN_WIRING,
     INACCESSIBLE_AREA,
+    PANEL_NOT_OPENED,
+    PILLAR_NOT_ACCESSIBLE,
+    CIRCUIT_OUT_OF_SERVICE,
+    NO_MEASUREMENTS,
     INDIVIDUAL_CIRCUITS,
     OTHER,
 }

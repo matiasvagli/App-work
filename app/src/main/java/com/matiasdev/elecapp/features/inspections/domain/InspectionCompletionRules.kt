@@ -6,7 +6,10 @@ data class InspectionCompletionResult(
 )
 
 object InspectionCompletionRules {
-    fun validate(aggregate: InspectionAggregate): InspectionCompletionResult {
+    fun validate(aggregate: InspectionAggregate, hasCalculations: Boolean = false): InspectionCompletionResult {
+        if (aggregate.inspection.scope == InspectionScope.VISUAL_INSPECTION) {
+            return validateVisualInspection(aggregate, hasCalculations)
+        }
         val missing = buildList {
             val inspection = aggregate.inspection
             if (inspection.clientNameSnapshot.isBlank() || inspection.visitReasonSnapshot.isBlank()) {
@@ -23,6 +26,29 @@ object InspectionCompletionRules {
             if (inspection.originalTechnicalComment.isNullOrBlank() && aggregate.findings.isEmpty()) {
                 add("Comentario técnico o al menos un hallazgo")
             }
+        }
+        return InspectionCompletionResult(canComplete = missing.isEmpty(), missingItems = missing)
+    }
+
+    private fun validateVisualInspection(
+        aggregate: InspectionAggregate,
+        hasCalculations: Boolean,
+    ): InspectionCompletionResult {
+        val inspection = aggregate.inspection
+        val hasMinimumContent = listOf(
+            inspection.reviewReason,
+            inspection.reviewedElement,
+            inspection.taskDescription,
+            inspection.visitReasonSnapshot,
+            inspection.originalTechnicalComment,
+        ).any { !it.isNullOrBlank() } ||
+            aggregate.findings.isNotEmpty() ||
+            aggregate.unverifiedItems.isNotEmpty() ||
+            hasCalculations
+        val missing = if (hasMinimumContent) {
+            emptyList()
+        } else {
+            listOf("Motivo, sector, descripción, hallazgo, observación o medición")
         }
         return InspectionCompletionResult(canComplete = missing.isEmpty(), missingItems = missing)
     }

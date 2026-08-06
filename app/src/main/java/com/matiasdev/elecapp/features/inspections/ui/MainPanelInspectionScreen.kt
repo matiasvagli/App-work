@@ -2,6 +2,7 @@ package com.matiasdev.elecapp.features.inspections.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -22,6 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -31,6 +34,8 @@ import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility
 import com.matiasdev.elecapp.features.inspections.domain.YesNoPartialUnknown
@@ -75,6 +80,28 @@ private fun MainPanelForm(uiState: MainPanelInspectionUiState, viewModel: MainPa
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        if (uiState.scope == InspectionScope.VISUAL_INSPECTION) {
+            InspectionFormBlock("¿Se revisó el tablero principal?") {
+                InspectionDropdownField("Respuesta", uiState.reviewStatus, InspectionSectionReviewStatus.entries.toList(), InspectionSectionReviewStatus::label) {
+                    viewModel.update { copy(reviewStatus = it) }
+                }
+                if (uiState.reviewStatus == InspectionSectionReviewStatus.NOT_VERIFIED) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = uiState.addToUnverified,
+                            onCheckedChange = { checked -> viewModel.update { copy(addToUnverified = checked) } },
+                        )
+                        Text("Agregar a elementos no verificados")
+                    }
+                }
+            }
+            if (uiState.reviewStatus != InspectionSectionReviewStatus.REVIEWED) {
+                Button(onClick = viewModel::save, enabled = uiState.status == InspectionStatus.DRAFT, modifier = Modifier.fillMaxWidth()) {
+                    Text("Guardar sección")
+                }
+                return@Column
+            }
+        }
         InspectionFormBlock("Acceso y estado") {
             InspectionDropdownField("Accesible", uiState.accessible, AccessStatus.entries.toList(), AccessStatus::label) {
                 viewModel.update { copy(accessible = it) }

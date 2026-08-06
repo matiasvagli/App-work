@@ -13,6 +13,7 @@ data class MainPanelInspectionEntity(
     @PrimaryKey
     @ColumnInfo(name = "inspection_id")
     val inspectionId: String,
+    @ColumnInfo(name = "review_status") val reviewStatus: String,
     val accessible: String,
     @ColumnInfo(name = "general_condition") val generalCondition: String,
     @ColumnInfo(name = "differential_present") val differentialPresent: String,

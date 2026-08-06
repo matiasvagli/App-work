@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">ElecApp</string>
+    <string name="common_back">Volver</string>
+    <string name="inspection_scope_new_title">Nuevo relevamiento</string>
+    <string name="inspection_scope_header_label">Alcance</string>
+    <string name="inspection_scope_question">¿Qué alcance tendrá la revisión?</string>
+    <string name="inspection_scope_visual_title">Inspección visual</string>
+    <string name="inspection_scope_visual_short_description">Revisión rápida y puntual, limitada a los elementos visibles.</string>
+    <string name="inspection_scope_sector_title">Relevamiento por sector</string>
+    <string name="inspection_scope_sector_short_description">Evaluación detallada de una zona, equipo o circuito específico.</string>
+    <string name="inspection_scope_general_title">Relevamiento general</string>
+    <string name="inspection_scope_general_short_description">Evaluación general de la instalación accesible.</string>
 </resources>

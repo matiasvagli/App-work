@@ -8,12 +8,17 @@ import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
 import com.matiasdev.elecapp.features.inspections.domain.ConductorCondition
 import com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.InspectionValidation
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
 import com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility
+import com.matiasdev.elecapp.features.inspections.domain.UnverifiedItemType
 import com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown
 import java.time.Instant
+import java.util.UUID
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +29,9 @@ import kotlinx.coroutines.launch
 
 data class PillarInspectionUiState(
     val isLoading: Boolean = true,
+    val scope: InspectionScope = InspectionScope.GENERAL_ASSESSMENT,
+    val reviewStatus: InspectionSectionReviewStatus = InspectionSectionReviewStatus.REVIEWED,
+    val addToUnverified: Boolean = false,
     val exists: Boolean? = null,
     val accessible: AccessStatus = AccessStatus.PARTIAL,
     val generalCondition: GeneralCondition = GeneralCondition.NOT_ASSESSED,
@@ -56,11 +64,14 @@ class PillarInspectionViewModel(
             val aggregate = repository.findAggregate(inspectionId)
             val pillar = aggregate?.pillar
             createdAt = pillar?.createdAt ?: Instant.now()
+            val scope = aggregate?.inspection?.scope ?: InspectionScope.GENERAL_ASSESSMENT
             _uiState.update {
                 it.copy(
                     isLoading = false,
+                    scope = scope,
+                    reviewStatus = pillar?.reviewStatus ?: InspectionSectionReviewStatus.REVIEWED,
                     exists = pillar?.exists,
-                    accessible = pillar?.accessible ?: it.accessible,
+                    accessible = pillar?.accessible ?: if (scope == InspectionScope.VISUAL_INSPECTION) AccessStatus.UNKNOWN else it.accessible,
                     generalCondition = pillar?.generalCondition ?: it.generalCondition,
                     mainBreakerPresent = pillar?.mainBreakerPresent ?: it.mainBreakerPresent,
                     mainBreakerAmps = pillar?.mainBreakerAmps?.toString().orEmpty(),
@@ -96,6 +107,7 @@ class PillarInspectionViewModel(
             repository.savePillar(
                 PillarInspection(
                     inspectionId = inspectionId,
+                    reviewStatus = state.reviewStatus,
                     exists = state.exists,
                     accessible = state.accessible,
                     generalCondition = state.generalCondition,
@@ -112,8 +124,35 @@ class PillarInspectionViewModel(
                     updatedAt = now,
                 ),
             )
+            saveUnverifiedReferenceIfRequested(state)
             _uiState.update { it.copy(saved = true) }
         }
+    }
+
+    private suspend fun saveUnverifiedReferenceIfRequested(state: PillarInspectionUiState) {
+        if (
+            state.scope != InspectionScope.VISUAL_INSPECTION ||
+            state.reviewStatus != InspectionSectionReviewStatus.NOT_VERIFIED ||
+            !state.addToUnverified
+        ) {
+            return
+        }
+        val aggregate = repository.findAggregate(inspectionId) ?: return
+        val existing = aggregate.unverifiedItems
+        if (existing.any { it.type == UnverifiedItemType.PILLAR_NOT_ACCESSIBLE }) return
+        val now = Instant.now()
+        repository.saveUnverifiedItems(
+            inspectionId,
+            existing + InspectionUnverifiedItem(
+                id = UUID.randomUUID().toString(),
+                inspectionId = inspectionId,
+                type = UnverifiedItemType.PILLAR_NOT_ACCESSIBLE,
+                description = "Pilar o acometida no verificados.",
+                createdAt = now,
+                updatedAt = now,
+                isDeleted = false,
+            ),
+        )
     }
 }
 

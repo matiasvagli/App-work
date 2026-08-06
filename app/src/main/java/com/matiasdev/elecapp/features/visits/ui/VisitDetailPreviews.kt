@@ -7,6 +7,7 @@ import com.matiasdev.elecapp.core.ui.theme.ElecAppTheme
 import com.matiasdev.elecapp.features.clients.domain.Client
 import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.PropertyType
@@ -128,10 +129,14 @@ private val fakeInspection = ElectricalInspection(
     "inspection",
     "visit",
     InspectionStatus.DRAFT,
+    InspectionScope.GENERAL_ASSESSMENT,
     InspectionType.VISUAL,
     GeneralCondition.FAIR,
     SupplyType.SINGLE_PHASE,
     PropertyType.HOUSE,
+    "Revisión",
+    null,
+    null,
     "Revisión",
     "Carlos Lopez",
     "Av. Siempre Viva 123",

@@ -48,6 +48,44 @@ class InspectionRulesTest {
     }
 
     @Test
+    fun `visual completion does not require pillar panel measurements or findings`() {
+        val aggregate = InspectionAggregate(
+            inspection = testInspection().copy(
+                scope = InspectionScope.VISUAL_INSPECTION,
+                supplyType = SupplyType.UNKNOWN,
+                propertyType = PropertyType.UNKNOWN,
+                reviewReason = "Revisar reflector exterior",
+                originalTechnicalComment = null,
+            ),
+            pillar = null,
+            mainPanel = null,
+            findings = emptyList(),
+            unverifiedItems = emptyList(),
+        )
+
+        val result = InspectionCompletionRules.validate(aggregate, hasCalculations = false)
+
+        assertTrue(result.canComplete)
+        assertEquals(emptyList<String>(), result.missingItems)
+    }
+
+    @Test
+    fun `visual progress opens complementary flow and keeps legacy unverified out of steps`() {
+        val aggregate = InspectionAggregate(
+            inspection = testInspection().copy(scope = InspectionScope.VISUAL_INSPECTION),
+            pillar = null,
+            mainPanel = null,
+            findings = emptyList(),
+            unverifiedItems = emptyList(),
+        )
+
+        val progress = InspectionProgressCalculator.calculate(aggregate)
+
+        assertTrue(progress.sections.any { it.section == InspectionSection.VISUAL_COMPLEMENTARY })
+        assertFalse(progress.sections.any { it.section == InspectionSection.UNVERIFIED })
+    }
+
+    @Test
     fun `reopen decision clears completed timestamp`() {
         val completed = testInspection().copy(status = InspectionStatus.COMPLETED, completedAt = Instant.parse("2026-08-04T15:00:00Z"))
         val reopened = completed.copy(status = InspectionStatus.DRAFT, completedAt = null)
@@ -63,6 +101,7 @@ fun completeAggregate(): InspectionAggregate {
         inspection = testInspection(),
         pillar = PillarInspection(
             inspectionId = "inspection-1",
+            reviewStatus = InspectionSectionReviewStatus.REVIEWED,
             exists = true,
             accessible = AccessStatus.PARTIAL,
             generalCondition = GeneralCondition.POOR,
@@ -80,6 +119,7 @@ fun completeAggregate(): InspectionAggregate {
         ),
         mainPanel = MainPanelInspection(
             inspectionId = "inspection-1",
+            reviewStatus = InspectionSectionReviewStatus.REVIEWED,
             accessible = AccessStatus.YES,
             generalCondition = GeneralCondition.FAIR,
             differentialPresent = YesNoUnknown.YES,

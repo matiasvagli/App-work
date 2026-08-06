@@ -3,7 +3,10 @@ package com.matiasdev.elecapp.features.inspections.data
 import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
 import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
+import com.matiasdev.elecapp.features.inspections.domain.PropertyType
+import com.matiasdev.elecapp.features.inspections.domain.SupplyType
 import com.matiasdev.elecapp.features.inspections.domain.UnverifiedItemType
 import com.matiasdev.elecapp.features.inspections.domain.testClient
 import com.matiasdev.elecapp.features.inspections.domain.testVisit
@@ -17,13 +20,36 @@ class FakeInspectionRepositoryTest {
     fun `start creates inspection with visit and client snapshots`() = kotlinx.coroutines.test.runTest {
         val repository = FakeInspectionRepository()
 
-        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val inspection = repository.startOrGetInspection(testVisit(), testClient(), InspectionScope.SECTOR_ASSESSMENT)
 
         assertEquals("visit-1", inspection.visitId)
+        assertEquals(InspectionScope.SECTOR_ASSESSMENT, inspection.scope)
         assertEquals("Carlos López", inspection.clientNameSnapshot)
         assertEquals("Av. X 1234", inspection.addressSnapshot)
         assertEquals("Temperley", inspection.localitySnapshot)
         assertEquals("cortes frecuentes", inspection.visitReasonSnapshot)
+    }
+
+    @Test
+    fun `start creates inspection with each scope`() = kotlinx.coroutines.test.runTest {
+        InspectionScope.entries.forEach { scope ->
+            val repository = FakeInspectionRepository()
+            val visit = testVisit().copy(id = "visit-${scope.name}")
+
+            val inspection = repository.startOrGetInspection(visit, testClient(), scope)
+
+            assertEquals(scope, inspection.scope)
+        }
+    }
+
+    @Test
+    fun `visual inspection starts without required supply or property type`() = kotlinx.coroutines.test.runTest {
+        val repository = FakeInspectionRepository()
+
+        val inspection = repository.startOrGetInspection(testVisit(), testClient(), InspectionScope.VISUAL_INSPECTION)
+
+        assertEquals(SupplyType.UNKNOWN, inspection.supplyType)
+        assertEquals(PropertyType.UNKNOWN, inspection.propertyType)
     }
 
     @Test

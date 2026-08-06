@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -122,13 +123,31 @@ class VisitOperationalViewModelTest {
         val inspectionRepository = FakeInspectionRepository()
         val visitRepository = FakeVisitRepository(listOf(visit(VisitStatus.IN_PROGRESS)))
         val viewModel = viewModel(visitRepository, inspectionRepository = inspectionRepository)
+        inspectionRepository.startOrGetInspection(visitRepository.currentVisits().first(), client)
         val opened = mutableListOf<String>()
+        val requestedScope = mutableListOf<String>()
 
-        viewModel.requestOpenInspection { opened += it }
-        viewModel.requestOpenInspection { opened += it }
+        viewModel.requestOpenInspection({ opened += it }, { requestedScope += it })
+        viewModel.requestOpenInspection({ opened += it }, { requestedScope += it })
 
         assertEquals(2, opened.size)
         assertTrue(opened.distinct().size == 1)
+        assertEquals(emptyList<String>(), requestedScope)
+    }
+
+    @Test
+    fun `opening inspection without existing one requests scope without creating inspection`() = runTest(dispatcher) {
+        val inspectionRepository = FakeInspectionRepository()
+        val visitRepository = FakeVisitRepository(listOf(visit(VisitStatus.IN_PROGRESS)))
+        val viewModel = viewModel(visitRepository, inspectionRepository = inspectionRepository)
+        val opened = mutableListOf<String>()
+        val requestedScope = mutableListOf<String>()
+
+        viewModel.requestOpenInspection({ opened += it }, { requestedScope += it })
+
+        assertEquals(emptyList<String>(), opened)
+        assertEquals(listOf("visit"), requestedScope)
+        assertNull(inspectionRepository.findActiveInspectionForVisit("visit"))
     }
 
     @Test

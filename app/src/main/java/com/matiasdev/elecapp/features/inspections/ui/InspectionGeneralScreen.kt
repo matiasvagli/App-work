@@ -26,6 +26,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.PropertyType
@@ -69,15 +70,19 @@ fun InspectionGeneralScreen(
                 modifier = Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                InspectionFormBlock("Características") {
-                    InspectionDropdownField("Tipo", uiState.inspectionType, InspectionType.entries.toList(), InspectionType::label, onValueChange = viewModel::onInspectionTypeChange)
-                    InspectionDropdownField("Estado general", uiState.generalCondition, GeneralCondition.entries.toList(), GeneralCondition::label, onValueChange = viewModel::onGeneralConditionChange)
-                    InspectionDropdownField("Suministro", uiState.supplyType, SupplyType.entries.toList(), SupplyType::label, onValueChange = viewModel::onSupplyTypeChange)
-                    InspectionDropdownField("Tipo de propiedad", uiState.propertyType, PropertyType.entries.toList(), PropertyType::label, onValueChange = viewModel::onPropertyTypeChange)
-                }
-                InspectionFormBlock("Contexto de visita") {
-                    InspectionTextField("Técnico", uiState.technicianName, viewModel::onTechnicianNameChange)
-                    InspectionTextField("Limitaciones de acceso", uiState.accessLimitations, viewModel::onAccessLimitationsChange, minLines = 3)
+                if (uiState.scope == InspectionScope.VISUAL_INSPECTION) {
+                    VisualInspectionBasicData(uiState, viewModel)
+                } else {
+                    InspectionFormBlock("Características") {
+                        InspectionDropdownField("Tipo", uiState.inspectionType, InspectionType.entries.toList(), InspectionType::label, onValueChange = viewModel::onInspectionTypeChange)
+                        InspectionDropdownField("Estado general", uiState.generalCondition, GeneralCondition.entries.toList(), GeneralCondition::label, onValueChange = viewModel::onGeneralConditionChange)
+                        InspectionDropdownField("Suministro", uiState.supplyType, SupplyType.entries.toList(), SupplyType::label, onValueChange = viewModel::onSupplyTypeChange)
+                        InspectionDropdownField("Tipo de propiedad", uiState.propertyType, PropertyType.entries.filterNot { it == PropertyType.UNKNOWN }, PropertyType::label, onValueChange = viewModel::onPropertyTypeChange)
+                    }
+                    InspectionFormBlock("Contexto de visita") {
+                        InspectionTextField("Técnico", uiState.technicianName, viewModel::onTechnicianNameChange)
+                        InspectionTextField("Limitaciones de acceso", uiState.accessLimitations, viewModel::onAccessLimitationsChange, minLines = 3)
+                    }
                 }
                 Button(
                     onClick = viewModel::save,
@@ -88,5 +93,21 @@ fun InspectionGeneralScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun VisualInspectionBasicData(uiState: InspectionGeneralUiState, viewModel: InspectionGeneralViewModel) {
+    InspectionFormBlock("Datos básicos") {
+        InspectionTextField("Motivo de la revisión", uiState.reviewReason, viewModel::onReviewReasonChange)
+        InspectionTextField("Sector o elemento revisado", uiState.reviewedElement, viewModel::onReviewedElementChange)
+        Text("Ejemplos: patio, reflector exterior, toma del dormitorio, tablero principal, bomba de agua, portón eléctrico, cocina, baño u otro.")
+        InspectionTextField("Descripción breve de la tarea o situación", uiState.taskDescription, viewModel::onTaskDescriptionChange, minLines = 3)
+    }
+    InspectionFormBlock("Datos opcionales") {
+        InspectionDropdownField("Estado general observado", uiState.generalCondition, GeneralCondition.entries.toList(), GeneralCondition::label, onValueChange = viewModel::onGeneralConditionChange)
+        InspectionDropdownField("Suministro", uiState.supplyType, SupplyType.entries.toList(), SupplyType::label, onValueChange = viewModel::onSupplyTypeChange)
+        InspectionDropdownField("Tipo de propiedad", uiState.propertyType, PropertyType.entries.toList(), PropertyType::label, onValueChange = viewModel::onPropertyTypeChange)
+        InspectionTextField("Técnico", uiState.technicianName, viewModel::onTechnicianNameChange)
     }
 }

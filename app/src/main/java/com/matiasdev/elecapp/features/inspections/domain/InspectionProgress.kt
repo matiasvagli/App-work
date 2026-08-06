@@ -12,6 +12,7 @@ enum class InspectionSection {
     MAIN_PANEL,
     FINDINGS,
     UNVERIFIED,
+    VISUAL_COMPLEMENTARY,
     TECHNICAL_COMMENT,
     FINAL_REPORT,
 }
@@ -33,6 +34,18 @@ data class InspectionProgress(
 object InspectionProgressCalculator {
     fun calculate(aggregate: InspectionAggregate): InspectionProgress {
         val inspection = aggregate.inspection
+        if (inspection.scope == InspectionScope.VISUAL_INSPECTION) {
+            return InspectionProgress(
+                sections = listOf(
+                    generalProgress(inspection),
+                    visualPillarProgress(aggregate.pillar),
+                    visualMainPanelProgress(aggregate.mainPanel),
+                    findingsProgress(aggregate.findings),
+                    visualComplementaryProgress(inspection, aggregate.unverifiedItems),
+                    finalReportProgress(inspection),
+                ),
+            )
+        }
         return InspectionProgress(
             sections = listOf(
                 generalProgress(inspection),
@@ -47,11 +60,22 @@ object InspectionProgressCalculator {
     }
 
     private fun generalProgress(inspection: ElectricalInspection): InspectionSectionProgress {
-        val complete = inspection.visitReasonSnapshot.isNotBlank() && inspection.clientNameSnapshot.isNotBlank()
+        val complete = if (inspection.scope == InspectionScope.VISUAL_INSPECTION) {
+            inspection.clientNameSnapshot.isNotBlank() &&
+                listOf(
+                    inspection.reviewReason,
+                    inspection.reviewedElement,
+                    inspection.taskDescription,
+                    inspection.visitReasonSnapshot,
+                ).any { !it.isNullOrBlank() }
+        } else {
+            inspection.visitReasonSnapshot.isNotBlank() && inspection.clientNameSnapshot.isNotBlank()
+        }
         val summary = listOf(
+            inspection.scope.name,
             inspection.inspectionType.name,
             inspection.supplyType.name.takeUnless { inspection.supplyType == SupplyType.UNKNOWN },
-            inspection.propertyType.name,
+            inspection.propertyType.name.takeUnless { inspection.propertyType == PropertyType.UNKNOWN },
         ).filterNotNull().joinToString(" · ")
         return InspectionSectionProgress(
             InspectionSection.GENERAL,
@@ -69,12 +93,30 @@ object InspectionProgressCalculator {
         }
     }
 
+    private fun visualPillarProgress(pillar: PillarInspection?): InspectionSectionProgress {
+        return when {
+            pillar == null -> InspectionSectionProgress(InspectionSection.PILLAR, InspectionSectionStatus.COMPLETE, "Opcional")
+            pillar.reviewStatus != InspectionSectionReviewStatus.REVIEWED ->
+                InspectionSectionProgress(InspectionSection.PILLAR, InspectionSectionStatus.COMPLETE, pillar.reviewStatus.summary())
+            else -> InspectionSectionProgress(InspectionSection.PILLAR, InspectionSectionStatus.COMPLETE, "Revisado")
+        }
+    }
+
     private fun mainPanelProgress(panel: MainPanelInspection?): InspectionSectionProgress {
         return when {
             panel == null -> InspectionSectionProgress(InspectionSection.MAIN_PANEL, InspectionSectionStatus.NOT_STARTED, "")
             panel.generalCondition != GeneralCondition.NOT_ASSESSED || panel.accessible == AccessStatus.NO ->
                 InspectionSectionProgress(InspectionSection.MAIN_PANEL, InspectionSectionStatus.COMPLETE, panel.generalCondition.name)
             else -> InspectionSectionProgress(InspectionSection.MAIN_PANEL, InspectionSectionStatus.INCOMPLETE, "Sin estado observado")
+        }
+    }
+
+    private fun visualMainPanelProgress(panel: MainPanelInspection?): InspectionSectionProgress {
+        return when {
+            panel == null -> InspectionSectionProgress(InspectionSection.MAIN_PANEL, InspectionSectionStatus.COMPLETE, "Opcional")
+            panel.reviewStatus != InspectionSectionReviewStatus.REVIEWED ->
+                InspectionSectionProgress(InspectionSection.MAIN_PANEL, InspectionSectionStatus.COMPLETE, panel.reviewStatus.summary())
+            else -> InspectionSectionProgress(InspectionSection.MAIN_PANEL, InspectionSectionStatus.COMPLETE, "Revisado")
         }
     }
 
@@ -94,6 +136,22 @@ object InspectionProgressCalculator {
         )
     }
 
+    private fun visualComplementaryProgress(
+        inspection: ElectricalInspection,
+        items: List<InspectionUnverifiedItem>,
+    ): InspectionSectionProgress {
+        val complete = !inspection.originalTechnicalComment.isNullOrBlank() || items.isNotEmpty()
+        val summary = buildList {
+            inspection.originalTechnicalComment?.takeIf(String::isNotBlank)?.let { add(it.take(60)) }
+            if (items.isNotEmpty()) add("${items.size} elemento(s)")
+        }.joinToString(" · ")
+        return InspectionSectionProgress(
+            InspectionSection.VISUAL_COMPLEMENTARY,
+            if (complete) InspectionSectionStatus.COMPLETE else InspectionSectionStatus.NOT_STARTED,
+            summary,
+        )
+    }
+
     private fun technicalCommentProgress(inspection: ElectricalInspection): InspectionSectionProgress {
         return InspectionSectionProgress(
             InspectionSection.TECHNICAL_COMMENT,
@@ -108,5 +166,11 @@ object InspectionProgressCalculator {
             if (inspection.finalClientReport.isNullOrBlank()) InspectionSectionStatus.NOT_STARTED else InspectionSectionStatus.COMPLETE,
             inspection.finalClientReport.orEmpty().take(80),
         )
+    }
+
+    private fun InspectionSectionReviewStatus.summary(): String = when (this) {
+        InspectionSectionReviewStatus.REVIEWED -> "Revisado"
+        InspectionSectionReviewStatus.NOT_APPLICABLE -> "No corresponde"
+        InspectionSectionReviewStatus.NOT_VERIFIED -> "No se verificó"
     }
 }

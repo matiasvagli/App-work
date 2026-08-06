@@ -5,6 +5,7 @@ import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
 import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
@@ -25,7 +26,15 @@ interface InspectionRepository {
 
     suspend fun findActiveInspectionForVisit(visitId: String): ElectricalInspection?
 
-    suspend fun startOrGetInspection(visit: Visit, client: Client): ElectricalInspection
+    suspend fun startOrGetInspection(visit: Visit, client: Client): ElectricalInspection {
+        return startOrGetInspection(visit, client, InspectionScope.GENERAL_ASSESSMENT)
+    }
+
+    suspend fun startOrGetInspection(
+        visit: Visit,
+        client: Client,
+        scope: InspectionScope,
+    ): ElectricalInspection
 
     suspend fun saveInspection(inspection: ElectricalInspection)
 

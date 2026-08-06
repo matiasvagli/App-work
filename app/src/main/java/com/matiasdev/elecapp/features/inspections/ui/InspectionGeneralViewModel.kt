@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.PropertyType
@@ -23,6 +24,10 @@ data class InspectionGeneralUiState(
     val generalCondition: GeneralCondition = GeneralCondition.NOT_ASSESSED,
     val supplyType: SupplyType = SupplyType.UNKNOWN,
     val propertyType: PropertyType = PropertyType.HOUSE,
+    val scope: InspectionScope = InspectionScope.GENERAL_ASSESSMENT,
+    val reviewReason: String = "",
+    val reviewedElement: String = "",
+    val taskDescription: String = "",
     val technicianName: String = "",
     val accessLimitations: String = "",
     val status: InspectionStatus = InspectionStatus.DRAFT,
@@ -47,10 +52,14 @@ class InspectionGeneralViewModel(
                 } else {
                     it.copy(
                         isLoading = false,
+                        scope = inspection.scope,
                         inspectionType = inspection.inspectionType,
                         generalCondition = inspection.generalCondition,
                         supplyType = inspection.supplyType,
                         propertyType = inspection.propertyType,
+                        reviewReason = inspection.reviewReason ?: inspection.visitReasonSnapshot,
+                        reviewedElement = inspection.reviewedElement.orEmpty(),
+                        taskDescription = inspection.taskDescription.orEmpty(),
                         technicianName = inspection.technicianName.orEmpty(),
                         accessLimitations = inspection.accessLimitations.orEmpty(),
                         status = inspection.status,
@@ -64,6 +73,9 @@ class InspectionGeneralViewModel(
     fun onGeneralConditionChange(value: GeneralCondition) = _uiState.update { it.copy(generalCondition = value, saved = false) }
     fun onSupplyTypeChange(value: SupplyType) = _uiState.update { it.copy(supplyType = value, saved = false) }
     fun onPropertyTypeChange(value: PropertyType) = _uiState.update { it.copy(propertyType = value, saved = false) }
+    fun onReviewReasonChange(value: String) = _uiState.update { it.copy(reviewReason = value, saved = false) }
+    fun onReviewedElementChange(value: String) = _uiState.update { it.copy(reviewedElement = value, saved = false) }
+    fun onTaskDescriptionChange(value: String) = _uiState.update { it.copy(taskDescription = value, saved = false) }
     fun onTechnicianNameChange(value: String) = _uiState.update { it.copy(technicianName = value, saved = false) }
     fun onAccessLimitationsChange(value: String) = _uiState.update { it.copy(accessLimitations = value, saved = false) }
 
@@ -77,6 +89,9 @@ class InspectionGeneralViewModel(
                     generalCondition = state.generalCondition,
                     supplyType = state.supplyType,
                     propertyType = state.propertyType,
+                    reviewReason = state.reviewReason.trim().ifBlank { null },
+                    reviewedElement = state.reviewedElement.trim().ifBlank { null },
+                    taskDescription = state.taskDescription.trim().ifBlank { null },
                     technicianName = state.technicianName.trim().ifBlank { null },
                     accessLimitations = state.accessLimitations.trim().ifBlank { null },
                 ),

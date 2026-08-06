@@ -64,7 +64,7 @@ class InspectionOverviewViewModel(
 
     fun requestComplete() {
         val aggregate = _uiState.value.aggregate ?: return
-        val result = InspectionCompletionRules.validate(aggregate)
+        val result = InspectionCompletionRules.validate(aggregate, hasCalculations = _uiState.value.calculations.isNotEmpty())
         _uiState.update {
             it.copy(
                 completionMissingItems = result.missingItems,

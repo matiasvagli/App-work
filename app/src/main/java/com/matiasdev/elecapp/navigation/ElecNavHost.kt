@@ -26,10 +26,12 @@ import com.matiasdev.elecapp.features.inspections.ui.FindingsScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionFinalReportScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionGeneralScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionOverviewScreen
+import com.matiasdev.elecapp.features.inspections.ui.InspectionScopeSelectionScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionTechnicalCommentScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionsListScreen
 import com.matiasdev.elecapp.features.inspections.ui.MainPanelInspectionScreen
 import com.matiasdev.elecapp.features.inspections.ui.PillarInspectionScreen
+import com.matiasdev.elecapp.features.inspections.ui.VisualInspectionComplementaryScreen
 import com.matiasdev.elecapp.features.inspections.ui.UnverifiedItemsScreen
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
@@ -328,6 +330,7 @@ fun ElecNavHost(
                 onBackClick = { navController.navigateUp() },
                 onEditClick = { navController.navigate(AppRoutes.visitEdit(it)) },
                 onInspectionClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(it)) },
+                onCreateInspectionClick = { navController.navigateSingleTop(AppRoutes.visitInspectionScope(it)) },
                 onCreateQuoteClick = { visitId, clientId ->
                     navController.navigate(AppRoutes.quoteCreate(clientId = clientId, visitId = visitId))
                 },
@@ -363,6 +366,25 @@ fun ElecNavHost(
                     navController.navigate(AppRoutes.clientCreate(source = AppRoutes.SOURCE_VISIT))
                 },
                 onSaved = { navController.navigateUp() },
+            )
+        }
+        composable(
+            route = AppRoutes.VISIT_INSPECTION_SCOPE,
+            arguments = AppRoutes.visitIdArguments,
+        ) { backStackEntry ->
+            val visitId = backStackEntry.arguments?.getString(AppRoutes.VISIT_ID).orEmpty()
+            InspectionScopeSelectionScreen(
+                clientRepository = clientRepository,
+                visitRepository = visitRepository,
+                inspectionRepository = inspectionRepository,
+                visitId = visitId,
+                onBackClick = { navController.navigateUp() },
+                onInspectionReady = { inspectionId ->
+                    navController.navigate(AppRoutes.inspectionOverview(inspectionId)) {
+                        popUpTo(backStackEntry.destination.id) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                },
             )
         }
         composable(
@@ -412,6 +434,9 @@ fun ElecNavHost(
         composable(AppRoutes.INSPECTION_UNVERIFIED, AppRoutes.inspectionIdArguments) { backStackEntry ->
             UnverifiedItemsScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
         }
+        composable(AppRoutes.INSPECTION_VISUAL_COMPLEMENTARY, AppRoutes.inspectionIdArguments) { backStackEntry ->
+            VisualInspectionComplementaryScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
+        }
         composable(AppRoutes.INSPECTION_TECHNICAL_COMMENT, AppRoutes.inspectionIdArguments) { backStackEntry ->
             InspectionTechnicalCommentScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
         }
@@ -434,6 +459,7 @@ private fun inspectionSectionRoute(inspectionId: String, section: InspectionSect
         InspectionSection.MAIN_PANEL -> AppRoutes.inspectionMainPanel(inspectionId)
         InspectionSection.FINDINGS -> AppRoutes.inspectionFindings(inspectionId)
         InspectionSection.UNVERIFIED -> AppRoutes.inspectionUnverified(inspectionId)
+        InspectionSection.VISUAL_COMPLEMENTARY -> AppRoutes.inspectionVisualComplementary(inspectionId)
         InspectionSection.TECHNICAL_COMMENT -> AppRoutes.inspectionTechnicalComment(inspectionId)
         InspectionSection.FINAL_REPORT -> AppRoutes.inspectionFinalReport(inspectionId)
     }

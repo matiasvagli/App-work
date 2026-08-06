@@ -284,7 +284,10 @@ class VisitDetailViewModel(
         _events.emit(VisitDetailEvent.Message("Nota actualizada"))
     }
 
-    fun requestOpenInspection(onInspectionReady: (String) -> Unit) {
+    fun requestOpenInspection(
+        onInspectionReady: (String) -> Unit,
+        onNewInspectionRequested: (String) -> Unit,
+    ) {
         val visit = _uiState.value.visit ?: return
         val inspection = _uiState.value.inspection
         if (inspection != null) {
@@ -295,26 +298,17 @@ class VisitDetailViewModel(
             _uiState.update { it.copy(showCancelledInspectionWarning = true) }
             return
         }
-        startInspection(onInspectionReady)
+        onNewInspectionRequested(visit.id)
     }
 
     fun dismissCancelledInspectionWarning() {
         _uiState.update { it.copy(showCancelledInspectionWarning = false) }
     }
 
-    fun confirmStartCancelledInspection(onInspectionReady: (String) -> Unit) {
+    fun confirmStartCancelledInspection(onNewInspectionRequested: (String) -> Unit) {
         _uiState.update { it.copy(showCancelledInspectionWarning = false) }
-        startInspection(onInspectionReady)
-    }
-
-    private fun startInspection(onInspectionReady: (String) -> Unit) {
         val visit = _uiState.value.visit ?: return
-        val client = _uiState.value.client ?: return
-        viewModelScope.launch {
-            runCatching { withContext(ioDispatcher) { inspectionRepository.startOrGetInspection(visit, client) } }
-                .onSuccess { inspection -> onInspectionReady(inspection.id) }
-                .onFailure { error -> setLoadError(error.message ?: "No se pudo iniciar el relevamiento") }
-        }
+        onNewInspectionRequested(visit.id)
     }
 
     private fun launchOperation(onFailure: (String) -> Unit = ::setLoadError, block: suspend () -> Unit) {

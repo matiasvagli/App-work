@@ -7,13 +7,18 @@ import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
+import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.InspectionValidation
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
 import com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility
+import com.matiasdev.elecapp.features.inspections.domain.UnverifiedItemType
 import com.matiasdev.elecapp.features.inspections.domain.YesNoPartialUnknown
 import com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown
 import java.time.Instant
+import java.util.UUID
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +29,9 @@ import kotlinx.coroutines.launch
 
 data class MainPanelInspectionUiState(
     val isLoading: Boolean = true,
+    val scope: InspectionScope = InspectionScope.GENERAL_ASSESSMENT,
+    val reviewStatus: InspectionSectionReviewStatus = InspectionSectionReviewStatus.REVIEWED,
+    val addToUnverified: Boolean = false,
     val accessible: AccessStatus = AccessStatus.PARTIAL,
     val generalCondition: GeneralCondition = GeneralCondition.NOT_ASSESSED,
     val differentialPresent: YesNoUnknown = YesNoUnknown.UNKNOWN,
@@ -61,10 +69,13 @@ class MainPanelInspectionViewModel(
             val aggregate = repository.findAggregate(inspectionId)
             val panel = aggregate?.mainPanel
             createdAt = panel?.createdAt ?: Instant.now()
+            val scope = aggregate?.inspection?.scope ?: InspectionScope.GENERAL_ASSESSMENT
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    accessible = panel?.accessible ?: it.accessible,
+                    scope = scope,
+                    reviewStatus = panel?.reviewStatus ?: InspectionSectionReviewStatus.REVIEWED,
+                    accessible = panel?.accessible ?: if (scope == InspectionScope.VISUAL_INSPECTION) AccessStatus.UNKNOWN else it.accessible,
                     generalCondition = panel?.generalCondition ?: it.generalCondition,
                     differentialPresent = panel?.differentialPresent ?: it.differentialPresent,
                     differentialRatedAmps = panel?.differentialRatedAmps?.toString().orEmpty(),
@@ -109,6 +120,7 @@ class MainPanelInspectionViewModel(
             repository.saveMainPanel(
                 MainPanelInspection(
                     inspectionId = inspectionId,
+                    reviewStatus = state.reviewStatus,
                     accessible = state.accessible,
                     generalCondition = state.generalCondition,
                     differentialPresent = state.differentialPresent,
@@ -129,8 +141,35 @@ class MainPanelInspectionViewModel(
                     updatedAt = now,
                 ),
             )
+            saveUnverifiedReferenceIfRequested(state)
             _uiState.update { it.copy(saved = true) }
         }
+    }
+
+    private suspend fun saveUnverifiedReferenceIfRequested(state: MainPanelInspectionUiState) {
+        if (
+            state.scope != InspectionScope.VISUAL_INSPECTION ||
+            state.reviewStatus != InspectionSectionReviewStatus.NOT_VERIFIED ||
+            !state.addToUnverified
+        ) {
+            return
+        }
+        val aggregate = repository.findAggregate(inspectionId) ?: return
+        val existing = aggregate.unverifiedItems
+        if (existing.any { it.type == UnverifiedItemType.PANEL_NOT_OPENED }) return
+        val now = Instant.now()
+        repository.saveUnverifiedItems(
+            inspectionId,
+            existing + InspectionUnverifiedItem(
+                id = UUID.randomUUID().toString(),
+                inspectionId = inspectionId,
+                type = UnverifiedItemType.PANEL_NOT_OPENED,
+                description = "Tablero principal no verificado.",
+                createdAt = now,
+                updatedAt = now,
+                isDeleted = false,
+            ),
+        )
     }
 }
 

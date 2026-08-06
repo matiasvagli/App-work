@@ -60,6 +60,7 @@ fun VisitDetailScreen(
     onBackClick: () -> Unit,
     onEditClick: (String) -> Unit,
     onInspectionClick: (String) -> Unit,
+    onCreateInspectionClick: (String) -> Unit,
     onCreateQuoteClick: (String, String) -> Unit,
     onQuoteClick: (String) -> Unit,
     onCreateMaterialClick: (String, String) -> Unit,
@@ -123,7 +124,7 @@ fun VisitDetailScreen(
     ) { padding ->
         VisitDetailContent(
             uiState = uiState,
-            onInspectionClick = { viewModel.requestOpenInspection(onInspectionClick) },
+            onInspectionClick = { viewModel.requestOpenInspection(onInspectionClick, onCreateInspectionClick) },
             onQuoteClick = {
                 val quote = uiState.quote
                 val visit = uiState.visit
@@ -151,7 +152,7 @@ fun VisitDetailScreen(
             modifier = Modifier.padding(padding),
         )
     }
-    VisitDetailDialogs(uiState, viewModel, onBackClick, onInspectionClick)
+    VisitDetailDialogs(uiState, viewModel, onBackClick, onCreateInspectionClick)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -202,7 +203,7 @@ private fun VisitDetailDialogs(
     uiState: VisitDetailUiState,
     viewModel: VisitDetailViewModel,
     onDeleted: () -> Unit,
-    onInspectionClick: (String) -> Unit,
+    onCreateInspectionClick: (String) -> Unit,
 ) {
     uiState.statusPendingChange?.let { status ->
         AlertDialog(
@@ -228,7 +229,7 @@ private fun VisitDetailDialogs(
             title = { Text("Visita cancelada") },
             text = { Text("La visita está cancelada. ¿Querés iniciar el relevamiento igualmente?") },
             confirmButton = {
-                TextButton(onClick = { viewModel.confirmStartCancelledInspection(onInspectionClick) }) { Text("Iniciar") }
+                TextButton(onClick = { viewModel.confirmStartCancelledInspection(onCreateInspectionClick) }) { Text("Iniciar") }
             },
             dismissButton = { TextButton(onClick = viewModel::dismissCancelledInspectionWarning) { Text("Cancelar") } },
         )

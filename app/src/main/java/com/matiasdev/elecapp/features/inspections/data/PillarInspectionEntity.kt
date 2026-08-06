@@ -13,6 +13,7 @@ data class PillarInspectionEntity(
     @PrimaryKey
     @ColumnInfo(name = "inspection_id")
     val inspectionId: String,
+    @ColumnInfo(name = "review_status") val reviewStatus: String,
     @ColumnInfo(name = "pillar_exists") val exists: Boolean?,
     val accessible: String,
     @ColumnInfo(name = "general_condition") val generalCondition: String,

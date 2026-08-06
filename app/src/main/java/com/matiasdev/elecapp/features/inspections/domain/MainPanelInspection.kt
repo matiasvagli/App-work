@@ -4,6 +4,7 @@ import java.time.Instant
 
 data class MainPanelInspection(
     val inspectionId: String,
+    val reviewStatus: InspectionSectionReviewStatus,
     val accessible: AccessStatus,
     val generalCondition: GeneralCondition,
     val differentialPresent: YesNoUnknown,
