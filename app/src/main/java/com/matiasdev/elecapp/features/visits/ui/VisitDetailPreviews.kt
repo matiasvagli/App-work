@@ -86,6 +86,8 @@ private fun PreviewContent(status: VisitStatus, running: Boolean = false, withDo
             onPauseWorkClick = {},
             onResumeWorkClick = {},
             onCompleteVisitClick = {},
+            onReceiptClick = {},
+            onRegisterPaymentClick = { _, _, _ -> },
             onEditSessionNotesClick = {},
         )
     }

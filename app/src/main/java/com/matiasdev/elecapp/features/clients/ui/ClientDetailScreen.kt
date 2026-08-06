@@ -43,6 +43,7 @@ import com.matiasdev.elecapp.core.external.tryStartActivity
 import com.matiasdev.elecapp.core.external.whatsappIntent
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.clients.domain.Client
+import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import java.time.ZoneId
@@ -53,11 +54,14 @@ import java.time.format.DateTimeFormatter
 fun ClientDetailScreen(
     clientRepository: ClientRepository,
     visitRepository: VisitRepository,
+    financeRepository: FinanceRepository,
     clientId: String,
     onBackClick: () -> Unit,
     onEditClick: (String) -> Unit,
     onScheduleVisitClick: (String) -> Unit,
     onViewVisitsClick: (String) -> Unit,
+    onViewReceiptsClick: (String) -> Unit,
+    onRegisterPaymentClick: (String) -> Unit,
     onCreateQuoteClick: (String) -> Unit,
     onCreateMaterialClick: (String) -> Unit,
     onVisitClick: (String) -> Unit,
@@ -97,6 +101,8 @@ fun ClientDetailScreen(
             onDeleteClick = viewModel::askDelete,
             onScheduleVisitClick = onScheduleVisitClick,
             onViewVisitsClick = onViewVisitsClick,
+            onViewReceiptsClick = onViewReceiptsClick,
+            onRegisterPaymentClick = onRegisterPaymentClick,
             onCreateQuoteClick = onCreateQuoteClick,
             onCreateMaterialClick = onCreateMaterialClick,
             onVisitClick = onVisitClick,
@@ -130,6 +136,8 @@ private fun ClientDetailContent(
     onDeleteClick: (Client) -> Unit,
     onScheduleVisitClick: (String) -> Unit,
     onViewVisitsClick: (String) -> Unit,
+    onViewReceiptsClick: (String) -> Unit,
+    onRegisterPaymentClick: (String) -> Unit,
     onCreateQuoteClick: (String) -> Unit,
     onCreateMaterialClick: (String) -> Unit,
     onVisitClick: (String) -> Unit,
@@ -151,6 +159,7 @@ private fun ClientDetailContent(
         ) {
             ClientInfo(client)
             ClientQuickActions(client, onScheduleVisitClick, onCreateQuoteClick, onCreateMaterialClick)
+            ClientFinanceActions(client, onViewReceiptsClick, onRegisterPaymentClick)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { onEditClick(client.id) }) {
                     Text("Editar")
@@ -237,6 +246,26 @@ private fun ClientQuickActions(
             }
             OutlinedButton(onClick = { onCreateMaterialClick(client.id) }) {
                 Text("Nueva lista")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClientFinanceActions(
+    client: Client,
+    onViewReceiptsClick: (String) -> Unit,
+    onRegisterPaymentClick: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Economía", style = MaterialTheme.typography.titleMedium)
+        Text("Comprobantes, cobros y saldos del cliente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { onViewReceiptsClick(client.id) }) {
+                Text("Ver comprobantes")
+            }
+            OutlinedButton(onClick = { onRegisterPaymentClick(client.id) }) {
+                Text("Registrar cobro")
             }
         }
     }

@@ -120,7 +120,7 @@ class InspectionOverviewViewModel(
 
     fun notifySummaryCopied() {
         _uiState.update {
-            it.copy(snackbarMessage = "Resumen copiado. Pegalo en ChatGPT para redactar el informe.")
+            it.copy(snackbarMessage = "Informe copiado")
         }
     }
 }

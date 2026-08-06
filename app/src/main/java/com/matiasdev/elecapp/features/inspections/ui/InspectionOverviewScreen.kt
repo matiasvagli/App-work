@@ -270,11 +270,11 @@ private fun ProgressBlock(uiState: InspectionOverviewUiState) {
 private fun SummaryActions(onCopySummary: () -> Unit, onShareSummary: () -> Unit) {
     Button(onClick = onCopySummary, modifier = Modifier.fillMaxWidth()) {
         Icon(Icons.Default.ContentCopy, contentDescription = null)
-        Text("Copiar para ChatGPT", modifier = Modifier.padding(start = 8.dp))
+        Text("Copiar informe", modifier = Modifier.padding(start = 8.dp))
     }
     OutlinedButton(onClick = onShareSummary, modifier = Modifier.fillMaxWidth()) {
         Icon(Icons.Default.Share, contentDescription = null)
-        Text("Compartir resumen", modifier = Modifier.padding(start = 8.dp))
+        Text("Enviar informe", modifier = Modifier.padding(start = 8.dp))
     }
 }
 
@@ -283,5 +283,5 @@ private fun Context.sharePlainText(text: String) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    startActivity(Intent.createChooser(intent, "Compartir resumen"))
+    startActivity(Intent.createChooser(intent, "Enviar informe"))
 }

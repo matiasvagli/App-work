@@ -32,6 +32,9 @@ import com.matiasdev.elecapp.features.materials.domain.MaterialListStatus
 import com.matiasdev.elecapp.features.materials.summary.label
 import com.matiasdev.elecapp.features.quotes.domain.QuoteStatus
 import com.matiasdev.elecapp.features.quotes.summary.label
+import com.matiasdev.elecapp.features.finance.domain.MoneyFormatter
+import com.matiasdev.elecapp.features.finance.domain.PaymentBalanceCalculator
+import com.matiasdev.elecapp.features.finance.domain.displayNumber
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
 import com.matiasdev.elecapp.features.visits.domain.VisitWorkActions
@@ -51,6 +54,8 @@ fun VisitDetailContent(
     onPauseWorkClick: () -> Unit,
     onResumeWorkClick: () -> Unit,
     onCompleteVisitClick: () -> Unit,
+    onReceiptClick: (String) -> Unit,
+    onRegisterPaymentClick: (String, String, String?) -> Unit,
     onEditSessionNotesClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -78,9 +83,50 @@ fun VisitDetailContent(
             }
             item { VisitQuickActions(uiState, onInspectionClick, onQuoteClick, onMaterialClick, onElectricalToolsClick) }
             item { VisitDocumentsCard(uiState, onInspectionClick, onQuoteClick, onMaterialClick) }
+            if (visit.status == VisitStatus.COMPLETED) {
+                item { WorkClosureCard(uiState, onReceiptClick, onRegisterPaymentClick) }
+            }
             item { WorkSessionsCard(uiState, onEditSessionNotesClick) }
             item { VisitTimelineCard(uiState) }
             item { VisitNotesCard(visit) }
+        }
+    }
+}
+
+@Composable
+private fun WorkClosureCard(
+    uiState: VisitDetailUiState,
+    onReceiptClick: (String) -> Unit,
+    onRegisterPaymentClick: (String, String, String?) -> Unit,
+) {
+    val visit = uiState.visit ?: return
+    val receipt = uiState.receipt
+    val completion = uiState.completion
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Cierre del trabajo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            DetailLine("Trabajo realizado", completion?.workPerformed ?: visit.completionNotes.orEmpty().ifBlank { "Sin detalle estructurado" })
+            completion?.pendingWork?.takeIf(String::isNotBlank)?.let { DetailLine("Pendiente", it) }
+            if (receipt == null) {
+                Text("Sin comprobante asociado", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = { onRegisterPaymentClick("", visit.clientId, visit.id) }) {
+                    Text("Registrar cobro")
+                }
+            } else {
+                val balance = PaymentBalanceCalculator.balance(receipt.totalCents, uiState.payments)
+                DetailLine("Comprobante", receipt.displayNumber())
+                SummaryLine("Importe registrado", MoneyFormatter.format(receipt.totalCents))
+                SummaryLine("Cobrado", MoneyFormatter.format(balance.paidCents))
+                SummaryLine("Pendiente", MoneyFormatter.format(balance.pendingCents))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { onReceiptClick(receipt.id) }) { Text("Ver comprobante") }
+                    if (balance.pendingCents > 0L) {
+                        OutlinedButton(onClick = { onRegisterPaymentClick(receipt.id, receipt.clientId, visit.id) }) { Text("Registrar pago") }
+                    } else {
+                        Text("Cobrado completamente", color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 12.dp))
+                    }
+                }
+            }
         }
     }
 }
@@ -270,6 +316,14 @@ private fun DetailLine(label: String, value: String) {
     Column {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+@Composable
+private fun SummaryLine(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label)
+        Text(value, fontWeight = FontWeight.SemiBold)
     }
 }
 

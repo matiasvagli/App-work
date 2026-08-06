@@ -1,6 +1,9 @@
 package com.matiasdev.elecapp.features.visits.ui
 
 import com.matiasdev.elecapp.features.clients.domain.Client
+import com.matiasdev.elecapp.features.finance.domain.Payment
+import com.matiasdev.elecapp.features.finance.domain.ServiceReceipt
+import com.matiasdev.elecapp.features.finance.domain.VisitCompletion
 import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.materials.domain.MaterialList
 import com.matiasdev.elecapp.features.quotes.domain.Quote
@@ -17,6 +20,9 @@ data class VisitDetailUiState(
     val inspection: ElectricalInspection? = null,
     val quote: Quote? = null,
     val materialList: MaterialList? = null,
+    val completion: VisitCompletion? = null,
+    val receipt: ServiceReceipt? = null,
+    val payments: List<Payment> = emptyList(),
     val sessions: List<VisitWorkSession> = emptyList(),
     val workSummary: VisitWorkSummary? = null,
     val now: Instant = Instant.EPOCH,

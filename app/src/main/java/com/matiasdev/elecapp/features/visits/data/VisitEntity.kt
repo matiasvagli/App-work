@@ -10,6 +10,7 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["client_id"]),
         Index(value = ["scheduled_at"]),
+        Index(value = ["parent_visit_id"]),
     ],
 )
 data class VisitEntity(
@@ -24,6 +25,8 @@ data class VisitEntity(
     @ColumnInfo(name = "completed_at") val completedAt: Long?,
     @ColumnInfo(name = "completion_notes") val completionNotes: String?,
     @ColumnInfo(name = "pending_work_notes") val pendingWorkNotes: String?,
+    @ColumnInfo(name = "attention_type") val attentionType: String?,
+    @ColumnInfo(name = "parent_visit_id") val parentVisitId: String?,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long,
     @ColumnInfo(name = "is_deleted") val isDeleted: Boolean,

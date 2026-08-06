@@ -4,6 +4,7 @@ import com.matiasdev.elecapp.features.clients.domain.Client
 import com.matiasdev.elecapp.features.clients.ui.FakeClientRepository
 import com.matiasdev.elecapp.features.clients.ui.MainDispatcherRule
 import com.matiasdev.elecapp.core.time.TimeProvider
+import com.matiasdev.elecapp.features.finance.data.FakeFinanceRepository
 import com.matiasdev.elecapp.features.inspections.data.FakeInspectionRepository
 import com.matiasdev.elecapp.features.materials.data.FakeMaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.FakeQuoteRepository
@@ -162,6 +163,7 @@ class VisitOperationalViewModelTest {
             clientRepository = clientRepository,
             visitRepository = visitRepository,
             workSessionRepository = workSessionRepository,
+            financeRepository = FakeFinanceRepository(),
             inspectionRepository = inspectionRepository,
             quoteRepository = FakeQuoteRepository(),
             materialRepository = FakeMaterialRepository(),

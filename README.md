@@ -30,6 +30,9 @@ Clientes:
 Visitas:
 
 - Crear desde Home, Agenda o detalle de cliente.
+- Atender ahora desde Home crea una visita urgente/no programada con fecha actual, la deja `IN_PROGRESS` y crea una sesión `RUNNING`.
+- El cliente rápido de Atender ahora pide solo nombre obligatorio; teléfono, dirección y localidad son opcionales.
+- Si ya hay una sesión `RUNNING`, el flujo pide continuar la visita actual o pausarla antes de iniciar otra.
 - El formulario de visita permite buscar y seleccionar cliente por nombre o teléfono.
 - Si el cliente no existe, se puede crear sin salir del flujo y volver con ese cliente seleccionado.
 - Crear, editar, eliminar y cambiar estado.
@@ -39,6 +42,8 @@ Visitas:
 - Una visita en curso se muestra primero en Home con acceso “Continuar visita” y tiempo trabajado aproximado.
 - Pausar trabajo cierra la sesión activa como `PAUSED`; reanudar crea una nueva sesión `RUNNING`.
 - Finalizar visita cierra la sesión activa, guarda `completedAt`, trabajo realizado y pendientes.
+- Finalizar desde el detalle abre un cierre guiado con trabajo, tiempo, importe, cobro y confirmación.
+- El cierre guiado puede crear `VisitCompletion`, comprobante interno de servicio y pago inicial en una transacción.
 - El registro manual permite agregar una sesión cerrada para trabajo ya realizado, con validación de rango, futuro y superposición.
 - Agregar al calendario mediante Intent, sin sincronización.
 - Recordatorios locales: ninguno, uno o dos por visita.
@@ -66,6 +71,31 @@ Presupuestos:
 - Número local legible, por ejemplo `PRES-2026-0001`.
 - Permite copiar y compartir texto. No genera PDF todavía.
 - Los materiales no se cargan como ítems de presupuesto en este MVP.
+
+Economía, comprobantes y cobros:
+
+- Módulo offline-first, sin backend, login, Firebase ni pagos online.
+- Distingue importe de trabajos, dinero cobrado y saldos pendientes. No llama “ingreso” a dinero no cobrado.
+- `ServiceReceipt` es un comprobante interno de servicio. La UI y texto compartido indican: “No válido como factura”.
+- No implementa factura fiscal, AFIP/ARCA, CAE, IVA, notas de crédito ni PDF complejo.
+- Numeración local secuencial visible como `CS-000001`, asignada al emitir para evitar huecos por borradores abandonados.
+- Los comprobantes guardan snapshot propio de ítems e importes; no modifican presupuestos originales.
+- `ServiceReceiptItem` separa mano de obra, materiales y adicionales. Los materiales suministrados por el cliente pueden registrarse como no cobrables.
+- `Payment` permite cobros totales o parciales, varios métodos y cobros sin comprobante asociado con etiqueta clara.
+- Los pagos cancelados o eliminados no suman al cobrado. Los comprobantes cancelados no entran en estadísticas.
+- Por defecto se bloquea el sobrepago; propinas o adicionales deben cargarse primero como ítem adicional.
+- El detalle de comprobante permite compartir texto por Android Sharesheet, sin abrir WhatsApp obligatoriamente y sin incluir notas internas.
+- El dashboard económico muestra período, trabajos completados, importe generado, cobrado, pendiente, ticket promedio e importe por hora.
+- `ClientDetail` agrega accesos compactos a comprobantes y cobros del cliente.
+- Home prioriza visita en curso, Atender ahora, próxima visita y acceso al módulo económico.
+
+Decisiones monetarias:
+
+- Los importes nuevos se guardan como `Long` en centavos ARS.
+- No se usa `Double`, `Float` ni tipos binarios como fuente de verdad para dinero nuevo.
+- Las cantidades decimales nuevas usan `quantityMillis`: `1000 = 1 unidad`.
+- `MoneyParser` tolera `100000`, `100.000`, `100000,50` y `$100.000`.
+- `ReceiptCalculator`, `PaymentBalanceCalculator`, `ReceiptStatusResolver` y `FinanceMetricsCalculator` concentran reglas puras y testeables.
 
 Listas de materiales:
 
@@ -112,6 +142,21 @@ Arquitectura simple por feature:
 - `core/external`: Intents externos, contactos y texto compartido.
 - `app/AppContainer.kt`: armado manual de dependencias, sin Hilt.
 
+Equivalencias conceptuales con React Native:
+
+- Room Entity: modelo persistido local, similar a una tabla SQLite tipada.
+- DAO: interfaz de consultas y escrituras SQL, similar a un módulo de acceso a SQLite.
+- Repository: capa que coordina DAOs, reglas de datos y transacciones.
+- StateFlow: estado observable frío/caliente para UI, comparable a un store observable.
+- ViewModel: mantiene estado de pantalla y sobrevive recomposiciones/cambios simples.
+- UI state: data class inmutable que representa lo que la pantalla dibuja.
+- One-shot events: `SharedFlow` para snackbar, navegación o compartir, evitando repetir eventos por recomposición.
+- Navigation back stack: pila de pantallas de Navigation Compose, equivalente conceptual a un stack navigator.
+- Transaction: bloque atómico de Room para que visita, cierre, comprobante y pago no queden a medio guardar.
+- Derived state: estado calculado desde entidades, por ejemplo saldo = total - cobrado.
+- Money in integer cents: importes como enteros en centavos, no números flotantes.
+- Offline-first: toda operación principal funciona con base local, sin backend ni sincronización.
+
 ## Room y migraciones
 
 Base local: `elec_app.db`.
@@ -126,6 +171,7 @@ Versiones:
 - v6: agrega presupuestos y listas de materiales.
 - v7: agrega `technical_calculations` para herramientas eléctricas.
 - v8: agrega `visit_work_sessions` para sesiones reales de trabajo de visitas.
+- v9: agrega cierre estructurado, comprobantes internos, ítems, pagos, secuencia de comprobantes y metadatos de atención en visitas.
 
 Tablas de v4:
 
@@ -158,7 +204,18 @@ Columnas: `id`, `visit_id`, `started_at`, `ended_at`, `status`, `notes`, `create
 
 Índices: `visit_id`, `status`, `started_at` e `is_deleted`. No se agregan foreign keys físicas para mantener el patrón de borrado lógico.
 
-No se usa `fallbackToDestructiveMigration`. La migración `3 -> 4` solo crea tablas e índices nuevos. La migración `4 -> 5` solo agrega columnas nullable a `visits`. La migración `5 -> 6` solo crea tablas e índices nuevos. La migración `6 -> 7` solo crea `technical_calculations` e índices. La migración `7 -> 8` solo crea `visit_work_sessions` e índices, por lo que clientes, visitas, recordatorios, relevamientos, presupuestos, materiales y cálculos existentes siguen intactos.
+Tablas y columnas de v9:
+
+- Columnas nuevas en `visits`: `attention_type` y `parent_visit_id`.
+- `visit_completions`: cierre estructurado uno a uno lógico con visita.
+- `service_receipts`: comprobantes internos con total generado, descuentos, estado y número local.
+- `service_receipt_items`: snapshot de mano de obra, materiales y adicionales.
+- `payments`: cobros confirmados o cancelados, con o sin comprobante.
+- `receipt_sequence`: próxima numeración local de comprobantes emitidos.
+
+Índices principales: visita de cierre única, número de comprobante único, cliente, visita, presupuesto, fecha de emisión, estado, pagos por cliente/comprobante/fecha/método y borrado lógico.
+
+No se usa `fallbackToDestructiveMigration`. La migración `3 -> 4` solo crea tablas e índices nuevos. La migración `4 -> 5` solo agrega columnas nullable a `visits`. La migración `5 -> 6` solo crea tablas e índices nuevos. La migración `6 -> 7` solo crea `technical_calculations` e índices. La migración `7 -> 8` solo crea `visit_work_sessions` e índices. La migración `8 -> 9` agrega columnas nullable y tablas nuevas, por lo que clientes, visitas, recordatorios, relevamientos, presupuestos, materiales, cálculos y sesiones existentes siguen intactos.
 
 Las secciones pilar y tablero son tablas separadas 1 a 1 con `inspection_id` como clave primaria. Se eligió esa forma porque cada sección tiene campos propios y puede crecer sin agrandar `electrical_inspections` con columnas opcionales. No se usan foreign keys para no acoplar el modelo a borrado físico; el proyecto usa borrado lógico.
 
@@ -218,6 +275,46 @@ Limitaciones:
 Previews:
 
 - Las pantallas nuevas separan `Screen` conectada a ViewModel y `Content` presentacional.
+
+## QA manual sugerida para economía
+
+Urgencia:
+
+1. Home -> Atender ahora.
+2. Crear cliente rápido.
+3. Iniciar visita.
+4. Confirmar que aparece el timer en el detalle.
+5. Finalizar visita desde cierre guiado.
+6. Registrar trabajo, importe y pago total.
+7. Abrir comprobante y compartir texto.
+
+Pago parcial:
+
+1. Cerrar trabajo por `$100.000`.
+2. Registrar pago inicial `$40.000`.
+3. Confirmar saldo `$60.000`.
+4. Cerrar y abrir la app.
+5. Registrar pago posterior `$60.000`.
+6. Confirmar estado pagado y saldo cero.
+
+Materiales:
+
+1. En cierre, cargar materiales cobrables.
+2. Para materiales suministrados por cliente, registrarlos como no cobrables en el modelo de ítems cuando se use el editor completo.
+3. Confirmar que no suman al total.
+
+Navegación:
+
+1. Probar back del sistema y flecha superior en Atender ahora, Cierre, Comprobantes, Pago y Economía.
+2. Al guardar Atender ahora, back desde el detalle no debe volver al formulario rápido.
+3. Al cerrar visita, debe volver al detalle o al comprobante generado sin duplicar pantallas.
+
+Limitaciones actuales del módulo económico:
+
+- El cierre guiado implementa carga rápida de mano de obra, materiales, adicionales, descuento fijo y pago inicial.
+- La importación selectiva desde presupuesto/lista de materiales y el editor completo de ítems quedan preparados por modelo, pero no están terminados en UI.
+- No hay filtros avanzados, recordatorios de saldo, CSV, PDF ni backup económico.
+- Las previews exhaustivas pedidas quedan como trabajo pendiente; las pantallas mantienen separación presentacional para agregarlas sin Room.
 - Hay previews para home de herramientas, formularios vacíos/con datos, resultados y detalle/historial, sin conectar Room ni `AppContainer`.
 
 ## Recordatorios

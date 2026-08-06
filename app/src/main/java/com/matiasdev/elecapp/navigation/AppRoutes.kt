@@ -12,6 +12,12 @@ object AppRoutes {
     const val QUOTES = "quotes"
     const val MATERIALS = "materials"
     const val ELECTRICAL_TOOLS = "tools/electrical"
+    const val QUICK_VISIT = "visits/quick"
+    const val VISIT_CLOSE = "visits/{visitId}/close"
+    const val FINANCE_DASHBOARD = "finance"
+    const val SERVICE_RECEIPTS = "finance/receipts?clientId={clientId}"
+    const val SERVICE_RECEIPT_DETAIL = "finance/receipts/{receiptId}"
+    const val REGISTER_PAYMENT = "finance/payments/new?receiptId={receiptId}&clientId={clientId}&visitId={visitId}"
     const val ELECTRICAL_TOOLS_POWER = "tools/electrical/power?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}&duplicateId={duplicateId}"
     const val ELECTRICAL_TOOLS_VOLTAGE_DROP = "tools/electrical/voltage-drop?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}&duplicateId={duplicateId}"
     const val ELECTRICAL_TOOLS_HISTORY = "tools/electrical/history"
@@ -42,6 +48,7 @@ object AppRoutes {
     const val INSPECTION_ID = "inspectionId"
     const val QUOTE_ID = "quoteId"
     const val MATERIAL_LIST_ID = "materialListId"
+    const val RECEIPT_ID = "receiptId"
     const val CALCULATION_ID = "calculationId"
     const val DUPLICATE_ID = "duplicateId"
     const val NOTES = "notes"
@@ -57,6 +64,18 @@ object AppRoutes {
 
     val visitIdArguments = listOf(
         navArgument(VISIT_ID) { type = NavType.StringType },
+    )
+
+    val visitCloseArguments = visitIdArguments
+
+    val receiptIdArguments = listOf(navArgument(RECEIPT_ID) { type = NavType.StringType })
+
+    val serviceReceiptArguments = listOf(optionalStringArgument(CLIENT_ID))
+
+    val registerPaymentArguments = listOf(
+        optionalStringArgument(RECEIPT_ID),
+        optionalStringArgument(CLIENT_ID),
+        optionalStringArgument(VISIT_ID),
     )
 
     val inspectionIdArguments = listOf(
@@ -130,6 +149,16 @@ object AppRoutes {
     fun visitDetail(visitId: String): String = "visits/$visitId"
 
     fun visitEdit(visitId: String): String = "visits/$visitId/edit"
+
+    fun visitClose(visitId: String): String = "visits/$visitId/close"
+
+    fun serviceReceipts(clientId: String? = null): String = "finance/receipts?clientId=${clientId.orEmpty()}"
+
+    fun serviceReceiptDetail(receiptId: String): String = "finance/receipts/$receiptId"
+
+    fun registerPayment(receiptId: String? = null, clientId: String? = null, visitId: String? = null): String {
+        return "finance/payments/new?receiptId=${receiptId.orEmpty()}&clientId=${clientId.orEmpty()}&visitId=${visitId.orEmpty()}"
+    }
 
     fun inspectionOverview(inspectionId: String): String = "inspections/$inspectionId"
 

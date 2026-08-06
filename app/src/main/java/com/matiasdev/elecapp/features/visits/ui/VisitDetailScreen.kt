@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.core.external.calendarInsertIntent
 import com.matiasdev.elecapp.core.external.tryStartActivity
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
+import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
@@ -50,6 +51,7 @@ fun VisitDetailScreen(
     clientRepository: ClientRepository,
     visitRepository: VisitRepository,
     workSessionRepository: VisitWorkSessionRepository,
+    financeRepository: FinanceRepository,
     inspectionRepository: InspectionRepository,
     quoteRepository: QuoteRepository,
     materialRepository: MaterialRepository,
@@ -63,12 +65,16 @@ fun VisitDetailScreen(
     onCreateMaterialClick: (String, String) -> Unit,
     onMaterialClick: (String) -> Unit,
     onElectricalToolsClick: (String, String) -> Unit,
+    onCloseVisitClick: (String) -> Unit,
+    onReceiptClick: (String) -> Unit,
+    onRegisterPaymentClick: (String, String, String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: VisitDetailViewModel = viewModel(
         factory = VisitDetailViewModelFactory(
             clientRepository,
             visitRepository,
             workSessionRepository,
+            financeRepository,
             inspectionRepository,
             quoteRepository,
             materialRepository,
@@ -138,7 +144,9 @@ fun VisitDetailScreen(
             onStartVisitClick = viewModel::requestStartVisit,
             onPauseWorkClick = viewModel::pauseWork,
             onResumeWorkClick = viewModel::resumeWork,
-            onCompleteVisitClick = viewModel::requestCompleteVisit,
+            onCompleteVisitClick = { uiState.visit?.id?.let(onCloseVisitClick) },
+            onReceiptClick = onReceiptClick,
+            onRegisterPaymentClick = onRegisterPaymentClick,
             onEditSessionNotesClick = viewModel::requestEditSessionNotes,
             modifier = Modifier.padding(padding),
         )

@@ -11,9 +11,12 @@ import com.matiasdev.elecapp.features.clients.data.MIGRATION_4_5
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_5_6
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_6_7
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_7_8
+import com.matiasdev.elecapp.features.clients.data.MIGRATION_8_9
 import com.matiasdev.elecapp.features.clients.data.RoomClientRepository
 import com.matiasdev.elecapp.features.electricaltools.data.RoomTechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
+import com.matiasdev.elecapp.features.finance.data.FinanceRepository
+import com.matiasdev.elecapp.features.finance.data.RoomFinanceRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.data.RoomInspectionRepository
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
@@ -44,6 +47,7 @@ class AppContainer(context: Context) {
         MIGRATION_5_6,
         MIGRATION_6_7,
         MIGRATION_7_8,
+        MIGRATION_8_9,
     ).build()
 
     val clientRepository: ClientRepository = RoomClientRepository(
@@ -58,6 +62,18 @@ class AppContainer(context: Context) {
         database = database,
         visitDao = database.visitDao(),
         sessionDao = database.visitWorkSessionDao(),
+    )
+
+    val financeRepository: FinanceRepository = RoomFinanceRepository(
+        database = database,
+        clientDao = database.clientDao(),
+        visitDao = database.visitDao(),
+        sessionDao = database.visitWorkSessionDao(),
+        completionDao = database.visitCompletionDao(),
+        receiptDao = database.serviceReceiptDao(),
+        itemDao = database.serviceReceiptItemDao(),
+        paymentDao = database.paymentDao(),
+        sequenceDao = database.receiptSequenceDao(),
     )
 
     val reminderRepository: VisitReminderRepository = RoomVisitReminderRepository(

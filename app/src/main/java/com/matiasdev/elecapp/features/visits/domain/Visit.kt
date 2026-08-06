@@ -17,4 +17,6 @@ data class Visit(
     val completedAt: Instant? = null,
     val completionNotes: String? = null,
     val pendingWorkNotes: String? = null,
+    val attentionType: String? = null,
+    val parentVisitId: String? = null,
 )

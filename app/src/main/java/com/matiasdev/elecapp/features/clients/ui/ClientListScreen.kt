@@ -1,31 +1,42 @@
 package com.matiasdev.elecapp.features.clients.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -38,6 +49,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.matiasdev.elecapp.core.ui.components.ElecEmptyState
+import com.matiasdev.elecapp.core.ui.components.ElecLoadingState
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.clients.domain.Client
 
@@ -60,7 +73,12 @@ fun ClientListScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Clientes") },
+                title = {
+                    Text(
+                        "Clientes (${uiState.clients.size})",
+                        fontWeight = FontWeight.Bold,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -69,9 +87,12 @@ fun ClientListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onAddClick) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar cliente")
-            }
+            ExtendedFloatingActionButton(
+                onClick = onAddClick,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Nuevo cliente", fontWeight = FontWeight.Bold) },
+                shape = RoundedCornerShape(16.dp),
+            )
         },
     ) { padding ->
         ClientListContent(
@@ -80,6 +101,7 @@ fun ClientListScreen(
             onClientClick = onClientClick,
             onEditClick = onEditClick,
             onDeleteClick = viewModel::askDelete,
+            onAddClick = onAddClick,
             modifier = Modifier.padding(padding),
         )
     }
@@ -87,11 +109,11 @@ fun ClientListScreen(
     uiState.clientPendingDelete?.let { client ->
         AlertDialog(
             onDismissRequest = viewModel::dismissDelete,
-            title = { Text("Eliminar cliente") },
-            text = { Text("¿Querés eliminar a ${client.fullName}?") },
+            title = { Text("Eliminar cliente", fontWeight = FontWeight.Bold) },
+            text = { Text("¿Seguro que querés eliminar a ${client.fullName}? Esta acción no se puede deshacer.") },
             confirmButton = {
                 TextButton(onClick = viewModel::confirmDelete) {
-                    Text("Eliminar")
+                    Text("Eliminar", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -110,6 +132,7 @@ private fun ClientListContent(
     onClientClick: (String) -> Unit,
     onEditClick: (String) -> Unit,
     onDeleteClick: (Client) -> Unit,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -122,18 +145,32 @@ private fun ClientListContent(
             onValueChange = onSearchQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 12.dp),
+                .padding(vertical = 8.dp),
             singleLine = true,
-            label = { Text("Buscar") },
+            placeholder = { Text("Buscar por nombre, teléfono o dirección...") },
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = null)
             },
+            shape = RoundedCornerShape(14.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
+            ),
         )
 
         when {
-            uiState.isLoading -> LoadingState()
-            uiState.errorMessage != null -> MessageState(uiState.errorMessage)
-            uiState.clients.isEmpty() -> MessageState("No hay clientes cargados")
+            uiState.isLoading -> ElecLoadingState("Cargando lista de clientes...")
+            uiState.errorMessage != null -> ElecEmptyState(
+                icon = Icons.Default.Person,
+                title = "Ocurrió un error",
+                description = uiState.errorMessage,
+            )
+            uiState.clients.isEmpty() -> ElecEmptyState(
+                icon = Icons.Default.PersonAdd,
+                title = if (uiState.searchQuery.isNotBlank()) "Sin resultados" else "Sin clientes registrados",
+                description = if (uiState.searchQuery.isNotBlank()) "No se encontraron clientes para '${uiState.searchQuery}'." else "Agregá tu primer cliente para coordinar visitas y presupuestos.",
+                actionLabel = "Agregar cliente",
+                onActionClick = onAddClick,
+            )
             else -> ClientItems(
                 clients = uiState.clients,
                 onClientClick = onClientClick,
@@ -153,62 +190,81 @@ private fun ClientItems(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 88.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 88.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         items(items = clients, key = { it.id }) { client ->
-            ListItem(
-                modifier = Modifier.clickable { onClientClick(client.id) },
-                headlineContent = {
-                    Text(
-                        text = client.fullName,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                supportingContent = {
-                    Text(
-                        text = client.phone,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                trailingContent = {
-                    androidx.compose.foundation.layout.Row {
-                        IconButton(onClick = { onEditClick(client.id) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Editar")
-                        }
-                        IconButton(onClick = { onDeleteClick(client) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+            Card(
+                onClick = { onClientClick(client.id) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(44.dp),
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = client.fullName.take(1).uppercase(),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
                         }
                     }
-                },
-            )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = client.fullName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (client.phone.isNotBlank()) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 2.dp),
+                            ) {
+                                Icon(
+                                    Icons.Default.Phone,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = client.phone,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                        }
+                    }
+                    Row {
+                        IconButton(onClick = { onEditClick(client.id) }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = { onDeleteClick(client) }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error.copy(alpha = 0.8f))
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun MessageState(message: String) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}

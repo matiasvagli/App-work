@@ -18,6 +18,7 @@ import com.matiasdev.elecapp.features.clients.ui.ClientDetailScreen
 import com.matiasdev.elecapp.features.clients.ui.ClientFormDraft
 import com.matiasdev.elecapp.features.clients.ui.ClientFormScreen
 import com.matiasdev.elecapp.features.clients.ui.ClientListScreen
+import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.home.ui.HomeScreen
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
@@ -42,6 +43,20 @@ import com.matiasdev.elecapp.features.visits.ui.ClientVisitsScreen
 import com.matiasdev.elecapp.features.visits.ui.VisitDetailScreen
 import com.matiasdev.elecapp.features.visits.ui.VisitFormScreen
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PointOfSale
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.navigation.compose.currentBackStackEntryAsState
+
 @Composable
 fun ElecNavHost(
     clientRepository: ClientRepository,
@@ -51,6 +66,7 @@ fun ElecNavHost(
     quoteRepository: QuoteRepository,
     materialRepository: MaterialRepository,
     technicalCalculationRepository: TechnicalCalculationRepository,
+    financeRepository: FinanceRepository,
     reminderRepository: VisitReminderRepository,
     settingsRepository: ReminderSettingsRepository,
     reminderCoordinator: ReminderCoordinator,
@@ -60,6 +76,20 @@ fun ElecNavHost(
 ) {
     val navController = rememberNavController()
     val sharedTextHandled = remember { mutableStateOf(false) }
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    val topLevelRoutes = remember {
+        setOf(
+            AppRoutes.HOME,
+            AppRoutes.AGENDA,
+            AppRoutes.CLIENTS,
+            AppRoutes.ELECTRICAL_TOOLS,
+            AppRoutes.FINANCE_DASHBOARD,
+        )
+    }
+    val showBottomBar = currentRoute in topLevelRoutes
 
     LaunchedEffect(initialSharedText) {
         if (!sharedTextHandled.value && !initialSharedText.isNullOrBlank()) {
@@ -79,11 +109,45 @@ fun ElecNavHost(
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = AppRoutes.HOME,
+    Scaffold(
         modifier = modifier,
-    ) {
+        bottomBar = {
+            if (showBottomBar) {
+                NavigationBar {
+                    val items = listOf(
+                        Triple(AppRoutes.HOME, "Inicio", Icons.Default.Home),
+                        Triple(AppRoutes.AGENDA, "Agenda", Icons.Default.CalendarMonth),
+                        Triple(AppRoutes.CLIENTS, "Clientes", Icons.Default.People),
+                        Triple(AppRoutes.ELECTRICAL_TOOLS, "Herramientas", Icons.Default.Bolt),
+                        Triple(AppRoutes.FINANCE_DASHBOARD, "Economía", Icons.Default.PointOfSale),
+                    )
+                    items.forEach { (route, label, icon) ->
+                        val isSelected = currentRoute == route
+                        NavigationBarItem(
+                            selected = isSelected,
+                            onClick = {
+                                if (currentRoute != route) {
+                                    navController.navigate(route) {
+                                        popUpTo(AppRoutes.HOME) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            },
+                            icon = { Icon(icon, contentDescription = label) },
+                            label = { Text(label) },
+                        )
+                    }
+                }
+            }
+        },
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = AppRoutes.HOME,
+            modifier = Modifier.padding(innerPadding),
+        ) {
+
         composable(AppRoutes.HOME) {
             HomeScreen(
                 clientRepository = clientRepository,
@@ -93,6 +157,8 @@ fun ElecNavHost(
                 quoteRepository = quoteRepository,
                 materialRepository = materialRepository,
                 onElectricalToolsClick = { navController.navigateSingleTop(AppRoutes.ELECTRICAL_TOOLS) },
+                onQuickVisitClick = { navController.navigate(AppRoutes.QUICK_VISIT) },
+                onFinanceClick = { navController.navigateSingleTop(AppRoutes.FINANCE_DASHBOARD) },
                 onClientsClick = { navController.navigateSingleTop(AppRoutes.CLIENTS) },
                 onAgendaClick = { navController.navigateSingleTop(AppRoutes.AGENDA) },
                 onInspectionsClick = { navController.navigateSingleTop(AppRoutes.INSPECTIONS) },
@@ -123,6 +189,7 @@ fun ElecNavHost(
         }
         electricalToolsRoutes(navController, clientRepository, visitRepository, inspectionRepository, technicalCalculationRepository)
         documentRoutes(navController, clientRepository, visitRepository, inspectionRepository, quoteRepository, materialRepository)
+        financeRoutes(navController, clientRepository, visitRepository, workSessionRepository, financeRepository)
         composable(AppRoutes.SETTINGS) {
             SettingsScreen(
                 repository = settingsRepository,
@@ -189,11 +256,14 @@ fun ElecNavHost(
             ClientDetailScreen(
                 clientRepository = clientRepository,
                 visitRepository = visitRepository,
+                financeRepository = financeRepository,
                 clientId = clientId,
                 onBackClick = { navController.navigateUp() },
                 onEditClick = { navController.navigate(AppRoutes.clientEdit(it)) },
                 onScheduleVisitClick = { navController.navigate(AppRoutes.visitCreate(it)) },
                 onViewVisitsClick = { navController.navigate(AppRoutes.clientVisits(it)) },
+                onViewReceiptsClick = { navController.navigate(AppRoutes.serviceReceipts(it)) },
+                onRegisterPaymentClick = { navController.navigate(AppRoutes.registerPayment(clientId = it)) },
                 onCreateQuoteClick = { navController.navigate(AppRoutes.quoteCreate(clientId = it)) },
                 onCreateMaterialClick = { navController.navigate(AppRoutes.materialCreate(clientId = it)) },
                 onVisitClick = { navController.navigateSingleTop(AppRoutes.visitDetail(it)) },
@@ -249,6 +319,7 @@ fun ElecNavHost(
                 clientRepository = clientRepository,
                 visitRepository = visitRepository,
                 workSessionRepository = workSessionRepository,
+                financeRepository = financeRepository,
                 inspectionRepository = inspectionRepository,
                 quoteRepository = quoteRepository,
                 materialRepository = materialRepository,
@@ -267,6 +338,11 @@ fun ElecNavHost(
                 onMaterialClick = { navController.navigateSingleTop(AppRoutes.materialDetail(it)) },
                 onElectricalToolsClick = { visitId, clientId ->
                     navController.navigateSingleTop(AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId))
+                },
+                onCloseVisitClick = { navController.navigate(AppRoutes.visitClose(it)) },
+                onReceiptClick = { navController.navigateSingleTop(AppRoutes.serviceReceiptDetail(it)) },
+                onRegisterPaymentClick = { receiptId, clientId, linkedVisitId ->
+                    navController.navigate(AppRoutes.registerPayment(receiptId, clientId, linkedVisitId))
                 },
             )
         }
@@ -344,6 +420,8 @@ fun ElecNavHost(
         }
     }
 }
+}
+
 
 private fun androidx.navigation.NavBackStackEntry.inspectionId(): String {
     return arguments?.getString(AppRoutes.INSPECTION_ID).orEmpty()

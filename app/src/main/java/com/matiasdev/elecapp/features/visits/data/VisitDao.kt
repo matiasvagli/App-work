@@ -73,6 +73,16 @@ interface VisitDao {
     )
     suspend fun findFutureSchedulable(fromMillis: Long): List<VisitEntity>
 
+    @Query(
+        """
+        SELECT * FROM visits
+        WHERE is_deleted = 0 AND status = 'COMPLETED'
+            AND completed_at >= :startMillis AND completed_at < :endMillis
+        ORDER BY completed_at DESC
+        """,
+    )
+    suspend fun findCompletedInRange(startMillis: Long, endMillis: Long): List<VisitEntity>
+
     @Upsert
     suspend fun upsert(visit: VisitEntity)
 

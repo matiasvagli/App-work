@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
                         quoteRepository = appContainer.quoteRepository,
                         materialRepository = appContainer.materialRepository,
                         technicalCalculationRepository = appContainer.technicalCalculationRepository,
+                        financeRepository = appContainer.financeRepository,
                         reminderRepository = appContainer.reminderRepository,
                         settingsRepository = appContainer.reminderSettingsRepository,
                         reminderCoordinator = appContainer.reminderCoordinator,

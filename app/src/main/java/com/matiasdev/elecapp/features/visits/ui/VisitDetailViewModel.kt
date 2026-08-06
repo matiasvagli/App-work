@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.matiasdev.elecapp.core.time.SystemTimeProvider
 import com.matiasdev.elecapp.core.time.TimeProvider
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
+import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
@@ -23,20 +24,25 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class VisitDetailViewModel(
     private val clientRepository: ClientRepository,
     private val visitRepository: VisitRepository,
     private val workSessionRepository: VisitWorkSessionRepository,
+    private val financeRepository: FinanceRepository,
     private val inspectionRepository: InspectionRepository,
     private val quoteRepository: QuoteRepository,
     private val materialRepository: MaterialRepository,
@@ -83,6 +89,21 @@ class VisitDetailViewModel(
         viewModelScope.launch(ioDispatcher) {
             materialRepository.observeLatestForVisit(visitId)
                 .collect { materialList -> _uiState.update { it.copy(materialList = materialList) } }
+        }
+        viewModelScope.launch(ioDispatcher) {
+            financeRepository.observeVisitCompletion(visitId).collect { completion ->
+                _uiState.update { it.copy(completion = completion) }
+            }
+        }
+        viewModelScope.launch(ioDispatcher) {
+            financeRepository.observeReceiptByVisitId(visitId).collect { receipt ->
+                _uiState.update { it.copy(receipt = receipt) }
+            }
+        }
+        viewModelScope.launch(ioDispatcher) {
+            financeRepository.observeReceiptByVisitId(visitId)
+                .flatMapLatest { receipt -> receipt?.let { financeRepository.observePayments(it.id) } ?: flowOf(emptyList()) }
+                .collect { payments -> _uiState.update { it.copy(payments = payments) } }
         }
     }
 
@@ -330,6 +351,7 @@ class VisitDetailViewModelFactory(
     private val clientRepository: ClientRepository,
     private val visitRepository: VisitRepository,
     private val workSessionRepository: VisitWorkSessionRepository,
+    private val financeRepository: FinanceRepository,
     private val inspectionRepository: InspectionRepository,
     private val quoteRepository: QuoteRepository,
     private val materialRepository: MaterialRepository,
@@ -342,6 +364,7 @@ class VisitDetailViewModelFactory(
             clientRepository,
             visitRepository,
             workSessionRepository,
+            financeRepository,
             inspectionRepository,
             quoteRepository,
             materialRepository,

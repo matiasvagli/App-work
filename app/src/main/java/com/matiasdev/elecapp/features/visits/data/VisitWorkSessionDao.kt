@@ -49,6 +49,15 @@ interface VisitWorkSessionDao {
     @Query(
         """
         SELECT * FROM visit_work_sessions
+        WHERE status = 'RUNNING' AND is_deleted = 0
+        ORDER BY started_at DESC
+        """,
+    )
+    suspend fun getAllActive(): List<VisitWorkSessionEntity>
+
+    @Query(
+        """
+        SELECT * FROM visit_work_sessions
         WHERE visit_id = :visitId AND is_deleted = 0
         ORDER BY started_at ASC
         """,
