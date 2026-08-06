@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -35,6 +36,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -44,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.R
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalMeasurementReviewItem
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
@@ -63,6 +67,7 @@ fun InspectionOverviewScreen(
     inspectionRepository: InspectionRepository,
     visitRepository: VisitRepository,
     technicalCalculationRepository: TechnicalCalculationRepository,
+    electricalRuleConfigRepository: ElectricalRuleConfigRepository,
     inspectionId: String,
     onBackClick: () -> Unit,
     onSectionClick: (InspectionSection) -> Unit,
@@ -77,6 +82,7 @@ fun InspectionOverviewScreen(
             visitRepository = visitRepository,
             inspectionId = inspectionId,
             technicalCalculationRepository = technicalCalculationRepository,
+            electricalRuleConfigRepository = electricalRuleConfigRepository,
         ),
     ),
 ) {
@@ -137,6 +143,7 @@ fun InspectionOverviewScreen(
                 if (visit != null) onAddCalculationClick(visit.clientId, visit.id, inspectionId)
             },
             onCalculationClick = onCalculationClick,
+            onToggleMeasurementReview = viewModel::toggleMeasurementReview,
             modifier = Modifier.padding(padding),
         )
     }
@@ -187,6 +194,7 @@ private fun InspectionOverviewContent(
     onCreateMaterialClick: () -> Unit,
     onAddCalculationClick: () -> Unit,
     onCalculationClick: (String) -> Unit,
+    onToggleMeasurementReview: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val aggregate = uiState.aggregate
@@ -202,6 +210,7 @@ private fun InspectionOverviewContent(
             uiState.visit?.let { Text("Visita: ${it.scheduledAt.formatVisitDateTime()}") }
             Text("${stringResource(R.string.inspection_scope_header_label)}: ${aggregate.inspection.scope.label()}")
             Text("Estado: ${aggregate.inspection.status.label()}", fontWeight = FontWeight.Bold)
+            MeasurementReviewBlock(uiState, onToggleMeasurementReview)
             ProgressBlock(uiState)
             if (aggregate.inspection.scope == InspectionScope.VISUAL_INSPECTION) {
                 uiState.progress?.sections.orEmpty().forEach { section ->
@@ -237,6 +246,36 @@ private fun InspectionOverviewContent(
                 Button(onClick = onCompleteClick, modifier = Modifier.fillMaxWidth()) { Text("Finalizar relevamiento") }
             }
         }
+    }
+}
+
+@Composable
+private fun MeasurementReviewBlock(
+    uiState: InspectionOverviewUiState,
+    onToggleMeasurementReview: () -> Unit,
+) {
+    val summary = uiState.measurementReviewSummary
+    if (!summary.hasAnomalies) return
+    Card(onClick = onToggleMeasurementReview, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.WarningAmber, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                Text(summary.indicatorText, fontWeight = FontWeight.SemiBold)
+            }
+            if (uiState.measurementReviewExpanded) {
+                summary.items.forEach { item -> MeasurementReviewItemRow(item) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MeasurementReviewItemRow(item: ElectricalMeasurementReviewItem) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(item.title, fontWeight = FontWeight.SemiBold)
+        Text("Medido: ${item.measuredValue.formatRuleNumber()} ${item.unit}")
+        Text("Rango configurado: ${item.minimumAllowed.formatOptionalRuleNumber()} - ${item.maximumAllowed.formatOptionalRuleNumber()} ${item.unit}")
+        Text(item.reason, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -307,6 +346,14 @@ private fun SummaryActions(onCopySummary: () -> Unit, onShareSummary: () -> Unit
         Icon(Icons.Default.Share, contentDescription = null)
         Text("Enviar informe", modifier = Modifier.padding(start = 8.dp))
     }
+}
+
+private fun Double.formatRuleNumber(): String {
+    return if (this % 1.0 == 0.0) toInt().toString() else String.format(java.util.Locale.US, "%.2f", this).trimEnd('0').trimEnd('.')
+}
+
+private fun Double?.formatOptionalRuleNumber(): String {
+    return this?.formatRuleNumber() ?: "sin límite"
 }
 
 private fun Context.sharePlainText(text: String) {

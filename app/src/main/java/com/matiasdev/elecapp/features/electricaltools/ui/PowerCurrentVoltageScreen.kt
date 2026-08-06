@@ -37,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.core.ui.theme.ElecAppTheme
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.domain.CalculationSource
 import com.matiasdev.elecapp.features.electricaltools.domain.ElectricalSystemType
@@ -54,6 +55,7 @@ fun PowerCurrentVoltageScreen(
     clientRepository: ClientRepository,
     visitRepository: VisitRepository,
     inspectionRepository: InspectionRepository,
+    electricalRuleConfigRepository: ElectricalRuleConfigRepository,
     clientId: String?,
     visitId: String?,
     inspectionId: String?,
@@ -61,7 +63,17 @@ fun PowerCurrentVoltageScreen(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PowerCurrentVoltageViewModel = viewModel(
-        factory = PowerCurrentVoltageViewModelFactory(repository, clientRepository, visitRepository, inspectionRepository, clientId, visitId, inspectionId, duplicateId),
+        factory = PowerCurrentVoltageViewModelFactory(
+            repository,
+            clientRepository,
+            visitRepository,
+            inspectionRepository,
+            clientId,
+            visitId,
+            inspectionId,
+            duplicateId,
+            electricalRuleConfigRepository,
+        ),
     ),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()

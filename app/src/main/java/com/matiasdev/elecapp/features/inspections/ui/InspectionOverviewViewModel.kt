@@ -3,6 +3,12 @@ package com.matiasdev.elecapp.features.inspections.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.matiasdev.elecapp.features.electricalrules.domain.DefaultElectricalRuleConfigs
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalMeasurementReviewEvaluator
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleCode
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfig
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
+import com.matiasdev.elecapp.features.electricalrules.domain.EvaluateSupplyVoltageUseCase
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationFilters
 import com.matiasdev.elecapp.features.electricaltools.domain.CalculationSource
@@ -33,6 +39,7 @@ class InspectionOverviewViewModel(
     private val inspectionId: String,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val technicalCalculationRepository: TechnicalCalculationRepository = EmptyTechnicalCalculationRepository,
+    private val electricalRuleConfigRepository: ElectricalRuleConfigRepository = DefaultElectricalRuleConfigRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(InspectionOverviewUiState())
     val uiState: StateFlow<InspectionOverviewUiState> = _uiState.asStateFlow()
@@ -48,12 +55,22 @@ class InspectionOverviewViewModel(
                 }
                 .collect { (aggregate, calculations) ->
                     val visit = aggregate?.inspection?.visitId?.let { visitRepository.findActiveById(it) }
+                    val measurementReviewSummary = ElectricalMeasurementReviewEvaluator.evaluateSupplyVoltage(
+                        calculations = calculations,
+                        useCase = EvaluateSupplyVoltageUseCase(electricalRuleConfigRepository),
+                    )
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             aggregate = aggregate,
                             visit = visit,
                             calculations = calculations,
+                            measurementReviewSummary = measurementReviewSummary,
+                            measurementReviewExpanded = if (measurementReviewSummary.hasAnomalies) {
+                                it.measurementReviewExpanded
+                            } else {
+                                false
+                            },
                             progress = aggregate?.let(InspectionProgressCalculator::calculate),
                             errorMessage = if (aggregate == null) "Relevamiento no encontrado" else null,
                         )
@@ -118,6 +135,10 @@ class InspectionOverviewViewModel(
         _uiState.update { it.copy(snackbarMessage = null) }
     }
 
+    fun toggleMeasurementReview() {
+        _uiState.update { it.copy(measurementReviewExpanded = !it.measurementReviewExpanded) }
+    }
+
     fun notifySummaryCopied() {
         _uiState.update {
             it.copy(snackbarMessage = "Informe copiado")
@@ -130,6 +151,7 @@ class InspectionOverviewViewModelFactory(
     private val visitRepository: VisitRepository,
     private val inspectionId: String,
     private val technicalCalculationRepository: TechnicalCalculationRepository = EmptyTechnicalCalculationRepository,
+    private val electricalRuleConfigRepository: ElectricalRuleConfigRepository = DefaultElectricalRuleConfigRepository,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -138,8 +160,18 @@ class InspectionOverviewViewModelFactory(
             visitRepository = visitRepository,
             inspectionId = inspectionId,
             technicalCalculationRepository = technicalCalculationRepository,
+            electricalRuleConfigRepository = electricalRuleConfigRepository,
         ) as T
     }
+}
+
+private object DefaultElectricalRuleConfigRepository : ElectricalRuleConfigRepository {
+    override fun observeAll() = flowOf(DefaultElectricalRuleConfigs.all)
+    override fun observeByCode(code: ElectricalRuleCode) = flowOf(DefaultElectricalRuleConfigs.all.firstOrNull { it.code == code })
+    override suspend fun getByCode(code: ElectricalRuleCode): ElectricalRuleConfig? = DefaultElectricalRuleConfigs.all.firstOrNull { it.code == code }
+    override suspend fun save(config: ElectricalRuleConfig) = Unit
+    override suspend fun saveAll(configs: List<ElectricalRuleConfig>) = Unit
+    override suspend fun restoreDefaults() = Unit
 }
 
 private object EmptyTechnicalCalculationRepository : TechnicalCalculationRepository {

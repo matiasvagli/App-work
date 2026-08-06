@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalMeasurementReviewEvaluator
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
+import com.matiasdev.elecapp.features.electricalrules.domain.EvaluateSupplyVoltageUseCase
 import com.matiasdev.elecapp.features.electricaltools.calculators.PowerCurrentVoltageCalculator
 import com.matiasdev.elecapp.features.electricaltools.data.CalculationJson
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
@@ -49,6 +52,7 @@ class PowerCurrentVoltageViewModel(
     private val clientRepository: ClientRepository,
     private val visitRepository: VisitRepository,
     private val inspectionRepository: InspectionRepository,
+    private val electricalRuleConfigRepository: ElectricalRuleConfigRepository,
     initialClientId: String?,
     initialVisitId: String?,
     initialInspectionId: String?,
@@ -84,6 +88,10 @@ class PowerCurrentVoltageViewModel(
         viewModelScope.launch(ioDispatcher) {
             val calculation = buildPowerCalculation(state.savedCalculationId, state.toInput(), result, state.association)
             repository.save(calculation)
+            ElectricalMeasurementReviewEvaluator.evaluateSupplyVoltage(
+                calculation = calculation,
+                useCase = EvaluateSupplyVoltageUseCase(electricalRuleConfigRepository),
+            )
             _uiState.update { it.copy(savedCalculationId = calculation.id, snackbarMessage = "Cálculo guardado") }
         }
     }
@@ -171,9 +179,20 @@ class PowerCurrentVoltageViewModelFactory(
     private val visitId: String?,
     private val inspectionId: String?,
     private val duplicateId: String?,
+    private val electricalRuleConfigRepository: ElectricalRuleConfigRepository,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return PowerCurrentVoltageViewModel(repository, clientRepository, visitRepository, inspectionRepository, clientId, visitId, inspectionId, duplicateId) as T
+        return PowerCurrentVoltageViewModel(
+            repository,
+            clientRepository,
+            visitRepository,
+            inspectionRepository,
+            electricalRuleConfigRepository,
+            clientId,
+            visitId,
+            inspectionId,
+            duplicateId,
+        ) as T
     }
 }

@@ -5,6 +5,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.ui.ElectricalToolsHistoryScreen
 import com.matiasdev.elecapp.features.electricaltools.ui.ElectricalToolsHomeScreen
@@ -20,6 +21,7 @@ fun NavGraphBuilder.electricalToolsRoutes(
     visitRepository: VisitRepository,
     inspectionRepository: InspectionRepository,
     technicalCalculationRepository: TechnicalCalculationRepository,
+    electricalRuleConfigRepository: ElectricalRuleConfigRepository,
 ) {
     composable(AppRoutes.ELECTRICAL_TOOLS) {
         ElectricalToolsHomeScreen(
@@ -44,6 +46,7 @@ fun NavGraphBuilder.electricalToolsRoutes(
             clientRepository = clientRepository,
             visitRepository = visitRepository,
             inspectionRepository = inspectionRepository,
+            electricalRuleConfigRepository = electricalRuleConfigRepository,
             clientId = backStackEntry.optionalArg(AppRoutes.CLIENT_ID),
             visitId = backStackEntry.optionalArg(AppRoutes.VISIT_ID),
             inspectionId = backStackEntry.optionalArg(AppRoutes.INSPECTION_ID),

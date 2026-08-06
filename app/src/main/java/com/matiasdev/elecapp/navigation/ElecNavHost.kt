@@ -197,7 +197,14 @@ fun ElecNavHost(
                 onInspectionClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(it)) },
             )
         }
-        electricalToolsRoutes(navController, clientRepository, visitRepository, inspectionRepository, technicalCalculationRepository)
+        electricalToolsRoutes(
+            navController,
+            clientRepository,
+            visitRepository,
+            inspectionRepository,
+            technicalCalculationRepository,
+            electricalRuleConfigRepository,
+        )
         documentRoutes(navController, clientRepository, visitRepository, inspectionRepository, quoteRepository, materialRepository)
         financeRoutes(navController, clientRepository, visitRepository, workSessionRepository, financeRepository)
         composable(AppRoutes.SETTINGS) {
@@ -423,6 +430,7 @@ fun ElecNavHost(
                 inspectionRepository = inspectionRepository,
                 visitRepository = visitRepository,
                 technicalCalculationRepository = technicalCalculationRepository,
+                electricalRuleConfigRepository = electricalRuleConfigRepository,
                 inspectionId = inspectionId,
                 onBackClick = { navController.navigateUp() },
                 onSectionClick = { section ->

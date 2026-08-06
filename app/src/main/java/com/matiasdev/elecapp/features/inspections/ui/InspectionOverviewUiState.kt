@@ -1,5 +1,6 @@
 package com.matiasdev.elecapp.features.inspections.ui
 
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalMeasurementReviewSummary
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionProgress
@@ -10,6 +11,8 @@ data class InspectionOverviewUiState(
     val aggregate: InspectionAggregate? = null,
     val visit: Visit? = null,
     val calculations: List<TechnicalCalculation> = emptyList(),
+    val measurementReviewSummary: ElectricalMeasurementReviewSummary = ElectricalMeasurementReviewSummary(),
+    val measurementReviewExpanded: Boolean = false,
     val progress: InspectionProgress? = null,
     val errorMessage: String? = null,
     val snackbarMessage: String? = null,
