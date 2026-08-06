@@ -3,4 +3,16 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowNoTitle">true</item>
     </style>
+
+    <!-- Tema de inicio para la Splash Screen nativa (API 31+) -->
+    <style name="Theme.ElecApp.Starting" parent="Theme.SplashScreen">
+        <!-- Fondo de la splash screen -->
+        <item name="windowSplashScreenBackground">#1E2022</item>
+
+        <!-- Logo central de la app -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_elecapp_logo</item>
+
+        <!-- Tema al que cambia una vez cargada la app -->
+        <item name="postSplashScreenTheme">@style/Theme.ElecApp</item>
+    </style>
 </resources>

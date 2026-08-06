@@ -5,11 +5,14 @@
     <application
         android:name=".ElecApplication"
         android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:theme="@style/Theme.ElecApp">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Theme.ElecApp.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

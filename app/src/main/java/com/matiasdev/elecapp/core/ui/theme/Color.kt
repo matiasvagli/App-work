@@ -3,6 +3,12 @@ package com.matiasdev.elecapp.core.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Brand Colors
+val ElectricYellow = Color(0xFFFFD600)
+val ElectricYellowDark = Color(0xFFFFAB00)
+val IndustrialBlue = Color(0xFF0D47A1)
+val IndustrialBlueLight = Color(0xFF0052CC)
+val PanelDark = Color(0xFF1E2022)
+
 val CircuitGreen = Color(0xFF006C4C)
 val CircuitGreenDark = Color(0xFF6CDBAC)
 val Copper = Color(0xFFB45F2A)
