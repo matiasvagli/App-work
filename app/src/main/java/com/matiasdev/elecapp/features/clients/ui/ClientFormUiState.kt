@@ -14,6 +14,7 @@ data class ClientFormUiState(
     val phoneError: String? = null,
     val errorMessage: String? = null,
     val successMessage: String? = null,
+    val phoneChoices: List<String> = emptyList(),
     val saved: Boolean = false,
     val savedClientId: String? = null,
 )
@@ -21,6 +22,7 @@ data class ClientFormUiState(
 data class ClientFormDraft(
     val fullName: String = "",
     val phone: String = "",
+    val phoneChoices: List<String> = emptyList(),
     val email: String = "",
     val address: String = "",
     val locality: String = "",

@@ -1,5 +1,6 @@
 package com.matiasdev.elecapp.navigation
 
+import android.net.Uri
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
@@ -23,7 +24,7 @@ object AppRoutes {
     const val ELECTRICAL_TOOLS_VOLTAGE_DROP = "tools/electrical/voltage-drop?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}&duplicateId={duplicateId}"
     const val ELECTRICAL_TOOLS_HISTORY = "tools/electrical/history"
     const val TECHNICAL_CALCULATION_DETAIL = "tools/electrical/calculations/{calculationId}"
-    const val CLIENT_CREATE = "clients/new?notes={notes}&phone={phone}&source={source}"
+    const val CLIENT_CREATE = "clients/new?fullName={fullName}&phone={phone}&phones={phones}&email={email}&notes={notes}&source={source}"
     const val CLIENT_DETAIL = "clients/{clientId}"
     const val CLIENT_EDIT = "clients/{clientId}/edit"
     const val CLIENT_VISITS = "clients/{clientId}/visits"
@@ -56,6 +57,9 @@ object AppRoutes {
     const val DUPLICATE_ID = "duplicateId"
     const val NOTES = "notes"
     const val PHONE = "phone"
+    const val PHONES = "phones"
+    const val FULL_NAME = "fullName"
+    const val EMAIL = "email"
     const val SOURCE = "source"
     const val SOURCE_VISIT = "visit"
     const val SOURCE_SHARED_TEXT = "shared_text"
@@ -92,12 +96,27 @@ object AppRoutes {
     val technicalCalculationIdArguments = listOf(navArgument(CALCULATION_ID) { type = NavType.StringType })
 
     val clientCreateArguments = listOf(
-        navArgument(NOTES) {
+        navArgument(FULL_NAME) {
             type = NavType.StringType
             nullable = true
             defaultValue = null
         },
         navArgument(PHONE) {
+            type = NavType.StringType
+            nullable = true
+            defaultValue = null
+        },
+        navArgument(PHONES) {
+            type = NavType.StringType
+            nullable = true
+            defaultValue = null
+        },
+        navArgument(EMAIL) {
+            type = NavType.StringType
+            nullable = true
+            defaultValue = null
+        },
+        navArgument(NOTES) {
             type = NavType.StringType
             nullable = true
             defaultValue = null
@@ -137,8 +156,15 @@ object AppRoutes {
         optionalStringArgument(DUPLICATE_ID),
     )
 
-    fun clientCreate(notes: String? = null, phone: String? = null, source: String? = null): String {
-        return "clients/new?notes=${notes.orEmpty()}&phone=${phone.orEmpty()}&source=${source.orEmpty()}"
+    fun clientCreate(
+        fullName: String? = null,
+        phone: String? = null,
+        phones: String? = null,
+        email: String? = null,
+        notes: String? = null,
+        source: String? = null,
+    ): String {
+        return "clients/new?fullName=${fullName.encoded()}&phone=${phone.encoded()}&phones=${phones.encoded()}&email=${email.encoded()}&notes=${notes.encoded()}&source=${source.encoded()}"
     }
 
     fun clientDetail(clientId: String): String = "clients/$clientId"
@@ -219,4 +245,6 @@ object AppRoutes {
         nullable = true
         defaultValue = null
     }
+
+    private fun String?.encoded(): String = Uri.encode(orEmpty())
 }

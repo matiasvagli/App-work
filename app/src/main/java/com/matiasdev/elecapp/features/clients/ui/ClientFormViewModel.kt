@@ -3,6 +3,7 @@ package com.matiasdev.elecapp.features.clients.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.matiasdev.elecapp.core.external.ImportedContact
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.clients.domain.Client
 import com.matiasdev.elecapp.features.clients.domain.ClientValidator
@@ -26,11 +27,12 @@ class ClientFormViewModel(
         ClientFormUiState(
             id = clientId,
             fullName = initialDraft.fullName,
-            phone = initialDraft.phone,
+            phone = initialDraft.phone.ifBlank { initialDraft.phoneChoices.singleOrNull().orEmpty() },
             email = initialDraft.email,
             address = initialDraft.address,
             locality = initialDraft.locality,
             notes = initialDraft.notes,
+            phoneChoices = if (initialDraft.phone.isBlank() && initialDraft.phoneChoices.size > 1) initialDraft.phoneChoices else emptyList(),
             isLoading = clientId != null,
         ),
     )
@@ -68,19 +70,57 @@ class ClientFormViewModel(
         _uiState.update { it.copy(notes = value) }
     }
 
-    fun applyImportedContact(contact: com.matiasdev.elecapp.core.external.ImportedContact) {
+    fun applyImportedContact(contact: ImportedContact) {
+        val normalizedPhones = contact.phones.distinct().filter(String::isNotBlank)
         _uiState.update {
             it.copy(
                 fullName = contact.fullName.ifBlank { it.fullName },
-                phone = contact.phone.ifBlank { it.phone },
+                phone = if (normalizedPhones.size == 1) normalizedPhones.first() else it.phone,
                 email = contact.email.ifBlank { it.email },
+                phoneChoices = if (normalizedPhones.size > 1) normalizedPhones else emptyList(),
+                errorMessage = if (normalizedPhones.isEmpty()) {
+                    "El contacto no tiene teléfono. Podés completarlo manualmente."
+                } else {
+                    null
+                },
                 successMessage = "Contacto importado. Revisá los datos antes de guardar.",
             )
         }
     }
 
+    fun selectImportedPhone(phone: String) {
+        _uiState.update {
+            it.copy(
+                phone = phone,
+                phoneChoices = emptyList(),
+                phoneError = null,
+                successMessage = "Teléfono importado. Revisá los datos antes de guardar.",
+            )
+        }
+    }
+
+    fun dismissPhoneChoices() {
+        _uiState.update { it.copy(phoneChoices = emptyList()) }
+    }
+
     fun showMessage(message: String) {
         _uiState.update { it.copy(errorMessage = message) }
+    }
+
+    fun onContactSelectionCancelled() {
+        showMessage("Selección de contacto cancelada.")
+    }
+
+    fun onContactReadFailed() {
+        showMessage("No se pudo leer el contacto seleccionado.")
+    }
+
+    fun onVCardSelectionCancelled() {
+        showMessage("Selección de archivo cancelada.")
+    }
+
+    fun onVCardReadFailed() {
+        showMessage("No se pudo importar la vCard seleccionada.")
     }
 
     fun save() {

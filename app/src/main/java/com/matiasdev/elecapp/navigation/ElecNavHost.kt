@@ -6,11 +6,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import android.net.Uri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.matiasdev.elecapp.core.external.SharedClientDraft
 import com.matiasdev.elecapp.features.agenda.ui.AgendaScreen
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
@@ -75,12 +75,12 @@ fun ElecNavHost(
     settingsRepository: ReminderSettingsRepository,
     electricalRuleConfigRepository: ElectricalRuleConfigRepository,
     reminderCoordinator: ReminderCoordinator,
-    initialSharedText: String? = null,
+    initialSharedClientDraft: SharedClientDraft? = null,
     initialVisitId: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val navController = rememberNavController()
-    val sharedTextHandled = remember { mutableStateOf(false) }
+    val sharedClientDraftHandled = remember { mutableStateOf(false) }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -96,12 +96,17 @@ fun ElecNavHost(
     }
     val showBottomBar = currentRoute in topLevelRoutes
 
-    LaunchedEffect(initialSharedText) {
-        if (!sharedTextHandled.value && !initialSharedText.isNullOrBlank()) {
-            sharedTextHandled.value = true
+    LaunchedEffect(initialSharedClientDraft) {
+        val draft = initialSharedClientDraft
+        if (!sharedClientDraftHandled.value && draft != null) {
+            sharedClientDraftHandled.value = true
             navController.navigate(
                 AppRoutes.clientCreate(
-                    notes = Uri.encode(initialSharedText),
+                    fullName = draft.fullName,
+                    phone = draft.phones.singleOrNull().orEmpty(),
+                    phones = draft.phones.takeIf { it.size > 1 }?.joinToString("\n"),
+                    email = draft.email,
+                    notes = draft.notes,
                     source = AppRoutes.SOURCE_SHARED_TEXT,
                 ),
             )
@@ -221,8 +226,17 @@ fun ElecNavHost(
             route = AppRoutes.CLIENT_CREATE,
             arguments = AppRoutes.clientCreateArguments,
         ) { backStackEntry ->
+            val fullName = backStackEntry.arguments?.getString(AppRoutes.FULL_NAME)?.takeIf { it.isNotBlank() }
             val notes = backStackEntry.arguments?.getString(AppRoutes.NOTES)?.takeIf { it.isNotBlank() }
             val phone = backStackEntry.arguments?.getString(AppRoutes.PHONE)?.takeIf { it.isNotBlank() }
+            val phones = backStackEntry.arguments?.getString(AppRoutes.PHONES)
+                ?.takeIf { it.isNotBlank() }
+                ?.lineSequence()
+                ?.map(String::trim)
+                ?.filter(String::isNotBlank)
+                ?.toList()
+                .orEmpty()
+            val email = backStackEntry.arguments?.getString(AppRoutes.EMAIL)?.takeIf { it.isNotBlank() }
             val source = backStackEntry.arguments?.getString(AppRoutes.SOURCE)?.takeIf { it.isNotBlank() }
             val fromVisit = source == AppRoutes.SOURCE_VISIT
             val fromSharedText = source == AppRoutes.SOURCE_SHARED_TEXT
@@ -230,7 +244,10 @@ fun ElecNavHost(
                 repository = clientRepository,
                 clientId = null,
                 initialDraft = ClientFormDraft(
+                    fullName = fullName.orEmpty(),
                     phone = phone.orEmpty(),
+                    phoneChoices = phones,
+                    email = email.orEmpty(),
                     notes = notes.orEmpty(),
                 ),
                 onBackClick = { navController.navigateUp() },

@@ -13,8 +13,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContactPhone
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +29,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.matiasdev.elecapp.core.external.readImportedVCard
 import com.matiasdev.elecapp.core.external.readImportedContact
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import kotlinx.coroutines.Dispatchers
@@ -70,21 +74,33 @@ fun ClientFormScreen(
     val contactLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickContact(),
     ) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
+        if (uri == null) {
+            viewModel.onContactSelectionCancelled()
+            return@rememberLauncherForActivityResult
+        }
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 readImportedContact(context.contentResolver, uri)
             }
             result
-                .onSuccess { contact ->
-                    if (contact.phone.isBlank()) {
-                        viewModel.showMessage("El contacto no tiene teléfono. Podés completarlo manualmente.")
-                    }
-                    viewModel.applyImportedContact(contact)
-                }
-                .onFailure {
-                    viewModel.showMessage("No se pudo importar el contacto")
-                }
+                .onSuccess(viewModel::applyImportedContact)
+                .onFailure { viewModel.onContactReadFailed() }
+        }
+    }
+    val vCardLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri == null) {
+            viewModel.onVCardSelectionCancelled()
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                readImportedVCard(context.contentResolver, uri)
+            }
+            result
+                .onSuccess(viewModel::applyImportedContact)
+                .onFailure { viewModel.onVCardReadFailed() }
         }
     }
 
@@ -117,6 +133,15 @@ fun ClientFormScreen(
                         IconButton(onClick = { contactLauncher.launch(null) }) {
                             Icon(Icons.Default.ContactPhone, contentDescription = "Importar desde contactos")
                         }
+                        IconButton(
+                            onClick = {
+                                vCardLauncher.launch(
+                                    arrayOf("text/x-vcard", "text/vcard", "text/directory", "text/plain", "application/octet-stream", "*/*"),
+                                )
+                            },
+                        ) {
+                            Icon(Icons.Default.AttachFile, contentDescription = "Importar archivo vCard")
+                        }
                     }
                 },
             )
@@ -148,6 +173,28 @@ fun ClientFormScreen(
                 modifier = Modifier.padding(padding),
             )
         }
+    }
+
+    if (uiState.phoneChoices.isNotEmpty()) {
+        AlertDialog(
+            onDismissRequest = viewModel::dismissPhoneChoices,
+            title = { Text("Elegí un teléfono") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    uiState.phoneChoices.forEach { phone ->
+                        TextButton(onClick = { viewModel.selectImportedPhone(phone) }) {
+                            Text(phone)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissPhoneChoices) {
+                    Text("Cancelar")
+                }
+            },
+        )
     }
 }
 
