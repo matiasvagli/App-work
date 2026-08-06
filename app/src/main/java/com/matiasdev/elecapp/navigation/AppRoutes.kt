@@ -7,6 +7,7 @@ object AppRoutes {
     const val HOME = "home"
     const val AGENDA = "agenda"
     const val SETTINGS = "settings"
+    const val ELECTRICAL_RULES_SETTINGS = "settings/electrical-rules"
     const val CLIENTS = "clients"
     const val INSPECTIONS = "inspections"
     const val QUOTES = "quotes"
