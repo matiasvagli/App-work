@@ -2,6 +2,8 @@ package com.matiasdev.elecapp.features.clients.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.matiasdev.elecapp.features.electricalrules.data.ElectricalRuleConfigDao
+import com.matiasdev.elecapp.features.electricalrules.data.ElectricalRuleConfigEntity
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationDao
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationEntity
 import com.matiasdev.elecapp.features.finance.data.PaymentDao
@@ -54,8 +56,9 @@ import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionEntity
         ServiceReceiptItemEntity::class,
         PaymentEntity::class,
         ReceiptSequenceEntity::class,
+        ElectricalRuleConfigEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -84,4 +87,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
 
     abstract fun receiptSequenceDao(): ReceiptSequenceDao
+
+    abstract fun electricalRuleConfigDao(): ElectricalRuleConfigDao
 }

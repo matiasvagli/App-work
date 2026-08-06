@@ -1,0 +1,12 @@
+package com.matiasdev.elecapp.features.electricalrules.domain
+
+enum class ElectricalRuleCode {
+    MIN_SUPPLY_VOLTAGE,
+    MAX_SUPPLY_VOLTAGE,
+    MAX_FEEDER_VOLTAGE_DROP_PERCENT,
+    MAX_CURRENT_COPPER_1_5_MM2,
+    MAX_CURRENT_COPPER_2_5_MM2,
+    MAX_CURRENT_COPPER_4_MM2,
+    MAX_CURRENT_COPPER_6_MM2,
+    MAX_CURRENT_COPPER_10_MM2,
+}

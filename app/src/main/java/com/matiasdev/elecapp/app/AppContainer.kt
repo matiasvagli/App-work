@@ -2,6 +2,8 @@ package com.matiasdev.elecapp.app
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.matiasdev.elecapp.features.clients.data.AppDatabase
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_1_2
@@ -12,7 +14,11 @@ import com.matiasdev.elecapp.features.clients.data.MIGRATION_5_6
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_6_7
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_7_8
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_8_9
+import com.matiasdev.elecapp.features.clients.data.MIGRATION_9_10
 import com.matiasdev.elecapp.features.clients.data.RoomClientRepository
+import com.matiasdev.elecapp.features.electricalrules.data.RoomElectricalRuleConfigRepository
+import com.matiasdev.elecapp.features.electricalrules.data.insertDefaultElectricalRuleConfigsIgnoringExisting
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
 import com.matiasdev.elecapp.features.electricaltools.data.RoomTechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
@@ -48,6 +54,17 @@ class AppContainer(context: Context) {
         MIGRATION_6_7,
         MIGRATION_7_8,
         MIGRATION_8_9,
+        MIGRATION_9_10,
+    ).addCallback(
+        object : RoomDatabase.Callback() {
+            override fun onCreate(db: SupportSQLiteDatabase) {
+                db.insertDefaultElectricalRuleConfigsIgnoringExisting()
+            }
+
+            override fun onOpen(db: SupportSQLiteDatabase) {
+                db.insertDefaultElectricalRuleConfigsIgnoringExisting()
+            }
+        },
     ).build()
 
     val clientRepository: ClientRepository = RoomClientRepository(
@@ -94,6 +111,10 @@ class AppContainer(context: Context) {
 
     val technicalCalculationRepository: TechnicalCalculationRepository = RoomTechnicalCalculationRepository(
         dao = database.technicalCalculationDao(),
+    )
+
+    val electricalRuleConfigRepository: ElectricalRuleConfigRepository = RoomElectricalRuleConfigRepository(
+        dao = database.electricalRuleConfigDao(),
     )
 
     val reminderSettingsRepository: ReminderSettingsRepository = DataStoreReminderSettingsRepository(
