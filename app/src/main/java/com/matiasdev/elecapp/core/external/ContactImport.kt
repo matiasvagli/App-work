@@ -15,25 +15,54 @@ data class ImportedContact(
 
 fun readImportedContact(contentResolver: ContentResolver, contactUri: Uri): Result<ImportedContact> {
     return runCatching {
+        val resolvedUri = ContactsContract.Contacts.lookupContact(contentResolver, contactUri)
+            ?: error("No se encontró el contacto seleccionado.")
         val summary = contentResolver.query(
-            contactUri,
+            resolvedUri,
             arrayOf(
+                ContactsContract.Contacts._ID,
                 ContactsContract.Contacts.DISPLAY_NAME,
             ),
             null,
             null,
             null,
         )?.use { cursor ->
-            if (!cursor.moveToFirst()) return@use null
+            if (!cursor.moveToFirst()) error("No se pudo leer el contacto seleccionado.")
             ContactSummary(
+                id = cursor.getLong(cursor.getColumnIndexOrThrow(ContactsContract.Contacts._ID)),
                 fullName = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.DISPLAY_NAME)).orEmpty(),
             )
-        }
-        val detail = readContactEntity(contentResolver, contactUri)
+        } ?: error("No se pudo leer el contacto seleccionado.")
+        val phones = contentResolver.query(
+            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+            "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?",
+            arrayOf(summary.id.toString()),
+            null,
+        )?.use { cursor ->
+            buildList {
+                val numberIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                while (cursor.moveToNext()) {
+                    normalizeImportedPhone(cursor.getString(numberIndex).orEmpty())
+                        .takeIf(String::isNotBlank)
+                        ?.let(::add)
+                }
+            }
+        }.orEmpty().distinct()
+        val email = contentResolver.query(
+            ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+            arrayOf(ContactsContract.CommonDataKinds.Email.ADDRESS),
+            "${ContactsContract.CommonDataKinds.Email.CONTACT_ID} = ?",
+            arrayOf(summary.id.toString()),
+            null,
+        )?.use { cursor ->
+            if (!cursor.moveToFirst()) ""
+            else cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.ADDRESS)).orEmpty()
+        }.orEmpty()
         ImportedContact(
-            fullName = detail.fullName.ifBlank { summary?.fullName.orEmpty() },
-            phones = detail.phones,
-            email = detail.email,
+            fullName = summary.fullName,
+            phones = phones,
+            email = email,
         )
     }
 }
@@ -75,45 +104,7 @@ fun normalizeImportedPhone(value: String): String {
     }
 }
 
-private fun readContactEntity(contentResolver: ContentResolver, contactUri: Uri): ImportedContact {
-    val entityUri = Uri.withAppendedPath(contactUri, ContactsContract.Contacts.Entity.CONTENT_DIRECTORY)
-    return contentResolver.query(
-        entityUri,
-        arrayOf(
-            ContactsContract.Contacts.Entity.DISPLAY_NAME,
-            ContactsContract.Contacts.Entity.MIMETYPE,
-            ContactsContract.Contacts.Entity.DATA1,
-        ),
-        null,
-        null,
-        null,
-    )?.use { cursor ->
-        var fullName = ""
-        val phones = mutableListOf<String>()
-        var email = ""
-        while (cursor.moveToNext()) {
-            if (fullName.isBlank()) {
-                fullName = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.Entity.DISPLAY_NAME)).orEmpty()
-            }
-            when (cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.Entity.MIMETYPE))) {
-                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE -> {
-                    val phone = normalizeImportedPhone(
-                        cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.Entity.DATA1)).orEmpty(),
-                    )
-                    if (phone.isNotBlank()) phones += phone
-                }
-                ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE -> {
-                    if (email.isBlank()) {
-                        email = cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.Contacts.Entity.DATA1)).orEmpty()
-                    }
-                }
-            }
-        }
-        ImportedContact(fullName = fullName, phones = phones.distinct(), email = email)
-    } ?: ImportedContact()
-}
-
-private data class ContactSummary(val fullName: String)
+private data class ContactSummary(val id: Long, val fullName: String)
 
 private fun unfoldVCardLines(text: String): List<String> {
     val result = mutableListOf<String>()
