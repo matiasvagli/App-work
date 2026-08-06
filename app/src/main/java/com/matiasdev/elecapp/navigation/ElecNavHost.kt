@@ -13,6 +13,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.matiasdev.elecapp.features.agenda.ui.AgendaScreen
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
+import com.matiasdev.elecapp.features.electricalrules.ui.ElectricalRulesSettingsScreen
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.clients.ui.ClientDetailScreen
 import com.matiasdev.elecapp.features.clients.ui.ClientFormDraft
@@ -71,6 +73,7 @@ fun ElecNavHost(
     financeRepository: FinanceRepository,
     reminderRepository: VisitReminderRepository,
     settingsRepository: ReminderSettingsRepository,
+    electricalRuleConfigRepository: ElectricalRuleConfigRepository,
     reminderCoordinator: ReminderCoordinator,
     initialSharedText: String? = null,
     initialVisitId: String? = null,
@@ -195,6 +198,13 @@ fun ElecNavHost(
         composable(AppRoutes.SETTINGS) {
             SettingsScreen(
                 repository = settingsRepository,
+                onBackClick = { navController.navigateUp() },
+                onElectricalRulesClick = { navController.navigateSingleTop(AppRoutes.ELECTRICAL_RULES_SETTINGS) },
+            )
+        }
+        composable(AppRoutes.ELECTRICAL_RULES_SETTINGS) {
+            ElectricalRulesSettingsScreen(
+                repository = electricalRuleConfigRepository,
                 onBackClick = { navController.navigateUp() },
             )
         }

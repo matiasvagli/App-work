@@ -33,6 +33,7 @@ class MainActivity : ComponentActivity() {
                         financeRepository = appContainer.financeRepository,
                         reminderRepository = appContainer.reminderRepository,
                         settingsRepository = appContainer.reminderSettingsRepository,
+                        electricalRuleConfigRepository = appContainer.electricalRuleConfigRepository,
                         reminderCoordinator = appContainer.reminderCoordinator,
                         initialSharedText = sharedText,
                         initialVisitId = initialVisitId,
