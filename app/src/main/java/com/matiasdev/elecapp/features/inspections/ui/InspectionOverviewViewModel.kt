@@ -108,10 +108,15 @@ class InspectionOverviewViewModel(
                 it.copy(
                     completionMissingItems = emptyList(),
                     showCompleteConfirmation = false,
+                    navigateHomeAfterCompletion = true,
                     snackbarMessage = "Relevamiento finalizado",
                 )
             }
         }
+    }
+
+    fun onCompletionNavigationHandled() {
+        _uiState.update { it.copy(navigateHomeAfterCompletion = false) }
     }
 
     fun requestReopen() {

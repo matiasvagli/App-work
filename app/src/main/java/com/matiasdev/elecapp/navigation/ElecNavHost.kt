@@ -452,6 +452,7 @@ fun ElecNavHost(
                     navController.navigate(route)
                 },
                 onCalculationClick = { navController.navigateSingleTop(AppRoutes.technicalCalculationDetail(it)) },
+                onCompletionFinished = { navController.navigateHomeClearingStack() },
             )
         }
         composable(AppRoutes.INSPECTION_GENERAL, AppRoutes.inspectionIdArguments) { backStackEntry ->

@@ -21,4 +21,5 @@ data class InspectionOverviewUiState(
     val completionMissingItems: List<String> = emptyList(),
     val showCompleteConfirmation: Boolean = false,
     val showReopenConfirmation: Boolean = false,
+    val navigateHomeAfterCompletion: Boolean = false,
 )

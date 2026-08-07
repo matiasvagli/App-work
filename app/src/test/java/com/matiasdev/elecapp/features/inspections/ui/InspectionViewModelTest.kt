@@ -60,6 +60,10 @@ class InspectionViewModelTest {
 
         viewModel.confirmComplete()
         assertEquals(InspectionStatus.COMPLETED, repository.findAggregate(inspection.id)?.inspection?.status)
+        assertTrue(viewModel.uiState.value.navigateHomeAfterCompletion)
+
+        viewModel.onCompletionNavigationHandled()
+        assertFalse(viewModel.uiState.value.navigateHomeAfterCompletion)
     }
 
     @Test
@@ -84,6 +88,8 @@ class InspectionViewModelTest {
         viewModel.requestComplete()
         viewModel.confirmComplete()
         assertEquals(InspectionStatus.COMPLETED, repository.findAggregate(inspection.id)?.inspection?.status)
+        assertTrue(viewModel.uiState.value.navigateHomeAfterCompletion)
+        viewModel.onCompletionNavigationHandled()
 
         viewModel.requestReopen()
         viewModel.confirmReopen()

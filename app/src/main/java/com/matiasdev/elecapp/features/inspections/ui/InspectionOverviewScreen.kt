@@ -78,6 +78,7 @@ fun InspectionOverviewScreen(
     onCreateMaterialClick: (String, String) -> Unit,
     onAddCalculationClick: (String, String, String, InspectionManualCalculationType) -> Unit,
     onCalculationClick: (String) -> Unit,
+    onCompletionFinished: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InspectionOverviewViewModel = viewModel(
         factory = InspectionOverviewViewModelFactory(
@@ -99,6 +100,12 @@ fun InspectionOverviewScreen(
         uiState.snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
             viewModel.clearSnackbar()
+        }
+    }
+    LaunchedEffect(uiState.navigateHomeAfterCompletion) {
+        if (uiState.navigateHomeAfterCompletion) {
+            viewModel.onCompletionNavigationHandled()
+            onCompletionFinished()
         }
     }
 
