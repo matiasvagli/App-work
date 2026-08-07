@@ -19,10 +19,12 @@ class AppMigrationsV15Test {
 
         MIGRATION_14_15.migrate(db)
 
-        assertTrue(db.sql.contains("ALTER TABLE inspection_findings ADD COLUMN source_type TEXT NOT NULL DEFAULT 'MANUAL'"))
-        assertTrue(db.sql.contains("ALTER TABLE inspection_findings ADD COLUMN review_status TEXT NOT NULL DEFAULT 'CONFIRMED'"))
-        assertTrue(db.sql.contains("ALTER TABLE inspection_findings ADD COLUMN include_in_report INTEGER NOT NULL DEFAULT 1"))
-        assertTrue(db.sql.contains("CREATE INDEX IF NOT EXISTS index_inspection_findings_inspection_id_source_entity_id ON inspection_findings(inspection_id, source_entity_id)"))
+        assertTrue(db.sql.any { it.contains("CREATE TABLE IF NOT EXISTS inspection_findings_new") })
+        assertTrue(db.sql.any { it.contains("'MANUAL'") && it.contains("'CONFIRMED'") })
+        assertTrue(db.sql.contains("DROP TABLE inspection_findings"))
+        assertTrue(db.sql.contains("ALTER TABLE inspection_findings_new RENAME TO inspection_findings"))
+        assertTrue(db.sql.contains("CREATE INDEX IF NOT EXISTS index_inspection_findings_inspection_id ON inspection_findings(inspection_id)"))
+        assertTrue(db.sql.contains("CREATE INDEX IF NOT EXISTS index_inspection_findings_inspection_id_sort_order ON inspection_findings(inspection_id, sort_order)"))
     }
 }
 
