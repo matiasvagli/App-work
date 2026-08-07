@@ -36,6 +36,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import com.matiasdev.elecapp.core.ui.components.AboutAppContent
 import com.matiasdev.elecapp.features.reminders.scheduling.notificationsAllowed
 import com.matiasdev.elecapp.features.settings.data.ReminderSettingsRepository
 
@@ -123,6 +127,9 @@ fun SettingsScreen(
                 "Android puede demorar recordatorios no exactos por ahorro de batería.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Text("Acerca del Sistema", style = MaterialTheme.typography.titleMedium)
+            AboutAppContent()
         }
     }
 }

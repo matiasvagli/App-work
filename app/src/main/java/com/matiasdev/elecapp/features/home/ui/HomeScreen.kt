@@ -49,16 +49,24 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.clickable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.matiasdev.elecapp.R
+import com.matiasdev.elecapp.core.ui.components.AboutAppDialog
 import com.matiasdev.elecapp.core.ui.components.ElecBadge
 import com.matiasdev.elecapp.features.agenda.ui.VisitStatusChip
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
@@ -104,6 +112,11 @@ fun HomeScreen(
     ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showAboutDialog by remember { mutableStateOf(false) }
+
+    if (showAboutDialog) {
+        AboutAppDialog(onDismiss = { showAboutDialog = false })
+    }
 
     val cards = listOf(
         HomeCard("Clientes", "Directorio", Icons.Default.Person, enabled = true, action = onClientsClick),
@@ -138,21 +151,16 @@ fun HomeScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { showAboutDialog = true },
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_elecapp_logo),
+                            contentDescription = "Logo ElecApp",
+                            tint = Color.Unspecified,
                             modifier = Modifier.size(36.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Default.Bolt,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(22.dp),
-                                )
-                            }
-                        }
+                        )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(

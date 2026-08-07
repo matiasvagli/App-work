@@ -31,7 +31,7 @@ fun NavGraphBuilder.electricalToolsRoutes(
             onPowerClick = { navController.navigateSingleTop(AppRoutes.electricalToolsPower()) },
             onVoltageDropClick = { navController.navigateSingleTop(AppRoutes.electricalToolsVoltageDrop()) },
             onHistoryClick = { navController.navigateSingleTop(AppRoutes.ELECTRICAL_TOOLS_HISTORY) },
-            onReferenceClick = { navController.navigateSingleTop(AppRoutes.electricalToolsReference(it.name)) },
+            onReferenceClick = { tool: ReferenceTool -> navController.navigateSingleTop(AppRoutes.electricalToolsReference(tool.name)) },
         )
     }
     composable(AppRoutes.ELECTRICAL_TOOLS_REFERENCE) { entry ->
