@@ -11,6 +11,8 @@ import com.matiasdev.elecapp.features.electricaltools.ui.ElectricalToolsHomeScre
 import com.matiasdev.elecapp.features.electricaltools.ui.PowerCurrentVoltageScreen
 import com.matiasdev.elecapp.features.electricaltools.ui.TechnicalCalculationDetailScreen
 import com.matiasdev.elecapp.features.electricaltools.ui.VoltageDropScreen
+import com.matiasdev.elecapp.features.electricaltools.ui.ElectricalReferenceScreen
+import com.matiasdev.elecapp.features.electricaltools.ui.ReferenceTool
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 
@@ -27,7 +29,13 @@ fun NavGraphBuilder.electricalToolsRoutes(
             onPowerClick = { navController.navigateSingleTop(AppRoutes.electricalToolsPower()) },
             onVoltageDropClick = { navController.navigateSingleTop(AppRoutes.electricalToolsVoltageDrop()) },
             onHistoryClick = { navController.navigateSingleTop(AppRoutes.ELECTRICAL_TOOLS_HISTORY) },
+            onReferenceClick = { navController.navigateSingleTop(AppRoutes.electricalToolsReference(it.name)) },
         )
+    }
+    composable(AppRoutes.ELECTRICAL_TOOLS_REFERENCE) { entry ->
+        val tool = runCatching { ReferenceTool.valueOf(entry.arguments?.getString("tool").orEmpty()) }
+            .getOrDefault(ReferenceTool.TABLES)
+        ElectricalReferenceScreen(tool = tool, onBackClick = { navController.navigateUp() })
     }
     composable(AppRoutes.ELECTRICAL_TOOLS_HISTORY) {
         ElectricalToolsHistoryScreen(

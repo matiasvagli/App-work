@@ -22,6 +22,7 @@ object AppRoutes {
     const val ELECTRICAL_TOOLS_POWER = "tools/electrical/power?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}&duplicateId={duplicateId}"
     const val ELECTRICAL_TOOLS_VOLTAGE_DROP = "tools/electrical/voltage-drop?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}&duplicateId={duplicateId}"
     const val ELECTRICAL_TOOLS_HISTORY = "tools/electrical/history"
+    const val ELECTRICAL_TOOLS_REFERENCE = "tools/electrical/reference/{tool}"
     const val TECHNICAL_CALCULATION_DETAIL = "tools/electrical/calculations/{calculationId}"
     const val CLIENT_CREATE = "clients/new?notes={notes}&phone={phone}&source={source}"
     const val CLIENT_DETAIL = "clients/{clientId}"
@@ -205,6 +206,8 @@ object AppRoutes {
     fun electricalToolsVoltageDrop(clientId: String? = null, visitId: String? = null, inspectionId: String? = null, duplicateId: String? = null): String {
         return "tools/electrical/voltage-drop?clientId=${clientId.orEmpty()}&visitId=${visitId.orEmpty()}&inspectionId=${inspectionId.orEmpty()}&duplicateId=${duplicateId.orEmpty()}"
     }
+
+    fun electricalToolsReference(tool: String): String = "tools/electrical/reference/$tool"
 
     fun technicalCalculationDetail(calculationId: String): String = "tools/electrical/calculations/$calculationId"
 
