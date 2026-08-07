@@ -111,7 +111,7 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
                     sourceValue = value,
                     sourceUnit = unit,
                     ruleCode = "SUPPLY_VOLTAGE_RANGE",
-                    includeInReport = false,
+                    includeInReport = true,
                     reviewStatus = FindingReviewStatus.PENDING,
                 ),
             )
@@ -135,7 +135,7 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
                         sourceValue = it.value,
                         sourceUnit = it.unit,
                         ruleCode = "PROTECTION_CONDUCTOR_QUICK_CHECK",
-                        includeInReport = false,
+                        includeInReport = true,
                         reviewStatus = FindingReviewStatus.PENDING,
                     ),
                 )
@@ -161,7 +161,7 @@ private fun InspectionAggregate.dataReviewFindings(): List<InspectionFinding> = 
                     sourceEntityId = circuit.id,
                     sourceValue = consumption,
                     sourceUnit = "A",
-                    includeInReport = false,
+                    includeInReport = true,
                     reviewStatus = FindingReviewStatus.PENDING,
                 ),
             )

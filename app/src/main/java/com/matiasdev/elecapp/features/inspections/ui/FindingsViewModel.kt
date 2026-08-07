@@ -33,10 +33,15 @@ data class FindingsUiState(
     val notVerified: List<InspectionFinding> = emptyList(),
     val manual: List<InspectionFinding> = emptyList(),
     val editingId: String? = null,
+    val isEditorOpen: Boolean = false,
+    val filter: FindingsFilter = FindingsFilter.ALL,
     val category: FindingCategory = FindingCategory.MAIN_PANEL,
     val severity: FindingSeverity = FindingSeverity.RECOMMENDED,
+    val title: String = "",
     val description: String = "",
     val technicianNotes: String = "",
+    val exclusionReason: String = "",
+    val excludeDialogFindingId: String? = null,
     val descriptionError: String? = null,
     val status: InspectionStatus = InspectionStatus.DRAFT,
     val saved: Boolean = false,
@@ -82,13 +87,54 @@ class FindingsViewModel(
         _uiState.update {
             it.copy(
                 editingId = finding.id,
+                isEditorOpen = true,
                 category = finding.category,
                 severity = finding.severity,
+                title = finding.title,
                 description = finding.description,
                 technicianNotes = finding.technicianNotes.orEmpty(),
                 saved = false,
             )
         }
+    }
+
+    fun openManualEditor() {
+        _uiState.update {
+            it.copy(
+                editingId = null,
+                isEditorOpen = true,
+                category = FindingCategory.MAIN_PANEL,
+                severity = FindingSeverity.RECOMMENDED,
+                title = "",
+                description = "",
+                technicianNotes = "",
+                descriptionError = null,
+                saved = false,
+            )
+        }
+    }
+
+    fun updateFilter(filter: FindingsFilter) {
+        _uiState.update { it.copy(filter = filter) }
+    }
+
+    fun requestExclude(finding: InspectionFinding) {
+        _uiState.update { it.copy(excludeDialogFindingId = finding.id, exclusionReason = "") }
+    }
+
+    fun updateExclusionReason(value: String) {
+        _uiState.update { it.copy(exclusionReason = value) }
+    }
+
+    fun dismissExcludeDialog() {
+        _uiState.update { it.copy(excludeDialogFindingId = null, exclusionReason = "") }
+    }
+
+    fun confirmExclude() {
+        val state = _uiState.value
+        val finding = state.allFindings.firstOrNull { it.id == state.excludeDialogFindingId } ?: return
+        excludeFromReport(finding, state.exclusionReason)
+        dismissExcludeDialog()
     }
 
     fun clearForm() {
@@ -101,6 +147,7 @@ class FindingsViewModel(
                 notVerified = state.notVerified,
                 manual = state.manual,
                 status = state.status,
+                filter = state.filter,
             )
         }
     }
@@ -121,7 +168,7 @@ class FindingsViewModel(
                     inspectionId = inspectionId,
                     category = state.category,
                     severity = state.severity,
-                    title = state.category.labelForTitle(),
+                    title = state.title.trim().ifBlank { state.category.labelForTitle() },
                     description = state.description.trim(),
                     recommendation = null,
                     sourceType = existing?.sourceType ?: FindingSourceType.MANUAL,
@@ -130,7 +177,7 @@ class FindingsViewModel(
                     sourceValue = existing?.sourceValue,
                     sourceUnit = existing?.sourceUnit,
                     ruleCode = existing?.ruleCode,
-                    reviewStatus = existing?.reviewStatus ?: FindingReviewStatus.CONFIRMED,
+                    reviewStatus = existing?.reviewStatus?.takeUnless { it == FindingReviewStatus.PENDING } ?: FindingReviewStatus.CONFIRMED,
                     includeInReport = existing?.includeInReport ?: true,
                     technicianNotes = state.technicianNotes.trim().ifBlank { null },
                     sortOrder = existing?.sortOrder ?: state.manual.size,
@@ -146,7 +193,24 @@ class FindingsViewModel(
 
     fun includeInReport(finding: InspectionFinding) = saveFindingDecision(finding.copy(includeInReport = true))
 
-    fun excludeFromReport(finding: InspectionFinding) = saveFindingDecision(finding.copy(includeInReport = false, reviewStatus = FindingReviewStatus.EXCLUDED))
+    fun restoreInReport(finding: InspectionFinding) = saveFindingDecision(
+        finding.copy(
+            includeInReport = true,
+            reviewStatus = if (finding.sourceType == FindingSourceType.RULE_SUGGESTION || finding.sourceType == FindingSourceType.DATA_REVIEW) {
+                FindingReviewStatus.PENDING
+            } else {
+                FindingReviewStatus.CONFIRMED
+            },
+        ),
+    )
+
+    fun excludeFromReport(finding: InspectionFinding, reason: String = "") = saveFindingDecision(
+        finding.copy(
+            includeInReport = false,
+            reviewStatus = FindingReviewStatus.EXCLUDED,
+            technicianNotes = reason.trim().ifBlank { finding.technicianNotes },
+        ),
+    )
 
     fun changePriority(finding: InspectionFinding, severity: FindingSeverity) = saveFindingDecision(finding.copy(severity = severity))
 
@@ -170,6 +234,12 @@ class FindingsViewModel(
             repository.saveFinding(finding.copy(updatedAt = Instant.now()))
         }
     }
+}
+
+enum class FindingsFilter {
+    ALL,
+    IMPORTANT,
+    EXCLUDED,
 }
 
 private fun FindingCategory.labelForTitle(): String = when (this) {

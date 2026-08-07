@@ -648,7 +648,7 @@ class InspectionViewModelTest {
     }
 
     @Test
-    fun `findings groups rule suggestions and data review without including them in report`() = runTest(dispatcher) {
+    fun `findings groups automatic suggestions as included by default`() = runTest(dispatcher) {
         val repository = FakeInspectionRepository()
         val inspection = repository.startOrGetInspection(testVisit(), testClient())
         val panelViewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
@@ -671,11 +671,11 @@ class InspectionViewModelTest {
 
         assertEquals(1, state.suggested.size)
         assertEquals(FindingSourceType.RULE_SUGGESTION, state.suggested.single().sourceType)
-        assertFalse(state.suggested.single().includeInReport)
+        assertTrue(state.suggested.single().includeInReport)
         assertTrue(state.suggested.single().description.contains("180 V"))
         assertEquals(1, state.dataReview.size)
         assertEquals(FindingSourceType.DATA_REVIEW, state.dataReview.single().sourceType)
-        assertFalse(state.dataReview.single().includeInReport)
+        assertTrue(state.dataReview.single().includeInReport)
         assertTrue(state.dataReview.single().description.contains("198 A"))
     }
 
@@ -731,6 +731,11 @@ class InspectionViewModelTest {
         val excluded = repository.findAggregate(inspection.id)?.findings?.single()!!
         assertFalse(excluded.includeInReport)
         assertEquals(FindingReviewStatus.EXCLUDED, excluded.reviewStatus)
+
+        viewModel.restoreInReport(excluded)
+        val restored = repository.findAggregate(inspection.id)?.findings?.single()!!
+        assertTrue(restored.includeInReport)
+        assertEquals(FindingReviewStatus.CONFIRMED, restored.reviewStatus)
     }
 
     @Test

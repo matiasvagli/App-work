@@ -40,7 +40,6 @@ object InspectionSummaryGenerator {
             appendLine()
             appendLine("TIPO DE RELEVAMIENTO")
             appendLine(inspection.inspectionType.label())
-            appendGeneralData(inspection)
             appendPillar(inspection, aggregateWithFindings.pillar, aggregateWithFindings.pillarMeasurements)
             appendMainPanel(aggregateWithFindings.mainPanel, aggregateWithFindings.mainPanelMeasurements, aggregateWithFindings.mainPanelCircuits)
             appendCalculations(calculations)
@@ -72,7 +71,6 @@ object InspectionSummaryGenerator {
             appendLineIfNotBlank("Motivo", inspection.reviewReason ?: inspection.visitReasonSnapshot)
             appendLineIfNotBlank("Sector o elemento revisado", inspection.reviewedElement)
             appendLineIfNotBlank("Descripción", inspection.taskDescription)
-            appendVisualGeneralData(inspection)
             appendVisualPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
             appendVisualMainPanel(aggregate.mainPanel, aggregate.mainPanelMeasurements, aggregate.mainPanelCircuits)
             appendVisualCalculations(calculations)
@@ -103,35 +101,6 @@ object InspectionSummaryGenerator {
         val date = (visit?.scheduledAt ?: inspection.startedAt).atZone(zoneId).format(dateFormatter)
         appendLine("Fecha: $date")
         appendLineIfNotBlank("Motivo", inspection.visitReasonSnapshot)
-    }
-
-    private fun StringBuilder.appendGeneralData(inspection: ElectricalInspection) {
-        appendLine()
-        appendLine("DATOS GENERALES")
-        appendLine("- Suministro: ${inspection.supplyType.label()}")
-        appendLine("- Tipo de propiedad: ${inspection.propertyType.label()}")
-        appendLine("- Estado general: ${inspection.generalCondition.label()}")
-        appendLineIfNotBlank("- Técnico", inspection.technicianName)
-        appendLineIfNotBlank("- Limitaciones de acceso", inspection.accessLimitations)
-    }
-
-    private fun StringBuilder.appendVisualGeneralData(inspection: ElectricalInspection) {
-        val rows = buildList {
-            if (inspection.supplyType != com.matiasdev.elecapp.features.inspections.domain.SupplyType.UNKNOWN) {
-                add("- Suministro: ${inspection.supplyType.label()}")
-            }
-            if (inspection.propertyType != com.matiasdev.elecapp.features.inspections.domain.PropertyType.UNKNOWN) {
-                add("- Tipo de propiedad: ${inspection.propertyType.label()}")
-            }
-            if (inspection.generalCondition != GeneralCondition.NOT_ASSESSED) {
-                add("- Estado general observado: ${inspection.generalCondition.label()}")
-            }
-            inspection.technicianName?.takeIf(String::isNotBlank)?.let { add("- Técnico: $it") }
-        }
-        if (rows.isEmpty()) return
-        appendLine()
-        appendLine("DATOS BÁSICOS")
-        rows.forEach(::appendLine)
     }
 
     private fun StringBuilder.appendPillar(inspection: ElectricalInspection, pillar: PillarInspection?, measurements: List<PillarMeasurement>) {
