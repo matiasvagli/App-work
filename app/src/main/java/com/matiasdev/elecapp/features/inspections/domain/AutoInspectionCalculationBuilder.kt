@@ -45,22 +45,22 @@ object AutoInspectionCalculationBuilder {
                 add(protectionCalculation("auto:pillar:protection", "Pilar: térmica y cable", breaker, section, pillar.conductorMaterial, rules))
             }
         }
-        aggregate.mainPanelCircuits.filterNot(MainPanelCircuit::isDeleted).forEach { circuit ->
+        aggregate.mainPanelCircuits.reportableCircuitsInReportOrder().forEachIndexed { index, circuit ->
             val breaker = circuit.breakerAmps ?: circuit.breakerOtherAmps
             val section = circuit.conductorSectionMm2 ?: circuit.conductorOtherSectionMm2
             if (breaker != null && section != null) {
-                val destination = circuit.destinationOther?.takeIf(String::isNotBlank) ?: circuit.destination.name.lowercase()
-                add(protectionCalculation("auto:circuit:${circuit.id}:protection", "Circuito $destination: térmica y cable", breaker, section, circuit.conductorMaterial, rules))
+                val circuitName = circuit.reportCircuitName(index)
+                add(protectionCalculation("auto:circuit:${circuit.id}:protection", "$circuitName: térmica y cable", breaker, section, circuit.conductorMaterial, rules))
             }
         }
     }
 
     private fun buildConsumptionCompatibility(aggregate: InspectionAggregate): List<AutoInspectionCalculation> = buildList {
-        aggregate.mainPanelCircuits.filterNot(MainPanelCircuit::isDeleted).forEach { circuit ->
+        aggregate.mainPanelCircuits.reportableCircuitsInReportOrder().forEachIndexed { index, circuit ->
             val breaker = circuit.breakerAmps ?: circuit.breakerOtherAmps
             val consumption = circuit.consumptionAmps
             if (breaker != null && consumption != null && circuit.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED) {
-                val destination = circuit.destinationOther?.takeIf(String::isNotBlank) ?: circuit.destination.name.lowercase()
+                val circuitName = circuit.reportCircuitName(index)
                 val classification = if (consumption <= breaker) {
                     TechnicalClassification.ACCEPTABLE
                 } else {
@@ -69,7 +69,7 @@ object AutoInspectionCalculationBuilder {
                 add(
                     AutoInspectionCalculation(
                         id = "auto:circuit:${circuit.id}:consumption-breaker",
-                        title = "Circuito $destination: consumo y térmica",
+                        title = "$circuitName: consumo y térmica",
                         primaryResult = "${TechnicalValueFormatter.withUnit(consumption, "A")} sobre ${breaker} A · ${classification.shortLabel()}",
                         detail = "El consumo ${circuit.consumptionOrigin.basicLabel()} se compara con la corriente nominal de la térmica.",
                         classification = classification,

@@ -266,7 +266,7 @@ class InspectionSummaryGeneratorTest {
             ZoneId.of("UTC"),
         )
 
-        assertTrue(summary.contains("Circuito iluminación: térmica 10 A"))
+        assertTrue(summary.contains("Circuito 1 (iluminación): térmica 10 A"))
         assertTrue(summary.contains("conductor cobre 1,5 mm²"))
         assertTrue(summary.contains("consumo medido 4,2 A"))
     }
@@ -339,6 +339,26 @@ class InspectionSummaryGeneratorTest {
                         updatedAt = now,
                         isDeleted = false,
                     ),
+                    MainPanelCircuit(
+                        id = "circuit-2",
+                        inspectionId = "inspection-1",
+                        sortOrder = 1,
+                        destination = com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED,
+                        destinationOther = null,
+                        breakerAmps = 16,
+                        breakerOtherAmps = null,
+                        breakerCurve = com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN,
+                        conductorSectionMm2 = 2.5,
+                        conductorOtherSectionMm2 = null,
+                        conductorMaterial = com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.COPPER,
+                        conductorMaterialOther = null,
+                        consumptionAmps = 8.0,
+                        consumptionOrigin = MeasurementOrigin.MEASURED,
+                        notes = null,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
                 ),
                 calculations = emptyList(),
             ),
@@ -355,6 +375,8 @@ class InspectionSummaryGeneratorTest {
         assertTrue(summary.contains("- Fase-tierra: 185 V (medido)"))
         assertTrue(summary.contains("Circuitos"))
         assertTrue(summary.contains("- Circuito 1 (iluminación): consumo 12 A (medido)"))
+        assertTrue(summary.contains("- Circuito 2 sin identificar: consumo 8 A (medido)"))
+        assertFalse(summary.contains("unidentified"))
         assertTrue(summary.contains("Cálculos técnicos"))
         assertTrue(summary.contains("- Sin cálculos registrados"))
         assertFalse(summary.contains("- Sin mediciones ni cálculos asociados"))

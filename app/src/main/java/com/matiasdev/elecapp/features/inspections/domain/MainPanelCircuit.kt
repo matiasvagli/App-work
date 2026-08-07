@@ -22,3 +22,49 @@ data class MainPanelCircuit(
     val updatedAt: Instant,
     val isDeleted: Boolean,
 )
+
+fun List<MainPanelCircuit>.activeCircuitsInReportOrder(): List<MainPanelCircuit> {
+    return filterNot(MainPanelCircuit::isDeleted)
+        .sortedWith(compareBy({ it.sortOrder }, { it.createdAt }))
+}
+
+fun List<MainPanelCircuit>.reportableCircuitsInReportOrder(): List<MainPanelCircuit> {
+    return activeCircuitsInReportOrder().filter(MainPanelCircuit::hasReportContent)
+}
+
+fun MainPanelCircuit.hasReportContent(): Boolean {
+    return destination != CircuitDestination.UNIDENTIFIED ||
+        !destinationOther.isNullOrBlank() ||
+        breakerAmps != null ||
+        breakerOtherAmps?.let { it > 0 } == true ||
+        breakerCurve != BreakerCurve.UNKNOWN ||
+        conductorSectionMm2 != null ||
+        conductorOtherSectionMm2?.let { it > 0.0 } == true ||
+        conductorMaterial != ConductorMaterial.UNKNOWN ||
+        consumptionAmps != null ||
+        consumptionOrigin != MeasurementOrigin.NOT_VERIFIED ||
+        !notes.isNullOrBlank()
+}
+
+fun MainPanelCircuit.reportCircuitName(index: Int): String {
+    return when {
+        destination == CircuitDestination.OTHER && !destinationOther.isNullOrBlank() -> "Circuito ${index + 1} ($destinationOther)"
+        destination == CircuitDestination.UNIDENTIFIED -> "Circuito ${index + 1} sin identificar"
+        else -> "Circuito ${index + 1} (${destination.reportLabel().lowercase()})"
+    }
+}
+
+private fun CircuitDestination.reportLabel(): String = when (this) {
+    CircuitDestination.LIGHTING -> "Iluminación"
+    CircuitDestination.OUTLETS -> "Tomacorrientes"
+    CircuitDestination.AIR_CONDITIONING -> "Aire acondicionado"
+    CircuitDestination.KITCHEN -> "Cocina"
+    CircuitDestination.OVEN -> "Horno"
+    CircuitDestination.PUMP -> "Bomba"
+    CircuitDestination.EXTERIOR -> "Exterior"
+    CircuitDestination.GATE -> "Portón"
+    CircuitDestination.WATER_HEATER -> "Termotanque"
+    CircuitDestination.RESERVE -> "Reserva"
+    CircuitDestination.UNIDENTIFIED -> "Sin identificar"
+    CircuitDestination.OTHER -> "Otro"
+}

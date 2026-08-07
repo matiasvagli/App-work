@@ -19,6 +19,8 @@ import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementSec
 import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
 import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
+import com.matiasdev.elecapp.features.inspections.domain.reportableCircuitsInReportOrder
+import com.matiasdev.elecapp.features.inspections.domain.reportCircuitName
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -352,9 +354,8 @@ object InspectionSummaryGenerator {
             }
         }
         val circuitMeasurements = aggregate.mainPanelCircuits
-            .filterNot { it.isDeleted }
+            .reportableCircuitsInReportOrder()
             .filter { it.consumptionAmps != null && it.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED }
-            .sortedWith(compareBy({ it.sortOrder }, { it.createdAt }))
         if (circuitMeasurements.isNotEmpty()) {
             hasMeasurements = true
             appendLine("Circuitos")
@@ -590,10 +591,10 @@ object InspectionSummaryGenerator {
     }
 
     private fun StringBuilder.appendMainPanelCircuits(circuits: List<MainPanelCircuit>) {
-        val active = circuits.filterNot { it.isDeleted }.filter { it.hasContent() }
+        val active = circuits.reportableCircuitsInReportOrder()
         if (active.isEmpty()) return
         appendLine("- Circuitos:")
-        active.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })).forEachIndexed { index, circuit ->
+        active.forEachIndexed { index, circuit ->
             appendLine("  - ${circuit.summary(index)}")
         }
     }
@@ -606,26 +607,8 @@ object InspectionSummaryGenerator {
         appendLine("  Resultado orientativo: ${panel.protectionConductorCheckResult.label().lowercase()}")
     }
 
-    private fun MainPanelCircuit.hasContent(): Boolean {
-        return destination != com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED ||
-            !destinationOther.isNullOrBlank() ||
-            breakerAmps != null ||
-            breakerOtherAmps?.let { it > 0 } == true ||
-            breakerCurve != com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN ||
-            conductorSectionMm2 != null ||
-            conductorOtherSectionMm2?.let { it > 0.0 } == true ||
-            conductorMaterial != com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.UNKNOWN ||
-            consumptionAmps != null ||
-            consumptionOrigin != MeasurementOrigin.NOT_VERIFIED ||
-            !notes.isNullOrBlank()
-    }
-
     private fun MainPanelCircuit.summary(index: Int): String {
-        val destinationText = when {
-            destination == com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.OTHER && !destinationOther.isNullOrBlank() -> destinationOther
-            destination == com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED -> "Circuito ${index + 1} sin identificar"
-            else -> "Circuito ${destination.label().lowercase()}"
-        }
+        val destinationText = reportCircuitName(index)
         val details = buildList {
             (breakerAmps ?: breakerOtherAmps?.takeIf { it > 0 })?.let { add("térmica $it A") }
             if (breakerCurve != com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN) add("curva ${breakerCurve.label()}")
@@ -667,13 +650,7 @@ object InspectionSummaryGenerator {
 
     private fun MainPanelMeasurement.reportValue(): String = "${formatNumber(value ?: 0.0)} $unit"
 
-    private fun MainPanelCircuit.reportCircuitLabel(index: Int): String {
-        return when {
-            destination == com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.OTHER && !destinationOther.isNullOrBlank() -> "Circuito ${index + 1} ($destinationOther)"
-            destination == com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED -> "Circuito ${index + 1}"
-            else -> "Circuito ${index + 1} (${destination.label().lowercase()})"
-        }
-    }
+    private fun MainPanelCircuit.reportCircuitLabel(index: Int): String = reportCircuitName(index)
 
     private fun formatNumber(value: Double): String {
         val whole = value.toLong()

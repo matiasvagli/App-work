@@ -197,7 +197,8 @@ private fun MainPanelMeasurementType.isVoltageMeasurement(): Boolean = this in s
 
 private fun InspectionAggregate.dataReviewFindings(): List<InspectionFinding> = buildList {
     val now = Instant.now()
-    mainPanelCircuits.forEach { circuit ->
+    mainPanelCircuits.reportableCircuitsInReportOrder().forEachIndexed { index, circuit ->
+        val circuitName = circuit.reportCircuitName(index)
         val breaker = circuit.breakerAmps ?: circuit.breakerOtherAmps
         val section = circuit.conductorSectionMm2 ?: circuit.conductorOtherSectionMm2
         val consumption = circuit.consumptionAmps
@@ -211,7 +212,7 @@ private fun InspectionAggregate.dataReviewFindings(): List<InspectionFinding> = 
                     id = "auto:rule:circuit:${circuit.id}:consumption-breaker",
                     category = FindingCategory.PROTECTIONS,
                     severity = FindingSeverity.PRIORITY,
-                    description = "El consumo registrado (${consumption.formatNumber()} A) supera la corriente nominal de la térmica (${breaker} A). Verificar medición, distribución de cargas y actuación de la protección.",
+                    description = "$circuitName: el consumo registrado (${consumption.formatNumber()} A) supera la corriente nominal de la térmica (${breaker} A). Verificar medición, distribución de cargas y actuación de la protección.",
                     sectionName = "Tablero principal",
                     now = now,
                     sourceType = FindingSourceType.RULE_SUGGESTION,
@@ -230,7 +231,7 @@ private fun InspectionAggregate.dataReviewFindings(): List<InspectionFinding> = 
                     id = "auto:data:circuit:${circuit.id}:consumption",
                     category = FindingCategory.CIRCUITS,
                     severity = FindingSeverity.OK,
-                    description = "Revisar el valor ingresado antes de incluirlo en el informe. Consumo registrado: ${consumption.formatNumber()} A para conductor de ${section.formatNumber()} mm².",
+                    description = "$circuitName: revisar el valor ingresado antes de incluirlo en el informe. Consumo registrado: ${consumption.formatNumber()} A para conductor de ${section.formatNumber()} mm².",
                     sectionName = "Tablero principal",
                     now = now,
                     sourceType = FindingSourceType.DATA_REVIEW,

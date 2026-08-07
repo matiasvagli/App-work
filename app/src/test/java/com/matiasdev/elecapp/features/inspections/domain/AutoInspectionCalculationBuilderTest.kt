@@ -47,6 +47,51 @@ class AutoInspectionCalculationBuilderTest {
     }
 
     @Test
+    fun usesReportCircuitNameForUnidentifiedCircuitCalculations() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                circuits = listOf(
+                    circuit(id = "circuit-1", breakerAmps = 10, conductorSectionMm2 = 1.5),
+                    circuit(
+                        id = "circuit-2",
+                        breakerAmps = 16,
+                        conductorSectionMm2 = 2.5,
+                        consumptionAmps = 18.0,
+                        destination = CircuitDestination.UNIDENTIFIED,
+                        sortOrder = 1,
+                    ),
+                ),
+            ),
+        )
+
+        assertTrue(calculations.any { it.title == "Circuito 2 sin identificar: térmica y cable" })
+        assertTrue(calculations.any { it.title == "Circuito 2 sin identificar: consumo y térmica" })
+        assertTrue(calculations.none { it.title.contains("unidentified") })
+    }
+
+    @Test
+    fun usesReportCircuitNameForUnidentifiedCircuitFindings() {
+        val groups = InspectionFindingProposalBuilder.buildGroups(
+            aggregate(
+                circuits = listOf(
+                    circuit(id = "circuit-1", breakerAmps = 10, conductorSectionMm2 = 1.5),
+                    circuit(
+                        id = "circuit-2",
+                        breakerAmps = 16,
+                        conductorSectionMm2 = 2.5,
+                        consumptionAmps = 18.0,
+                        destination = CircuitDestination.UNIDENTIFIED,
+                        sortOrder = 1,
+                    ),
+                ),
+            ),
+        )
+
+        assertTrue(groups.suggested.any { it.description.startsWith("Circuito 2 sin identificar:") })
+        assertTrue(groups.suggested.none { it.description.contains("unidentified") })
+    }
+
+    @Test
     fun buildsMeasuredVoltageDropWhenPillarAndPanelVoltagesExist() {
         val calculations = AutoInspectionCalculationBuilder.build(
             aggregate(
@@ -195,11 +240,13 @@ class AutoInspectionCalculationBuilderTest {
         breakerAmps: Int?,
         conductorSectionMm2: Double?,
         consumptionAmps: Double? = null,
+        destination: CircuitDestination = CircuitDestination.LIGHTING,
+        sortOrder: Int = 0,
     ) = MainPanelCircuit(
         id = id,
         inspectionId = "inspection-1",
-        sortOrder = 0,
-        destination = CircuitDestination.LIGHTING,
+        sortOrder = sortOrder,
+        destination = destination,
         destinationOther = null,
         breakerAmps = breakerAmps,
         breakerOtherAmps = null,
