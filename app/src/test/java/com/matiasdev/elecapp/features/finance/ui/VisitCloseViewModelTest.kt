@@ -6,6 +6,8 @@ import com.matiasdev.elecapp.features.clients.ui.FakeClientRepository
 import com.matiasdev.elecapp.features.clients.ui.MainDispatcherRule
 import com.matiasdev.elecapp.features.finance.data.FakeFinanceRepository
 import com.matiasdev.elecapp.features.finance.domain.PaymentMethod
+import com.matiasdev.elecapp.features.finance.domain.VisitTechnicalResult
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkType
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
 import com.matiasdev.elecapp.features.visits.domain.VisitWorkSession
@@ -143,8 +145,34 @@ class VisitCloseViewModelTest {
         assertTrue(requireNotNull(finance.lastCloseDraft).initialPayments.isEmpty())
     }
 
+    @Test
+    fun `close sends structured work fields and technical result`() = runTest(dispatcher) {
+        val finance = FakeFinanceRepository()
+        val viewModel = viewModel(finance)
+        completeRequiredFields(viewModel)
+        viewModel.selectWorkType(VisitWorkType.FAULT_FINDING)
+        viewModel.selectTechnicalResult(VisitTechnicalResult.NOT_RESOLVED)
+        viewModel.updateText(VisitCloseTextField.WORK_SECTORS, "Patio y bomba")
+        viewModel.updateText(VisitCloseTextField.WORK_ITEMS, "Interruptor diferencial")
+        viewModel.updateText(VisitCloseTextField.WORK_TESTS, "Aislamiento de cargas por tramo")
+        viewModel.updateText(VisitCloseTextField.WORK_OBSERVATIONS, "No se accedió a cajas ocultas")
+        viewModel.updateText(VisitCloseTextField.PENDING, "Continuar búsqueda de fuga")
+        viewModel.updateMoney(VisitCloseMoneyField.LABOR, "50.000")
+        viewModel.save()
+
+        val draft = requireNotNull(finance.lastCloseDraft)
+        assertEquals(VisitWorkType.FAULT_FINDING, draft.workType)
+        assertEquals(VisitTechnicalResult.NOT_RESOLVED, draft.technicalResult)
+        assertEquals("Patio y bomba", draft.workSectors)
+        assertEquals("Interruptor diferencial", draft.workItems)
+        assertEquals("Aislamiento de cargas por tramo", draft.workTests)
+        assertEquals("No se accedió a cajas ocultas", draft.workObservations)
+        assertEquals("Continuar búsqueda de fuga", draft.pendingWork)
+    }
+
     private fun completeRequiredFields(viewModel: VisitCloseViewModel) {
         viewModel.updateText(VisitCloseTextField.WORK, "Cambio de térmica y revisión de tablero")
+        viewModel.selectTechnicalResult(VisitTechnicalResult.RESOLVED)
     }
 
     private fun viewModel(

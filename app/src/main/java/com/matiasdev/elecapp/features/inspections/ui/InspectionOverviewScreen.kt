@@ -55,6 +55,7 @@ import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationR
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
 import com.matiasdev.elecapp.features.electricaltools.ui.primaryResultText
 import com.matiasdev.elecapp.features.electricaltools.summary.label
+import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.inspections.domain.AutoInspectionCalculation
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
@@ -69,6 +70,7 @@ import com.matiasdev.elecapp.features.visits.ui.formatVisitDateTime
 fun InspectionOverviewScreen(
     inspectionRepository: InspectionRepository,
     visitRepository: VisitRepository,
+    financeRepository: FinanceRepository,
     technicalCalculationRepository: TechnicalCalculationRepository,
     electricalRuleConfigRepository: ElectricalRuleConfigRepository,
     inspectionId: String,
@@ -84,6 +86,7 @@ fun InspectionOverviewScreen(
         factory = InspectionOverviewViewModelFactory(
             inspectionRepository = inspectionRepository,
             visitRepository = visitRepository,
+            financeRepository = financeRepository,
             inspectionId = inspectionId,
             technicalCalculationRepository = technicalCalculationRepository,
             electricalRuleConfigRepository = electricalRuleConfigRepository,
@@ -130,14 +133,14 @@ fun InspectionOverviewScreen(
             onReopenClick = viewModel::requestReopen,
             onCopySummary = {
                 val summary = uiState.aggregate?.let {
-                    InspectionSummaryGenerator.generate(it, uiState.visit, calculations = uiState.calculations, autoCalculations = uiState.autoCalculations)
+                    InspectionSummaryGenerator.generate(it, uiState.visit, visitCompletion = uiState.visitCompletion, calculations = uiState.calculations, autoCalculations = uiState.autoCalculations)
                 }.orEmpty()
                 clipboard.setText(AnnotatedString(summary))
                 viewModel.notifySummaryCopied()
             },
             onShareSummary = {
                 val summary = uiState.aggregate?.let {
-                    InspectionSummaryGenerator.generate(it, uiState.visit, calculations = uiState.calculations, autoCalculations = uiState.autoCalculations)
+                    InspectionSummaryGenerator.generate(it, uiState.visit, visitCompletion = uiState.visitCompletion, calculations = uiState.calculations, autoCalculations = uiState.autoCalculations)
                 }.orEmpty()
                 context.sharePlainText(summary)
             },

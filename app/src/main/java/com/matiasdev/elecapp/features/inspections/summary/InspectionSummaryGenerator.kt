@@ -21,6 +21,8 @@ import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
 import com.matiasdev.elecapp.features.inspections.domain.reportableCircuitsInReportOrder
 import com.matiasdev.elecapp.features.inspections.domain.reportCircuitName
+import com.matiasdev.elecapp.features.finance.domain.VisitCompletion
+import com.matiasdev.elecapp.features.finance.domain.label
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -32,25 +34,30 @@ object InspectionSummaryGenerator {
         aggregate: InspectionAggregate,
         visit: Visit?,
         zoneId: ZoneId = ZoneId.systemDefault(),
+        visitCompletion: VisitCompletion? = null,
         calculations: List<TechnicalCalculation> = aggregate.calculations,
         autoCalculations: List<AutoInspectionCalculation> = emptyList(),
     ): String {
         val aggregateWithFindings = InspectionFindingProposalBuilder.mergeIntoAggregate(aggregate)
         val inspection = aggregateWithFindings.inspection
         if (inspection.scope == InspectionScope.VISUAL_INSPECTION) {
-            return generateVisualInspection(aggregateWithFindings, visit, zoneId, calculations, autoCalculations)
+            return generateVisualInspection(aggregateWithFindings, visit, zoneId, visitCompletion, calculations, autoCalculations)
         }
         return buildString {
             appendHeader(inspection, visit, zoneId)
             appendLine()
-            appendLine("TIPO DE RELEVAMIENTO")
-            appendLine(inspection.inspectionType.label())
+            appendVisitWork(visitCompletion, visit)
+            appendVisitResult(visitCompletion)
+            appendLine()
+            appendLine("RELEVAMIENTO TÉCNICO")
+            appendLine("- Tipo: ${inspection.inspectionType.label()}")
             appendPillar(inspection, aggregateWithFindings.pillar, aggregateWithFindings.pillarMeasurements)
             appendMainPanel(aggregateWithFindings.mainPanel, aggregateWithFindings.mainPanelMeasurements, aggregateWithFindings.mainPanelCircuits)
             appendGrounding(aggregateWithFindings.grounding)
             appendMeasurementsAndCalculations(aggregateWithFindings, calculations, autoCalculations)
             appendFindings(aggregateWithFindings)
             appendUnverified(aggregateWithFindings)
+            appendVisitPending(visitCompletion, visit)
             appendTechnicalComment(inspection)
             appendLine()
             appendLine("ACLARACIÓN")
@@ -65,6 +72,7 @@ object InspectionSummaryGenerator {
         aggregate: InspectionAggregate,
         visit: Visit?,
         zoneId: ZoneId,
+        visitCompletion: VisitCompletion?,
         calculations: List<TechnicalCalculation>,
         autoCalculations: List<AutoInspectionCalculation>,
     ): String {
@@ -76,6 +84,10 @@ object InspectionSummaryGenerator {
             val date = (visit?.scheduledAt ?: inspection.startedAt).atZone(zoneId).format(dateFormatter)
             appendLine("Fecha: $date")
             appendLineIfNotBlank("Motivo", inspection.reviewReason ?: inspection.visitReasonSnapshot)
+            appendVisitWork(visitCompletion, visit)
+            appendVisitResult(visitCompletion)
+            appendLine()
+            appendLine("RELEVAMIENTO TÉCNICO")
             appendLineIfNotBlank("Sector o elemento revisado", inspection.reviewedElement)
             appendLineIfNotBlank("Descripción", inspection.taskDescription)
             appendVisualPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
@@ -84,6 +96,7 @@ object InspectionSummaryGenerator {
             appendVisualMeasurementsAndCalculations(aggregate, calculations, autoCalculations)
             appendVisualFindings(aggregate)
             appendVisualUnverified(aggregate)
+            appendVisitPending(visitCompletion, visit)
             appendVisualObservation(inspection)
             appendLine()
             appendLine("ACLARACIÓN")
@@ -92,6 +105,41 @@ object InspectionSummaryGenerator {
                     "No se realizó una evaluación integral de la instalación ni se verificaron sectores ocultos, inaccesibles o no incluidos en la visita.",
             )
         }.trimEnd()
+    }
+
+    private fun StringBuilder.appendVisitWork(completion: VisitCompletion?, visit: Visit?) {
+        val workPerformed = completion?.workPerformed ?: visit?.completionNotes
+        val hasWork = completion?.workType != null ||
+            !workPerformed.isNullOrBlank() ||
+            !completion?.workSectors.isNullOrBlank() ||
+            !completion?.workItems.isNullOrBlank() ||
+            !completion?.workTests.isNullOrBlank() ||
+            !completion?.workObservations.isNullOrBlank()
+        if (!hasWork) return
+        appendLine()
+        appendLine("TRABAJO REALIZADO")
+        completion?.workType?.let { appendLine("- Tipo: ${it.label()}") }
+        appendLineIfNotBlank("- Descripción", workPerformed)
+        appendLineIfNotBlank("- Sectores intervenidos", completion?.workSectors)
+        appendLineIfNotBlank("- Elementos reemplazados o instalados", completion?.workItems)
+        appendLineIfNotBlank("- Pruebas / verificaciones", completion?.workTests)
+        appendLineIfNotBlank("- Observaciones", completion?.workObservations)
+    }
+
+    private fun StringBuilder.appendVisitResult(completion: VisitCompletion?) {
+        val result = completion?.technicalResult ?: return
+        appendLine()
+        appendLine("RESULTADO DE LA VISITA")
+        appendLine("- ${result.label()}")
+        appendLineIfNotBlank("- Diagnóstico", completion.diagnosis)
+    }
+
+    private fun StringBuilder.appendVisitPending(completion: VisitCompletion?, visit: Visit?) {
+        val pending = completion?.pendingWork ?: visit?.pendingWorkNotes
+        if (pending.isNullOrBlank()) return
+        appendLine()
+        appendLine("PENDIENTES / RECOMENDACIONES")
+        appendLine(pending)
     }
 
     private fun StringBuilder.appendHeader(

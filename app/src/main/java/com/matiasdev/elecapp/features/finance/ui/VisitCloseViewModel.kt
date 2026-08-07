@@ -15,6 +15,8 @@ import com.matiasdev.elecapp.features.finance.domain.ReceiptItemDraft
 import com.matiasdev.elecapp.features.finance.domain.ServiceReceiptItemType
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseDraft
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseResult
+import com.matiasdev.elecapp.features.finance.domain.VisitTechnicalResult
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkType
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.domain.Visit
@@ -53,7 +55,13 @@ data class VisitCloseUiState(
     val workSummary: VisitWorkSummary? = null,
     val now: Instant = Instant.EPOCH,
     val diagnosis: String = "",
+    val workType: VisitWorkType = VisitWorkType.OTHER,
     val workPerformed: String = "",
+    val workSectors: String = "",
+    val workItems: String = "",
+    val workTests: String = "",
+    val workObservations: String = "",
+    val technicalResult: VisitTechnicalResult? = null,
     val pendingWork: String = "",
     val customerNotes: String = "",
     val internalNotes: String = "",
@@ -127,6 +135,10 @@ class VisitCloseViewModel(
             when (field) {
                 VisitCloseTextField.DIAGNOSIS -> state.copy(diagnosis = value)
                 VisitCloseTextField.WORK -> state.copy(workPerformed = value)
+                VisitCloseTextField.WORK_SECTORS -> state.copy(workSectors = value)
+                VisitCloseTextField.WORK_ITEMS -> state.copy(workItems = value)
+                VisitCloseTextField.WORK_TESTS -> state.copy(workTests = value)
+                VisitCloseTextField.WORK_OBSERVATIONS -> state.copy(workObservations = value)
                 VisitCloseTextField.PENDING -> state.copy(pendingWork = value)
                 VisitCloseTextField.CUSTOMER_NOTES -> state.copy(customerNotes = value)
                 VisitCloseTextField.INTERNAL_NOTES -> state.copy(internalNotes = value)
@@ -134,6 +146,14 @@ class VisitCloseViewModel(
                 VisitCloseTextField.MERCADO_PAGO_REFERENCE -> state.copy(mercadoPagoReference = value)
             }.copy(validationErrors = emptyList())
         }
+    }
+
+    fun selectWorkType(type: VisitWorkType) {
+        _uiState.update { it.copy(workType = type, validationErrors = emptyList()) }
+    }
+
+    fun selectTechnicalResult(result: VisitTechnicalResult) {
+        _uiState.update { it.copy(technicalResult = result, validationErrors = emptyList()) }
     }
 
     fun updateMoney(field: VisitCloseMoneyField, value: String) {
@@ -267,6 +287,7 @@ class VisitCloseViewModel(
 
     private fun validate(state: VisitCloseUiState): List<String> = buildList {
         if (state.workPerformed.isBlank()) add("Ingresá el trabajo realizado")
+        if (state.technicalResult == null) add("Seleccioná el resultado de la visita")
         if (!state.closeWithoutCharge && state.laborCents <= 0L) add("La mano de obra debe ser mayor a cero")
         if (state.materialsCents < 0L) add("Materiales no puede ser negativo")
         if (state.selectedPaymentMethod == ClosePaymentMethod.MIXED && !state.closeWithoutCharge) {
@@ -283,7 +304,13 @@ class VisitCloseViewModel(
         val paymentNotes = scheduledFollowUpVisit?.let { followUp -> followUpText(followUp) }
         return VisitCloseDraft(
             diagnosis = diagnosis,
+            workType = workType,
             workPerformed = workPerformed,
+            workSectors = workSectors,
+            workItems = workItems,
+            workTests = workTests,
+            workObservations = workObservations,
+            technicalResult = technicalResult,
             pendingWork = pendingWork,
             requiresFollowUp = scheduledFollowUpVisit != null,
             followUpSuggestedAt = scheduledFollowUpVisit?.scheduledAt,
@@ -321,7 +348,19 @@ class VisitCloseViewModel(
     }
 }
 
-enum class VisitCloseTextField { DIAGNOSIS, WORK, PENDING, CUSTOMER_NOTES, INTERNAL_NOTES, TRANSFER_REFERENCE, MERCADO_PAGO_REFERENCE }
+enum class VisitCloseTextField {
+    DIAGNOSIS,
+    WORK,
+    WORK_SECTORS,
+    WORK_ITEMS,
+    WORK_TESTS,
+    WORK_OBSERVATIONS,
+    PENDING,
+    CUSTOMER_NOTES,
+    INTERNAL_NOTES,
+    TRANSFER_REFERENCE,
+    MERCADO_PAGO_REFERENCE,
+}
 
 enum class VisitCloseMoneyField { LABOR, MATERIALS, MIXED_CASH, MIXED_TRANSFER, MIXED_MERCADO_PAGO }
 

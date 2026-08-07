@@ -10,13 +10,21 @@ import com.matiasdev.elecapp.features.finance.domain.ServiceReceiptItem
 import com.matiasdev.elecapp.features.finance.domain.ServiceReceiptItemType
 import com.matiasdev.elecapp.features.finance.domain.ServiceReceiptStatus
 import com.matiasdev.elecapp.features.finance.domain.VisitCompletion
+import com.matiasdev.elecapp.features.finance.domain.VisitTechnicalResult
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkType
 import java.time.Instant
 
 fun VisitCompletionEntity.toDomain(): VisitCompletion = VisitCompletion(
     id = id,
     visitId = visitId,
     diagnosis = diagnosis,
+    workType = workType?.let { runCatching { VisitWorkType.valueOf(it) }.getOrNull() },
     workPerformed = workPerformed,
+    workSectors = workSectors,
+    workItems = workItems,
+    workTests = workTests,
+    workObservations = workObservations,
+    technicalResult = technicalResult?.let { runCatching { VisitTechnicalResult.valueOf(it) }.getOrNull() },
     pendingWork = pendingWork,
     requiresFollowUp = requiresFollowUp,
     followUpSuggestedAt = followUpSuggestedAt?.let(Instant::ofEpochMilli),
@@ -32,7 +40,13 @@ fun VisitCompletion.toEntity(): VisitCompletionEntity = VisitCompletionEntity(
     id = id,
     visitId = visitId,
     diagnosis = diagnosis,
+    workType = workType?.name,
     workPerformed = workPerformed,
+    workSectors = workSectors,
+    workItems = workItems,
+    workTests = workTests,
+    workObservations = workObservations,
+    technicalResult = technicalResult?.name,
     pendingWork = pendingWork,
     requiresFollowUp = requiresFollowUp,
     followUpSuggestedAt = followUpSuggestedAt?.toEpochMilli(),

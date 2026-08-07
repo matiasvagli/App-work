@@ -66,7 +66,7 @@ import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionEntity
         ReceiptSequenceEntity::class,
         ElectricalRuleConfigEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {

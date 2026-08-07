@@ -431,6 +431,7 @@ fun ElecNavHost(
             InspectionOverviewScreen(
                 inspectionRepository = inspectionRepository,
                 visitRepository = visitRepository,
+                financeRepository = financeRepository,
                 technicalCalculationRepository = technicalCalculationRepository,
                 electricalRuleConfigRepository = electricalRuleConfigRepository,
                 inspectionId = inspectionId,

@@ -24,7 +24,13 @@ data class PaymentDraft(
 
 data class VisitCloseDraft(
     val diagnosis: String?,
+    val workType: VisitWorkType?,
     val workPerformed: String,
+    val workSectors: String?,
+    val workItems: String?,
+    val workTests: String?,
+    val workObservations: String?,
+    val technicalResult: VisitTechnicalResult?,
     val pendingWork: String?,
     val requiresFollowUp: Boolean,
     val followUpSuggestedAt: Instant?,

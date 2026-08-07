@@ -207,7 +207,27 @@ class RoomFinanceRepository(
     }
 
     private fun newCompletion(visitId: String, draft: VisitCloseDraft, now: Instant): VisitCompletionEntity {
-        return VisitCompletion(UUID.randomUUID().toString(), visitId, draft.diagnosis?.trim()?.ifBlank { null }, draft.workPerformed.trim(), draft.pendingWork?.trim()?.ifBlank { null }, draft.requiresFollowUp, draft.followUpSuggestedAt, draft.internalNotes?.trim()?.ifBlank { null }, draft.customerNotes?.trim()?.ifBlank { null }, now, now, now, false).toEntity()
+        return VisitCompletion(
+            id = UUID.randomUUID().toString(),
+            visitId = visitId,
+            diagnosis = draft.diagnosis?.trim()?.ifBlank { null },
+            workType = draft.workType,
+            workPerformed = draft.workPerformed.trim(),
+            workSectors = draft.workSectors?.trim()?.ifBlank { null },
+            workItems = draft.workItems?.trim()?.ifBlank { null },
+            workTests = draft.workTests?.trim()?.ifBlank { null },
+            workObservations = draft.workObservations?.trim()?.ifBlank { null },
+            technicalResult = draft.technicalResult,
+            pendingWork = draft.pendingWork?.trim()?.ifBlank { null },
+            requiresFollowUp = draft.requiresFollowUp,
+            followUpSuggestedAt = draft.followUpSuggestedAt,
+            internalNotes = draft.internalNotes?.trim()?.ifBlank { null },
+            customerNotes = draft.customerNotes?.trim()?.ifBlank { null },
+            completedAt = now,
+            createdAt = now,
+            updatedAt = now,
+            isDeleted = false,
+        ).toEntity()
     }
 
     private fun newSession(visitId: String, now: Instant): VisitWorkSessionEntity {

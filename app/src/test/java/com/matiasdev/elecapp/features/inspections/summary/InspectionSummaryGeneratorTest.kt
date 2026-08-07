@@ -5,6 +5,9 @@ import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculatio
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculationType
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalClassification
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicianConclusion
+import com.matiasdev.elecapp.features.finance.domain.VisitCompletion
+import com.matiasdev.elecapp.features.finance.domain.VisitTechnicalResult
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkType
 import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
 import com.matiasdev.elecapp.features.inspections.domain.AutoInspectionCalculationBuilder
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
@@ -53,6 +56,27 @@ class InspectionSummaryGeneratorTest {
         assertTrue(summary.contains("[URGENTE] Conductores deteriorados"))
         assertTrue(summary.contains("Estos elementos no fueron verificados durante la visita."))
         assertEquals(summary, InspectionSummaryGenerator.generate(completeAggregate(), testVisit(), ZoneId.of("UTC")))
+    }
+
+    @Test
+    fun `includes visit work result and pending sections before technical detail when completion exists`() {
+        val summary = InspectionSummaryGenerator.generate(
+            completeAggregate(),
+            testVisit(),
+            ZoneId.of("UTC"),
+            visitCompletion = visitCompletion(),
+        )
+
+        assertTrue(summary.contains("TRABAJO REALIZADO"))
+        assertTrue(summary.contains("- Tipo: Búsqueda de falla"))
+        assertTrue(summary.contains("- Descripción: Se revisaron sectores accesibles de la instalación."))
+        assertTrue(summary.contains("- Sectores intervenidos: Bomba, exterior y tablero"))
+        assertTrue(summary.contains("RESULTADO DE LA VISITA"))
+        assertTrue(summary.contains("- No resuelto"))
+        assertTrue(summary.contains("- Diagnóstico: No fue posible identificar el punto exacto de la fuga."))
+        assertTrue(summary.contains("PENDIENTES / RECOMENDACIONES\nContinuar búsqueda de fuga por tramos."))
+        assertTrue(summary.indexOf("TRABAJO REALIZADO") < summary.indexOf("RELEVAMIENTO TÉCNICO"))
+        assertTrue(summary.indexOf("HALLAZGOS") < summary.indexOf("PENDIENTES / RECOMENDACIONES"))
     }
 
     @Test
@@ -603,6 +627,31 @@ class InspectionSummaryGeneratorTest {
             notes = null,
             createdAt = now,
             updatedAt = now,
+        )
+    }
+
+    private fun visitCompletion(): VisitCompletion {
+        val now = Instant.parse("2026-08-04T18:00:00Z")
+        return VisitCompletion(
+            id = "completion-1",
+            visitId = "visit-1",
+            diagnosis = "No fue posible identificar el punto exacto de la fuga.",
+            workType = VisitWorkType.FAULT_FINDING,
+            workPerformed = "Se revisaron sectores accesibles de la instalación.",
+            workSectors = "Bomba, exterior y tablero",
+            workItems = null,
+            workTests = "Se aislaron cargas accesibles.",
+            workObservations = null,
+            technicalResult = VisitTechnicalResult.NOT_RESOLVED,
+            pendingWork = "Continuar búsqueda de fuga por tramos.",
+            requiresFollowUp = true,
+            followUpSuggestedAt = null,
+            internalNotes = null,
+            customerNotes = null,
+            completedAt = now,
+            createdAt = now,
+            updatedAt = now,
+            isDeleted = false,
         )
     }
 

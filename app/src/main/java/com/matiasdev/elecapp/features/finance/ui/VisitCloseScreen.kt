@@ -42,6 +42,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.finance.domain.MoneyFormatter
+import com.matiasdev.elecapp.features.finance.domain.VisitTechnicalResult
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkType
+import com.matiasdev.elecapp.features.finance.domain.label
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.ui.formatCompactDuration
@@ -135,14 +138,39 @@ private fun VisitSummaryCard(uiState: VisitCloseUiState) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WorkCard(uiState: VisitCloseUiState, viewModel: VisitCloseViewModel) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SectionTitle("Trabajo realizado")
+            Text("Tipo de trabajo", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                VisitWorkType.entries.forEach { type ->
+                    FilterChip(
+                        selected = uiState.workType == type,
+                        onClick = { viewModel.selectWorkType(type) },
+                        label = { Text(type.label()) },
+                    )
+                }
+            }
             TextField("Diagnóstico", uiState.diagnosis) { viewModel.updateText(VisitCloseTextField.DIAGNOSIS, it) }
-            TextField("Trabajo realizado", uiState.workPerformed, minLines = 3) { viewModel.updateText(VisitCloseTextField.WORK, it) }
-            TextField("Trabajo pendiente", uiState.pendingWork) { viewModel.updateText(VisitCloseTextField.PENDING, it) }
+            TextField("Descripción del trabajo realizado", uiState.workPerformed, minLines = 3) { viewModel.updateText(VisitCloseTextField.WORK, it) }
+            TextField("Sectores intervenidos", uiState.workSectors) { viewModel.updateText(VisitCloseTextField.WORK_SECTORS, it) }
+            TextField("Elementos reemplazados o instalados", uiState.workItems) { viewModel.updateText(VisitCloseTextField.WORK_ITEMS, it) }
+            TextField("Pruebas o verificaciones realizadas", uiState.workTests) { viewModel.updateText(VisitCloseTextField.WORK_TESTS, it) }
+            TextField("Observaciones del trabajo", uiState.workObservations) { viewModel.updateText(VisitCloseTextField.WORK_OBSERVATIONS, it) }
+            Text("Resultado de la visita", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                VisitTechnicalResult.entries.forEach { result ->
+                    FilterChip(
+                        selected = uiState.technicalResult == result,
+                        onClick = { viewModel.selectTechnicalResult(result) },
+                        label = { Text(result.label()) },
+                    )
+                }
+            }
+            TextField("Pendientes / próximos pasos", uiState.pendingWork) { viewModel.updateText(VisitCloseTextField.PENDING, it) }
             TextField("Notas para el cliente", uiState.customerNotes) { viewModel.updateText(VisitCloseTextField.CUSTOMER_NOTES, it) }
             TextField("Notas internas", uiState.internalNotes) { viewModel.updateText(VisitCloseTextField.INTERNAL_NOTES, it) }
         }

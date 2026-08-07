@@ -35,6 +35,7 @@ import com.matiasdev.elecapp.features.quotes.summary.label
 import com.matiasdev.elecapp.features.finance.domain.MoneyFormatter
 import com.matiasdev.elecapp.features.finance.domain.PaymentBalanceCalculator
 import com.matiasdev.elecapp.features.finance.domain.displayNumber
+import com.matiasdev.elecapp.features.finance.domain.label
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
 import com.matiasdev.elecapp.features.visits.domain.VisitWorkActions
@@ -105,8 +106,14 @@ private fun WorkClosureCard(
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Cierre del trabajo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            completion?.workType?.let { DetailLine("Tipo", it.label()) }
             DetailLine("Trabajo realizado", completion?.workPerformed ?: visit.completionNotes.orEmpty().ifBlank { "Sin detalle estructurado" })
-            completion?.pendingWork?.takeIf(String::isNotBlank)?.let { DetailLine("Pendiente", it) }
+            completion?.workSectors?.takeIf(String::isNotBlank)?.let { DetailLine("Sectores intervenidos", it) }
+            completion?.workItems?.takeIf(String::isNotBlank)?.let { DetailLine("Elementos", it) }
+            completion?.workTests?.takeIf(String::isNotBlank)?.let { DetailLine("Pruebas / verificaciones", it) }
+            completion?.workObservations?.takeIf(String::isNotBlank)?.let { DetailLine("Observaciones", it) }
+            completion?.technicalResult?.let { DetailLine("Resultado", it.label()) }
+            completion?.pendingWork?.takeIf(String::isNotBlank)?.let { DetailLine("Pendientes / próximos pasos", it) }
             if (receipt == null) {
                 Text("Sin comprobante asociado", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedButton(onClick = { onRegisterPaymentClick("", visit.clientId, visit.id) }) {

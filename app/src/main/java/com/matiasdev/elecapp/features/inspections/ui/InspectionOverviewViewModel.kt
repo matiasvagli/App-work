@@ -16,6 +16,7 @@ import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculatio
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculationType
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalClassification
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicianConclusion
+import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.AutoInspectionCalculationBuilder
 import com.matiasdev.elecapp.features.inspections.domain.InspectionCompletionRules
@@ -25,20 +26,26 @@ import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import java.time.Instant
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class InspectionOverviewViewModel(
     private val inspectionRepository: InspectionRepository,
     private val visitRepository: VisitRepository,
     private val inspectionId: String,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val financeRepository: FinanceRepository? = null,
     private val technicalCalculationRepository: TechnicalCalculationRepository = EmptyTechnicalCalculationRepository,
     private val electricalRuleConfigRepository: ElectricalRuleConfigRepository = DefaultElectricalRuleConfigRepository,
 ) : ViewModel() {
@@ -79,6 +86,15 @@ class InspectionOverviewViewModel(
                         )
                     }
                 }
+        }
+        viewModelScope.launch(ioDispatcher) {
+            inspectionRepository.observeAggregate(inspectionId)
+                .map { it?.inspection?.visitId }
+                .distinctUntilChanged()
+                .flatMapLatest { visitId ->
+                    if (visitId == null || financeRepository == null) flowOf(null) else financeRepository.observeVisitCompletion(visitId)
+                }
+                .collect { completion -> _uiState.update { it.copy(visitCompletion = completion) } }
         }
     }
 
@@ -158,6 +174,7 @@ class InspectionOverviewViewModelFactory(
     private val inspectionRepository: InspectionRepository,
     private val visitRepository: VisitRepository,
     private val inspectionId: String,
+    private val financeRepository: FinanceRepository? = null,
     private val technicalCalculationRepository: TechnicalCalculationRepository = EmptyTechnicalCalculationRepository,
     private val electricalRuleConfigRepository: ElectricalRuleConfigRepository = DefaultElectricalRuleConfigRepository,
 ) : ViewModelProvider.Factory {
@@ -167,6 +184,7 @@ class InspectionOverviewViewModelFactory(
             inspectionRepository = inspectionRepository,
             visitRepository = visitRepository,
             inspectionId = inspectionId,
+            financeRepository = financeRepository,
             technicalCalculationRepository = technicalCalculationRepository,
             electricalRuleConfigRepository = electricalRuleConfigRepository,
         ) as T
