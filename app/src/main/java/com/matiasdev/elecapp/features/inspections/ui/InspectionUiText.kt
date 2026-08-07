@@ -12,5 +12,6 @@ fun InspectionSectionStatus.symbol(): String = when (this) {
 fun FindingSeverity.symbol(): String = when (this) {
     FindingSeverity.OK -> "✓"
     FindingSeverity.RECOMMENDED -> "!"
+    FindingSeverity.PRIORITY -> "!!"
     FindingSeverity.URGENT -> "!!"
 }

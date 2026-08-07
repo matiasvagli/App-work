@@ -492,6 +492,7 @@ private fun inspectionSectionRoute(inspectionId: String, section: InspectionSect
         InspectionSection.GENERAL -> AppRoutes.inspectionGeneral(inspectionId)
         InspectionSection.PILLAR -> AppRoutes.inspectionPillar(inspectionId)
         InspectionSection.MAIN_PANEL -> AppRoutes.inspectionMainPanel(inspectionId)
+        InspectionSection.GROUNDING_SOON -> AppRoutes.inspectionOverview(inspectionId)
         InspectionSection.FINDINGS -> AppRoutes.inspectionFindings(inspectionId)
         InspectionSection.UNVERIFIED -> AppRoutes.inspectionUnverified(inspectionId)
         InspectionSection.VISUAL_COMPLEMENTARY -> AppRoutes.inspectionVisualComplementary(inspectionId)

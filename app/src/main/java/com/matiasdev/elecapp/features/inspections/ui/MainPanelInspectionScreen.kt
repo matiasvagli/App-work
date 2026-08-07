@@ -148,12 +148,12 @@ private fun MainPanelForm(uiState: MainPanelInspectionUiState, viewModel: MainPa
             NumberField("Cantidad de circuitos", uiState.circuitCount, viewModel::updateCircuitCount, uiState.circuitCountError)
             CircuitList(uiState, viewModel)
         }
-        InspectionFormBlock("Cableado, barras y riesgos visibles") {
+        InspectionFormBlock("Cableado, borneras y riesgos visibles") {
             InspectionDropdownField("Colores de conductores", uiState.conductorColorStatus, ConductorColorStatus.entries.toList(), ConductorColorStatus::label) {
                 viewModel.update { copy(conductorColorStatus = it) }
             }
-            yesNoField("Barra de neutro", uiState.neutralBarPresent) { viewModel.update { copy(neutralBarPresent = it) } }
-            yesNoField("Barra de tierra", uiState.groundBarPresent) { viewModel.update { copy(groundBarPresent = it) } }
+            yesNoField("Bornera de neutro", uiState.neutralBarPresent) { viewModel.update { copy(neutralBarPresent = it) } }
+            yesNoField("Bornera de tierra", uiState.groundBarPresent) { viewModel.update { copy(groundBarPresent = it) } }
             yesNoField("Neutro y tierra separados", uiState.neutralAndGroundSeparated) { viewModel.update { copy(neutralAndGroundSeparated = it) } }
             InspectionDropdownField("Conductores de protección presentes", uiState.protectionConductorsPresent, YesNoPartialUnknown.entries.toList(), YesNoPartialUnknown::label) {
                 viewModel.update { copy(protectionConductorsPresent = it) }

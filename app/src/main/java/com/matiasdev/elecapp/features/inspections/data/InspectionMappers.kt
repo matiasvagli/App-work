@@ -9,7 +9,9 @@ import com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
 import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
+import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
+import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
 import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
@@ -322,6 +324,15 @@ fun InspectionFindingEntity.toDomain(): InspectionFinding = InspectionFinding(
     title = title,
     description = description,
     recommendation = recommendation,
+    sourceType = enumValue(sourceType, FindingSourceType.MANUAL),
+    sourceSection = sourceSection?.let { enumValue(it, InspectionSection.FINDINGS) },
+    sourceEntityId = sourceEntityId,
+    sourceValue = sourceValue,
+    sourceUnit = sourceUnit,
+    ruleCode = ruleCode,
+    reviewStatus = enumValue(reviewStatus, FindingReviewStatus.CONFIRMED),
+    includeInReport = includeInReport,
+    technicianNotes = technicianNotes,
     sortOrder = sortOrder,
     createdAt = Instant.ofEpochMilli(createdAt),
     updatedAt = Instant.ofEpochMilli(updatedAt),
@@ -336,6 +347,15 @@ fun InspectionFinding.toEntity(): InspectionFindingEntity = InspectionFindingEnt
     title = title,
     description = description,
     recommendation = recommendation,
+    sourceType = sourceType.name,
+    sourceSection = sourceSection?.name,
+    sourceEntityId = sourceEntityId,
+    sourceValue = sourceValue,
+    sourceUnit = sourceUnit,
+    ruleCode = ruleCode,
+    reviewStatus = reviewStatus.name,
+    includeInReport = includeInReport,
+    technicianNotes = technicianNotes,
     sortOrder = sortOrder,
     createdAt = createdAt.toEpochMilli(),
     updatedAt = updatedAt.toEpochMilli(),

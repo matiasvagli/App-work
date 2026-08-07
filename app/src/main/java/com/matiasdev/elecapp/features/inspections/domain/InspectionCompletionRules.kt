@@ -13,7 +13,7 @@ object InspectionCompletionRules {
         val missing = buildList {
             val inspection = aggregate.inspection
             if (inspection.clientNameSnapshot.isBlank() || inspection.visitReasonSnapshot.isBlank()) {
-                add("Datos generales")
+                add("Datos de la visita")
             }
             val pillarIsRequired = inspection.scope != InspectionScope.SECTOR_ASSESSMENT ||
                 InspectionProgressCalculator.run { inspection.isPillarRelevantForSector() }

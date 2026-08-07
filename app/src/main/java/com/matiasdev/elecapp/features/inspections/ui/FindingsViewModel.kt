@@ -5,8 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
+import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
+import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
+import com.matiasdev.elecapp.features.inspections.domain.InspectionFindingGroups
+import com.matiasdev.elecapp.features.inspections.domain.InspectionFindingProposalBuilder
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionValidation
 import java.time.Instant
@@ -22,27 +27,23 @@ import kotlinx.coroutines.launch
 
 data class FindingsUiState(
     val isLoading: Boolean = true,
-    val findings: List<InspectionFinding> = emptyList(),
+    val confirmed: List<InspectionFinding> = emptyList(),
+    val suggested: List<InspectionFinding> = emptyList(),
+    val dataReview: List<InspectionFinding> = emptyList(),
+    val notVerified: List<InspectionFinding> = emptyList(),
+    val manual: List<InspectionFinding> = emptyList(),
     val editingId: String? = null,
-    val category: FindingCategory = FindingCategory.GENERAL,
+    val category: FindingCategory = FindingCategory.MAIN_PANEL,
     val severity: FindingSeverity = FindingSeverity.RECOMMENDED,
-    val title: String = "",
     val description: String = "",
-    val recommendation: String = "",
-    val titleError: String? = null,
+    val technicianNotes: String = "",
     val descriptionError: String? = null,
     val status: InspectionStatus = InspectionStatus.DRAFT,
     val saved: Boolean = false,
     val errorMessage: String? = null,
-)
-
-data class FindingTemplate(
-    val title: String,
-    val category: FindingCategory,
-    val severity: FindingSeverity,
-    val description: String,
-    val recommendation: String = "",
-)
+) {
+    val allFindings: List<InspectionFinding> = confirmed + suggested + dataReview + notVerified + manual
+}
 
 class FindingsViewModel(
     private val repository: InspectionRepository,
@@ -57,10 +58,15 @@ class FindingsViewModel(
             repository.observeAggregate(inspectionId)
                 .catch { error -> _uiState.update { it.copy(isLoading = false, errorMessage = error.message) } }
                 .collect { aggregate ->
+                    val groups = aggregate?.let(InspectionFindingProposalBuilder::buildGroups) ?: InspectionFindingGroups()
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            findings = aggregate?.findings.orEmpty(),
+                            confirmed = groups.confirmed,
+                            suggested = groups.suggested,
+                            dataReview = groups.dataReview,
+                            notVerified = groups.notVerified,
+                            manual = groups.manual,
                             status = aggregate?.inspection?.status ?: it.status,
                         )
                     }
@@ -69,7 +75,7 @@ class FindingsViewModel(
     }
 
     fun update(transform: FindingsUiState.() -> FindingsUiState) {
-        _uiState.update { it.transform().copy(saved = false, titleError = null, descriptionError = null) }
+        _uiState.update { it.transform().copy(saved = false, descriptionError = null) }
     }
 
     fun edit(finding: InspectionFinding) {
@@ -78,53 +84,56 @@ class FindingsViewModel(
                 editingId = finding.id,
                 category = finding.category,
                 severity = finding.severity,
-                title = finding.title,
                 description = finding.description,
-                recommendation = finding.recommendation.orEmpty(),
-                saved = false,
-            )
-        }
-    }
-
-    fun applyTemplate(template: FindingTemplate) {
-        _uiState.update {
-            it.copy(
-                editingId = null,
-                category = template.category,
-                severity = template.severity,
-                title = template.title,
-                description = template.description,
-                recommendation = template.recommendation,
+                technicianNotes = finding.technicianNotes.orEmpty(),
                 saved = false,
             )
         }
     }
 
     fun clearForm() {
-        _uiState.update { FindingsUiState(isLoading = false, findings = it.findings, status = it.status) }
+        _uiState.update { state ->
+            FindingsUiState(
+                isLoading = false,
+                confirmed = state.confirmed,
+                suggested = state.suggested,
+                dataReview = state.dataReview,
+                notVerified = state.notVerified,
+                manual = state.manual,
+                status = state.status,
+            )
+        }
     }
 
-    fun save() {
+    fun saveManual() {
         val state = _uiState.value
-        val titleError = InspectionValidation.validateRequiredText(state.title, "El título")
         val descriptionError = InspectionValidation.validateRequiredText(state.description, "La descripción")
-        if (titleError != null || descriptionError != null) {
-            _uiState.update { it.copy(titleError = titleError, descriptionError = descriptionError) }
+        if (descriptionError != null) {
+            _uiState.update { it.copy(descriptionError = descriptionError) }
             return
         }
         viewModelScope.launch(ioDispatcher) {
             val now = Instant.now()
-            val existing = state.findings.firstOrNull { it.id == state.editingId }
+            val existing = state.allFindings.firstOrNull { it.id == state.editingId }
             repository.saveFinding(
                 InspectionFinding(
                     id = existing?.id ?: UUID.randomUUID().toString(),
                     inspectionId = inspectionId,
                     category = state.category,
                     severity = state.severity,
-                    title = state.title.trim(),
+                    title = state.category.labelForTitle(),
                     description = state.description.trim(),
-                    recommendation = state.recommendation.trim().ifBlank { null },
-                    sortOrder = existing?.sortOrder ?: state.findings.size,
+                    recommendation = null,
+                    sourceType = existing?.sourceType ?: FindingSourceType.MANUAL,
+                    sourceSection = existing?.sourceSection ?: InspectionSection.FINDINGS,
+                    sourceEntityId = existing?.sourceEntityId,
+                    sourceValue = existing?.sourceValue,
+                    sourceUnit = existing?.sourceUnit,
+                    ruleCode = existing?.ruleCode,
+                    reviewStatus = existing?.reviewStatus ?: FindingReviewStatus.CONFIRMED,
+                    includeInReport = existing?.includeInReport ?: true,
+                    technicianNotes = state.technicianNotes.trim().ifBlank { null },
+                    sortOrder = existing?.sortOrder ?: state.manual.size,
                     createdAt = existing?.createdAt ?: now,
                     updatedAt = now,
                     isDeleted = false,
@@ -135,24 +144,46 @@ class FindingsViewModel(
         }
     }
 
+    fun includeInReport(finding: InspectionFinding) = saveFindingDecision(finding.copy(includeInReport = true))
+
+    fun excludeFromReport(finding: InspectionFinding) = saveFindingDecision(finding.copy(includeInReport = false, reviewStatus = FindingReviewStatus.EXCLUDED))
+
+    fun changePriority(finding: InspectionFinding, severity: FindingSeverity) = saveFindingDecision(finding.copy(severity = severity))
+
+    fun confirmSuggestion(finding: InspectionFinding) = saveFindingDecision(
+        finding.copy(
+            sourceType = if (finding.sourceType == FindingSourceType.RULE_SUGGESTION) FindingSourceType.OBSERVATION_CONFIRMED else finding.sourceType,
+            reviewStatus = FindingReviewStatus.CONFIRMED,
+            includeInReport = true,
+        ),
+    )
+
     fun delete(finding: InspectionFinding) {
+        if (finding.sourceType != FindingSourceType.MANUAL) return
         viewModelScope.launch(ioDispatcher) {
             repository.softDeleteFinding(finding.id)
         }
     }
+
+    private fun saveFindingDecision(finding: InspectionFinding) {
+        viewModelScope.launch(ioDispatcher) {
+            repository.saveFinding(finding.copy(updatedAt = Instant.now()))
+        }
+    }
 }
 
-val findingTemplates = listOf(
-    FindingTemplate("Conductores deteriorados", FindingCategory.PILLAR, FindingSeverity.URGENT, "Se observaron conductores deteriorados."),
-    FindingTemplate("Protección posiblemente sobredimensionada", FindingCategory.GENERAL, FindingSeverity.RECOMMENDED, "La protección podría no corresponder con la sección observada."),
-    FindingTemplate("Falta interruptor diferencial", FindingCategory.MAIN_PANEL, FindingSeverity.URGENT, "No se verificó interruptor diferencial en el tablero principal."),
-    FindingTemplate("Circuitos sin identificar", FindingCategory.MAIN_PANEL, FindingSeverity.RECOMMENDED, "Los circuitos no se encuentran identificados."),
-    FindingTemplate("Colores de conductores incorrectos", FindingCategory.MAIN_PANEL, FindingSeverity.RECOMMENDED, "Se observaron colores de conductores incorrectos o mezclados."),
-    FindingTemplate("Empalmes improvisados", FindingCategory.MAIN_PANEL, FindingSeverity.URGENT, "Se observaron empalmes o conexiones improvisadas."),
-    FindingTemplate("Signos de recalentamiento", FindingCategory.MAIN_PANEL, FindingSeverity.URGENT, "Se observaron signos compatibles con recalentamiento."),
-    FindingTemplate("Puesta a tierra no verificada", FindingCategory.GENERAL, FindingSeverity.RECOMMENDED, "No se pudo verificar la puesta a tierra."),
-    FindingTemplate("Sector inaccesible", FindingCategory.OTHER, FindingSeverity.RECOMMENDED, "Un sector no pudo ser verificado durante la visita."),
-)
+private fun FindingCategory.labelForTitle(): String = when (this) {
+    FindingCategory.PILLAR -> "Pilar y acometida"
+    FindingCategory.MAIN_PANEL -> "Tablero principal"
+    FindingCategory.CIRCUITS -> "Circuitos"
+    FindingCategory.CONDUCTORS -> "Conductores"
+    FindingCategory.PROTECTIONS -> "Protecciones"
+    FindingCategory.GROUNDING -> "Puesta a tierra"
+    FindingCategory.EQUIPMENT -> "Artefactos o equipos"
+    FindingCategory.VISIBLE_RISK -> "Riesgo visible"
+    FindingCategory.GENERAL -> "General"
+    FindingCategory.OTHER -> "Otro"
+}
 
 class FindingsViewModelFactory(
     private val repository: InspectionRepository,

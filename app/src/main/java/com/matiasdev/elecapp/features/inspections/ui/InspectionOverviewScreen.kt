@@ -284,6 +284,16 @@ private fun SectionProgressCard(
     section: com.matiasdev.elecapp.features.inspections.domain.InspectionSectionProgress,
     onSectionClick: (InspectionSection) -> Unit,
 ) {
+    if (section.section == InspectionSection.GROUNDING_SOON) {
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Puesta a tierra", fontWeight = FontWeight.SemiBold)
+                Text("Próximamente", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Registro de jabalina, conductor de protección y mediciones con telurómetro.")
+            }
+        }
+        return
+    }
     Card(onClick = { onSectionClick(section.section) }, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

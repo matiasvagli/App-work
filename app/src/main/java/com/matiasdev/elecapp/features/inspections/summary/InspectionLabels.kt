@@ -118,13 +118,20 @@ fun DifferentialTestResult.label(): String = when (this) {
 fun FindingCategory.label(): String = when (this) {
     FindingCategory.PILLAR -> "Pilar y acometida"
     FindingCategory.MAIN_PANEL -> "Tablero principal"
+    FindingCategory.CIRCUITS -> "Circuitos"
+    FindingCategory.CONDUCTORS -> "Conductores"
+    FindingCategory.PROTECTIONS -> "Protecciones"
+    FindingCategory.GROUNDING -> "Puesta a tierra"
+    FindingCategory.EQUIPMENT -> "Artefactos o equipos"
+    FindingCategory.VISIBLE_RISK -> "Riesgo visible"
     FindingCategory.GENERAL -> "General"
     FindingCategory.OTHER -> "Otro"
 }
 
 fun FindingSeverity.label(): String = when (this) {
-    FindingSeverity.OK -> "OK"
+    FindingSeverity.OK -> "Informativo"
     FindingSeverity.RECOMMENDED -> "Recomendado"
+    FindingSeverity.PRIORITY -> "Prioritario"
     FindingSeverity.URGENT -> "Urgente"
 }
 
@@ -221,6 +228,7 @@ fun InspectionSection.label(): String = when (this) {
     InspectionSection.GENERAL -> "Datos generales"
     InspectionSection.PILLAR -> "Pilar y acometida"
     InspectionSection.MAIN_PANEL -> "Tablero principal"
+    InspectionSection.GROUNDING_SOON -> "Puesta a tierra"
     InspectionSection.FINDINGS -> "Hallazgos"
     InspectionSection.UNVERIFIED -> "Sectores no verificados"
     InspectionSection.VISUAL_COMPLEMENTARY -> "Observaciones y no verificados"

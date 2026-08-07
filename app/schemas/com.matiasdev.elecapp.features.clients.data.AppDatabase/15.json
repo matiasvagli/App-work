@@ -1,0 +1,2895 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 15,
+    "identityHash": "0be2a9d90db293fd6dccece1fe516112",
+    "entities": [
+      {
+        "tableName": "clients",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `full_name` TEXT NOT NULL, `phone` TEXT NOT NULL, `email` TEXT, `address` TEXT, `locality` TEXT, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fullName",
+            "columnName": "full_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "address",
+            "columnName": "address",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "locality",
+            "columnName": "locality",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_clients_full_name",
+            "unique": false,
+            "columnNames": [
+              "full_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_clients_full_name` ON `${TABLE_NAME}` (`full_name`)"
+          },
+          {
+            "name": "index_clients_phone",
+            "unique": false,
+            "columnNames": [
+              "phone"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_clients_phone` ON `${TABLE_NAME}` (`phone`)"
+          }
+        ]
+      },
+      {
+        "tableName": "visits",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `client_id` TEXT NOT NULL, `scheduled_at` INTEGER NOT NULL, `estimated_duration_minutes` INTEGER, `reason` TEXT NOT NULL, `notes` TEXT, `status` TEXT NOT NULL, `started_at` INTEGER, `completed_at` INTEGER, `completion_notes` TEXT, `pending_work_notes` TEXT, `attention_type` TEXT, `parent_visit_id` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scheduledAt",
+            "columnName": "scheduled_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estimatedDurationMinutes",
+            "columnName": "estimated_duration_minutes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "started_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "completionNotes",
+            "columnName": "completion_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pendingWorkNotes",
+            "columnName": "pending_work_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "attentionType",
+            "columnName": "attention_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "parentVisitId",
+            "columnName": "parent_visit_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_visits_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visits_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "index_visits_scheduled_at",
+            "unique": false,
+            "columnNames": [
+              "scheduled_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visits_scheduled_at` ON `${TABLE_NAME}` (`scheduled_at`)"
+          },
+          {
+            "name": "index_visits_parent_visit_id",
+            "unique": false,
+            "columnNames": [
+              "parent_visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visits_parent_visit_id` ON `${TABLE_NAME}` (`parent_visit_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "visit_reminders",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `visit_id` TEXT NOT NULL, `minutes_before` INTEGER NOT NULL, `enabled` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "minutesBefore",
+            "columnName": "minutes_before",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enabled",
+            "columnName": "enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_visit_reminders_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visit_reminders_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "electrical_inspections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `visit_id` TEXT NOT NULL, `status` TEXT NOT NULL, `scope` TEXT NOT NULL, `inspection_type` TEXT NOT NULL, `general_condition` TEXT NOT NULL, `supply_type` TEXT NOT NULL, `property_type` TEXT NOT NULL, `review_reason` TEXT, `reviewed_element` TEXT, `task_description` TEXT, `visit_reason_snapshot` TEXT NOT NULL, `client_name_snapshot` TEXT NOT NULL, `address_snapshot` TEXT NOT NULL, `locality_snapshot` TEXT NOT NULL, `technician_name` TEXT, `access_limitations` TEXT, `original_technical_comment` TEXT, `final_client_report` TEXT, `started_at` INTEGER NOT NULL, `completed_at` INTEGER, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scope",
+            "columnName": "scope",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inspectionType",
+            "columnName": "inspection_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generalCondition",
+            "columnName": "general_condition",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "supplyType",
+            "columnName": "supply_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "propertyType",
+            "columnName": "property_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reviewReason",
+            "columnName": "review_reason",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reviewedElement",
+            "columnName": "reviewed_element",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "taskDescription",
+            "columnName": "task_description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "visitReasonSnapshot",
+            "columnName": "visit_reason_snapshot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientNameSnapshot",
+            "columnName": "client_name_snapshot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addressSnapshot",
+            "columnName": "address_snapshot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localitySnapshot",
+            "columnName": "locality_snapshot",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianName",
+            "columnName": "technician_name",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "accessLimitations",
+            "columnName": "access_limitations",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "originalTechnicalComment",
+            "columnName": "original_technical_comment",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "finalClientReport",
+            "columnName": "final_client_report",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "started_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_electrical_inspections_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_electrical_inspections_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "pillar_inspections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`inspection_id` TEXT NOT NULL, `review_status` TEXT NOT NULL, `pillar_exists` INTEGER, `property_type` TEXT, `property_type_other` TEXT, `supply_type` TEXT, `accessible` TEXT NOT NULL, `general_condition` TEXT NOT NULL, `main_breaker_present` TEXT NOT NULL, `main_breaker_amps` INTEGER, `main_breaker_other_amps` INTEGER, `differential_present` TEXT NOT NULL, `differential_rated_amps` INTEGER, `differential_other_rated_amps` INTEGER, `differential_sensitivity_ma` INTEGER, `differential_other_sensitivity_ma` INTEGER, `differential_test_result` TEXT NOT NULL, `conductor_section_mm2` REAL, `conductor_other_section_mm2` REAL, `conductor_material` TEXT NOT NULL, `conductor_material_other` TEXT, `conductor_condition` TEXT NOT NULL, `neutral_identified` TEXT NOT NULL, `grounding_visible` TEXT NOT NULL, `protection_compatibility` TEXT NOT NULL, `protection_compatibility_notes` TEXT, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`inspection_id`))",
+        "fields": [
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reviewStatus",
+            "columnName": "review_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exists",
+            "columnName": "pillar_exists",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "propertyType",
+            "columnName": "property_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "propertyTypeOther",
+            "columnName": "property_type_other",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "supplyType",
+            "columnName": "supply_type",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "accessible",
+            "columnName": "accessible",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generalCondition",
+            "columnName": "general_condition",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mainBreakerPresent",
+            "columnName": "main_breaker_present",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mainBreakerAmps",
+            "columnName": "main_breaker_amps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "mainBreakerOtherAmps",
+            "columnName": "main_breaker_other_amps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialPresent",
+            "columnName": "differential_present",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "differentialRatedAmps",
+            "columnName": "differential_rated_amps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialOtherRatedAmps",
+            "columnName": "differential_other_rated_amps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialSensitivityMa",
+            "columnName": "differential_sensitivity_ma",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialOtherSensitivityMa",
+            "columnName": "differential_other_sensitivity_ma",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialTestResult",
+            "columnName": "differential_test_result",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conductorSectionMm2",
+            "columnName": "conductor_section_mm2",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "conductorOtherSectionMm2",
+            "columnName": "conductor_other_section_mm2",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "conductorMaterial",
+            "columnName": "conductor_material",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conductorMaterialOther",
+            "columnName": "conductor_material_other",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "conductorCondition",
+            "columnName": "conductor_condition",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "neutralIdentified",
+            "columnName": "neutral_identified",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groundingVisible",
+            "columnName": "grounding_visible",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protectionCompatibility",
+            "columnName": "protection_compatibility",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protectionCompatibilityNotes",
+            "columnName": "protection_compatibility_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "inspection_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pillar_inspections_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pillar_inspections_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "pillar_measurements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `inspection_id` TEXT NOT NULL, `type` TEXT NOT NULL, `value` REAL, `unit` TEXT NOT NULL, `origin` TEXT NOT NULL, `sort_order` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_pillar_measurements_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pillar_measurements_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          },
+          {
+            "name": "index_pillar_measurements_inspection_id_type",
+            "unique": false,
+            "columnNames": [
+              "inspection_id",
+              "type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_pillar_measurements_inspection_id_type` ON `${TABLE_NAME}` (`inspection_id`, `type`)"
+          }
+        ]
+      },
+      {
+        "tableName": "main_panel_inspections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`inspection_id` TEXT NOT NULL, `review_status` TEXT NOT NULL, `accessible` TEXT NOT NULL, `general_condition` TEXT NOT NULL, `differential_present` TEXT NOT NULL, `differential_rated_amps` INTEGER, `differential_other_rated_amps` INTEGER, `differential_sensitivity_ma` INTEGER, `differential_other_sensitivity_ma` INTEGER, `differential_test_result` TEXT NOT NULL, `circuit_count` INTEGER, `circuits_identified` TEXT NOT NULL, `neutral_bar_present` TEXT NOT NULL, `ground_bar_present` TEXT NOT NULL, `neutral_and_ground_separated` TEXT NOT NULL, `protection_conductors_present` TEXT NOT NULL, `improvised_connections` TEXT NOT NULL, `conductor_color_status` TEXT NOT NULL, `mixed_or_incorrect_colors` TEXT NOT NULL, `overheating_signs` TEXT NOT NULL, `exposed_parts_or_damaged_insulation` TEXT NOT NULL, `protection_compatibility` TEXT NOT NULL, `wiring_risks_notes` TEXT, `protection_conductor_check_result` TEXT NOT NULL, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`inspection_id`))",
+        "fields": [
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reviewStatus",
+            "columnName": "review_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "accessible",
+            "columnName": "accessible",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generalCondition",
+            "columnName": "general_condition",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "differentialPresent",
+            "columnName": "differential_present",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "differentialRatedAmps",
+            "columnName": "differential_rated_amps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialOtherRatedAmps",
+            "columnName": "differential_other_rated_amps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialSensitivityMa",
+            "columnName": "differential_sensitivity_ma",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialOtherSensitivityMa",
+            "columnName": "differential_other_sensitivity_ma",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "differentialTestResult",
+            "columnName": "differential_test_result",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "circuitCount",
+            "columnName": "circuit_count",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "circuitsIdentified",
+            "columnName": "circuits_identified",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "neutralBarPresent",
+            "columnName": "neutral_bar_present",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groundBarPresent",
+            "columnName": "ground_bar_present",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "neutralAndGroundSeparated",
+            "columnName": "neutral_and_ground_separated",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protectionConductorsPresent",
+            "columnName": "protection_conductors_present",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "improvisedConnections",
+            "columnName": "improvised_connections",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conductorColorStatus",
+            "columnName": "conductor_color_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mixedOrIncorrectColors",
+            "columnName": "mixed_or_incorrect_colors",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "overheatingSigns",
+            "columnName": "overheating_signs",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exposedPartsOrDamagedInsulation",
+            "columnName": "exposed_parts_or_damaged_insulation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "protectionCompatibility",
+            "columnName": "protection_compatibility",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wiringRisksNotes",
+            "columnName": "wiring_risks_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "protectionConductorCheckResult",
+            "columnName": "protection_conductor_check_result",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "inspection_id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_main_panel_inspections_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_main_panel_inspections_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "main_panel_measurements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `inspection_id` TEXT NOT NULL, `section` TEXT NOT NULL, `type` TEXT NOT NULL, `value` REAL, `unit` TEXT NOT NULL, `origin` TEXT NOT NULL, `sort_order` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "section",
+            "columnName": "section",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_main_panel_measurements_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_main_panel_measurements_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          },
+          {
+            "name": "index_main_panel_measurements_inspection_id_section",
+            "unique": false,
+            "columnNames": [
+              "inspection_id",
+              "section"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_main_panel_measurements_inspection_id_section` ON `${TABLE_NAME}` (`inspection_id`, `section`)"
+          }
+        ]
+      },
+      {
+        "tableName": "main_panel_circuits",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `inspection_id` TEXT NOT NULL, `sort_order` INTEGER NOT NULL, `destination` TEXT NOT NULL, `destination_other` TEXT, `breaker_amps` INTEGER, `breaker_other_amps` INTEGER, `breaker_curve` TEXT NOT NULL, `conductor_section_mm2` REAL, `conductor_other_section_mm2` REAL, `conductor_material` TEXT NOT NULL, `conductor_material_other` TEXT, `consumption_amps` REAL, `consumption_origin` TEXT NOT NULL, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destination",
+            "columnName": "destination",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "destinationOther",
+            "columnName": "destination_other",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "breakerAmps",
+            "columnName": "breaker_amps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "breakerOtherAmps",
+            "columnName": "breaker_other_amps",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "breakerCurve",
+            "columnName": "breaker_curve",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conductorSectionMm2",
+            "columnName": "conductor_section_mm2",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "conductorOtherSectionMm2",
+            "columnName": "conductor_other_section_mm2",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "conductorMaterial",
+            "columnName": "conductor_material",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "conductorMaterialOther",
+            "columnName": "conductor_material_other",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "consumptionAmps",
+            "columnName": "consumption_amps",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "consumptionOrigin",
+            "columnName": "consumption_origin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_main_panel_circuits_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_main_panel_circuits_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          },
+          {
+            "name": "index_main_panel_circuits_inspection_id_sort_order",
+            "unique": false,
+            "columnNames": [
+              "inspection_id",
+              "sort_order"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_main_panel_circuits_inspection_id_sort_order` ON `${TABLE_NAME}` (`inspection_id`, `sort_order`)"
+          }
+        ]
+      },
+      {
+        "tableName": "inspection_findings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `inspection_id` TEXT NOT NULL, `category` TEXT NOT NULL, `severity` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT NOT NULL, `recommendation` TEXT, `source_type` TEXT NOT NULL, `source_section` TEXT, `source_entity_id` TEXT, `source_value` REAL, `source_unit` TEXT, `rule_code` TEXT, `review_status` TEXT NOT NULL, `include_in_report` INTEGER NOT NULL, `technician_notes` TEXT, `sort_order` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "severity",
+            "columnName": "severity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recommendation",
+            "columnName": "recommendation",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceType",
+            "columnName": "source_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceSection",
+            "columnName": "source_section",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceEntityId",
+            "columnName": "source_entity_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sourceValue",
+            "columnName": "source_value",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "sourceUnit",
+            "columnName": "source_unit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ruleCode",
+            "columnName": "rule_code",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reviewStatus",
+            "columnName": "review_status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "includeInReport",
+            "columnName": "include_in_report",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianNotes",
+            "columnName": "technician_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_inspection_findings_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inspection_findings_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          },
+          {
+            "name": "index_inspection_findings_inspection_id_sort_order",
+            "unique": false,
+            "columnNames": [
+              "inspection_id",
+              "sort_order"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inspection_findings_inspection_id_sort_order` ON `${TABLE_NAME}` (`inspection_id`, `sort_order`)"
+          }
+        ]
+      },
+      {
+        "tableName": "inspection_unverified_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `inspection_id` TEXT NOT NULL, `type` TEXT NOT NULL, `description` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_inspection_unverified_items_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_inspection_unverified_items_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "quotes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `client_id` TEXT NOT NULL, `visit_id` TEXT, `inspection_id` TEXT, `quote_number` TEXT NOT NULL, `title` TEXT NOT NULL, `description` TEXT, `status` TEXT NOT NULL, `currency` TEXT NOT NULL, `subtotal_amount` INTEGER NOT NULL, `discount_type` TEXT NOT NULL, `discount_value` INTEGER NOT NULL, `total_amount` INTEGER NOT NULL, `valid_until` INTEGER, `payment_terms` TEXT, `general_notes` TEXT, `client_message` TEXT, `sent_at` INTEGER, `approved_at` INTEGER, `rejected_at` INTEGER, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quoteNumber",
+            "columnName": "quote_number",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currency",
+            "columnName": "currency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtotalAmount",
+            "columnName": "subtotal_amount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discountType",
+            "columnName": "discount_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discountValue",
+            "columnName": "discount_value",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalAmount",
+            "columnName": "total_amount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "validUntil",
+            "columnName": "valid_until",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "paymentTerms",
+            "columnName": "payment_terms",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "generalNotes",
+            "columnName": "general_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "clientMessage",
+            "columnName": "client_message",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "sentAt",
+            "columnName": "sent_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "approvedAt",
+            "columnName": "approved_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rejectedAt",
+            "columnName": "rejected_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_quotes_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quotes_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "index_quotes_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quotes_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          },
+          {
+            "name": "index_quotes_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quotes_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          },
+          {
+            "name": "index_quotes_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quotes_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_quotes_quote_number",
+            "unique": true,
+            "columnNames": [
+              "quote_number"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_quotes_quote_number` ON `${TABLE_NAME}` (`quote_number`)"
+          }
+        ]
+      },
+      {
+        "tableName": "quote_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `quote_id` TEXT NOT NULL, `type` TEXT NOT NULL, `description` TEXT NOT NULL, `quantity` REAL NOT NULL, `unit` TEXT NOT NULL, `custom_unit_label` TEXT, `unit_price_amount` INTEGER NOT NULL, `line_total_amount` INTEGER NOT NULL, `sort_order` INTEGER NOT NULL, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quoteId",
+            "columnName": "quote_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "customUnitLabel",
+            "columnName": "custom_unit_label",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "unitPriceAmount",
+            "columnName": "unit_price_amount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lineTotalAmount",
+            "columnName": "line_total_amount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_quote_items_quote_id",
+            "unique": false,
+            "columnNames": [
+              "quote_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quote_items_quote_id` ON `${TABLE_NAME}` (`quote_id`)"
+          },
+          {
+            "name": "index_quote_items_quote_id_sort_order",
+            "unique": false,
+            "columnNames": [
+              "quote_id",
+              "sort_order"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_quote_items_quote_id_sort_order` ON `${TABLE_NAME}` (`quote_id`, `sort_order`)"
+          }
+        ]
+      },
+      {
+        "tableName": "material_lists",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `client_id` TEXT NOT NULL, `visit_id` TEXT, `inspection_id` TEXT, `quote_id` TEXT, `title` TEXT NOT NULL, `status` TEXT NOT NULL, `purchase_responsibility` TEXT NOT NULL, `introduction` TEXT, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `delivered_at` INTEGER, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quoteId",
+            "columnName": "quote_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "purchaseResponsibility",
+            "columnName": "purchase_responsibility",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "introduction",
+            "columnName": "introduction",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deliveredAt",
+            "columnName": "delivered_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_material_lists_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_lists_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "index_material_lists_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_lists_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          },
+          {
+            "name": "index_material_lists_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_lists_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          },
+          {
+            "name": "index_material_lists_quote_id",
+            "unique": false,
+            "columnNames": [
+              "quote_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_lists_quote_id` ON `${TABLE_NAME}` (`quote_id`)"
+          },
+          {
+            "name": "index_material_lists_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_lists_status` ON `${TABLE_NAME}` (`status`)"
+          }
+        ]
+      },
+      {
+        "tableName": "material_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `material_list_id` TEXT NOT NULL, `description` TEXT NOT NULL, `quantity` REAL NOT NULL, `unit` TEXT NOT NULL, `custom_unit_label` TEXT, `specifications` TEXT, `preferred_brand` TEXT, `alternative_allowed` INTEGER NOT NULL, `estimated_unit_price_amount` INTEGER, `actual_unit_price_amount` INTEGER, `sort_order` INTEGER NOT NULL, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "materialListId",
+            "columnName": "material_list_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "customUnitLabel",
+            "columnName": "custom_unit_label",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "specifications",
+            "columnName": "specifications",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "preferredBrand",
+            "columnName": "preferred_brand",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "alternativeAllowed",
+            "columnName": "alternative_allowed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estimatedUnitPriceAmount",
+            "columnName": "estimated_unit_price_amount",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "actualUnitPriceAmount",
+            "columnName": "actual_unit_price_amount",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_material_items_material_list_id",
+            "unique": false,
+            "columnNames": [
+              "material_list_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_items_material_list_id` ON `${TABLE_NAME}` (`material_list_id`)"
+          },
+          {
+            "name": "index_material_items_material_list_id_sort_order",
+            "unique": false,
+            "columnNames": [
+              "material_list_id",
+              "sort_order"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_material_items_material_list_id_sort_order` ON `${TABLE_NAME}` (`material_list_id`, `sort_order`)"
+          }
+        ]
+      },
+      {
+        "tableName": "technical_calculations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `type` TEXT NOT NULL, `source` TEXT NOT NULL, `client_id` TEXT, `visit_id` TEXT, `inspection_id` TEXT, `title` TEXT NOT NULL, `description` TEXT, `input_data_json` TEXT NOT NULL, `result_data_json` TEXT NOT NULL, `primary_result_value` REAL, `primary_result_unit` TEXT, `classification` TEXT NOT NULL, `technician_conclusion` TEXT NOT NULL, `technician_notes` TEXT, `formula_version` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "inspectionId",
+            "columnName": "inspection_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "inputDataJson",
+            "columnName": "input_data_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "resultDataJson",
+            "columnName": "result_data_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "primaryResultValue",
+            "columnName": "primary_result_value",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "primaryResultUnit",
+            "columnName": "primary_result_unit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "classification",
+            "columnName": "classification",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianConclusion",
+            "columnName": "technician_conclusion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianNotes",
+            "columnName": "technician_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "formulaVersion",
+            "columnName": "formula_version",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_technical_calculations_type",
+            "unique": false,
+            "columnNames": [
+              "type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_technical_calculations_type` ON `${TABLE_NAME}` (`type`)"
+          },
+          {
+            "name": "index_technical_calculations_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_technical_calculations_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "index_technical_calculations_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_technical_calculations_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          },
+          {
+            "name": "index_technical_calculations_inspection_id",
+            "unique": false,
+            "columnNames": [
+              "inspection_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_technical_calculations_inspection_id` ON `${TABLE_NAME}` (`inspection_id`)"
+          },
+          {
+            "name": "index_technical_calculations_created_at",
+            "unique": false,
+            "columnNames": [
+              "created_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_technical_calculations_created_at` ON `${TABLE_NAME}` (`created_at`)"
+          },
+          {
+            "name": "index_technical_calculations_classification",
+            "unique": false,
+            "columnNames": [
+              "classification"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_technical_calculations_classification` ON `${TABLE_NAME}` (`classification`)"
+          },
+          {
+            "name": "index_technical_calculations_is_deleted",
+            "unique": false,
+            "columnNames": [
+              "is_deleted"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_technical_calculations_is_deleted` ON `${TABLE_NAME}` (`is_deleted`)"
+          }
+        ]
+      },
+      {
+        "tableName": "visit_work_sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `visit_id` TEXT NOT NULL, `started_at` INTEGER NOT NULL, `ended_at` INTEGER, `status` TEXT NOT NULL, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "started_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endedAt",
+            "columnName": "ended_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_visit_work_sessions_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visit_work_sessions_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          },
+          {
+            "name": "index_visit_work_sessions_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visit_work_sessions_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_visit_work_sessions_started_at",
+            "unique": false,
+            "columnNames": [
+              "started_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visit_work_sessions_started_at` ON `${TABLE_NAME}` (`started_at`)"
+          },
+          {
+            "name": "index_visit_work_sessions_is_deleted",
+            "unique": false,
+            "columnNames": [
+              "is_deleted"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visit_work_sessions_is_deleted` ON `${TABLE_NAME}` (`is_deleted`)"
+          }
+        ]
+      },
+      {
+        "tableName": "visit_completions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `visit_id` TEXT NOT NULL, `diagnosis` TEXT, `work_performed` TEXT NOT NULL, `pending_work` TEXT, `requires_follow_up` INTEGER NOT NULL, `follow_up_suggested_at` INTEGER, `internal_notes` TEXT, `customer_notes` TEXT, `completed_at` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "diagnosis",
+            "columnName": "diagnosis",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "workPerformed",
+            "columnName": "work_performed",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pendingWork",
+            "columnName": "pending_work",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "requiresFollowUp",
+            "columnName": "requires_follow_up",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "followUpSuggestedAt",
+            "columnName": "follow_up_suggested_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "internalNotes",
+            "columnName": "internal_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "customerNotes",
+            "columnName": "customer_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_visit_completions_visit_id",
+            "unique": true,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_visit_completions_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          },
+          {
+            "name": "index_visit_completions_completed_at",
+            "unique": false,
+            "columnNames": [
+              "completed_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visit_completions_completed_at` ON `${TABLE_NAME}` (`completed_at`)"
+          },
+          {
+            "name": "index_visit_completions_is_deleted",
+            "unique": false,
+            "columnNames": [
+              "is_deleted"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_visit_completions_is_deleted` ON `${TABLE_NAME}` (`is_deleted`)"
+          }
+        ]
+      },
+      {
+        "tableName": "service_receipts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `receipt_number` INTEGER, `client_id` TEXT NOT NULL, `visit_id` TEXT, `quote_id` TEXT, `issued_at` INTEGER, `title` TEXT NOT NULL, `description` TEXT, `status` TEXT NOT NULL, `subtotal_labor_cents` INTEGER NOT NULL, `subtotal_materials_cents` INTEGER NOT NULL, `subtotal_other_cents` INTEGER NOT NULL, `discount_cents` INTEGER NOT NULL, `total_cents` INTEGER NOT NULL, `notes` TEXT, `internal_notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "receiptNumber",
+            "columnName": "receipt_number",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "quoteId",
+            "columnName": "quote_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "issuedAt",
+            "columnName": "issued_at",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtotalLaborCents",
+            "columnName": "subtotal_labor_cents",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtotalMaterialsCents",
+            "columnName": "subtotal_materials_cents",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "subtotalOtherCents",
+            "columnName": "subtotal_other_cents",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "discountCents",
+            "columnName": "discount_cents",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalCents",
+            "columnName": "total_cents",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "internalNotes",
+            "columnName": "internal_notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_service_receipts_receipt_number",
+            "unique": true,
+            "columnNames": [
+              "receipt_number"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_service_receipts_receipt_number` ON `${TABLE_NAME}` (`receipt_number`)"
+          },
+          {
+            "name": "index_service_receipts_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipts_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "index_service_receipts_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipts_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          },
+          {
+            "name": "index_service_receipts_quote_id",
+            "unique": false,
+            "columnNames": [
+              "quote_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipts_quote_id` ON `${TABLE_NAME}` (`quote_id`)"
+          },
+          {
+            "name": "index_service_receipts_issued_at",
+            "unique": false,
+            "columnNames": [
+              "issued_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipts_issued_at` ON `${TABLE_NAME}` (`issued_at`)"
+          },
+          {
+            "name": "index_service_receipts_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipts_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_service_receipts_is_deleted",
+            "unique": false,
+            "columnNames": [
+              "is_deleted"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipts_is_deleted` ON `${TABLE_NAME}` (`is_deleted`)"
+          }
+        ]
+      },
+      {
+        "tableName": "service_receipt_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `receipt_id` TEXT NOT NULL, `type` TEXT NOT NULL, `description` TEXT NOT NULL, `quantity_millis` INTEGER NOT NULL, `unit_price_cents` INTEGER NOT NULL, `total_cents` INTEGER NOT NULL, `source_type` TEXT NOT NULL, `source_id` TEXT, `supplied_by` TEXT NOT NULL, `is_chargeable` INTEGER NOT NULL, `sort_order` INTEGER NOT NULL, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "receiptId",
+            "columnName": "receipt_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantityMillis",
+            "columnName": "quantity_millis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unitPriceCents",
+            "columnName": "unit_price_cents",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalCents",
+            "columnName": "total_cents",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceType",
+            "columnName": "source_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceId",
+            "columnName": "source_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "suppliedBy",
+            "columnName": "supplied_by",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isChargeable",
+            "columnName": "is_chargeable",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_service_receipt_items_receipt_id",
+            "unique": false,
+            "columnNames": [
+              "receipt_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipt_items_receipt_id` ON `${TABLE_NAME}` (`receipt_id`)"
+          },
+          {
+            "name": "index_service_receipt_items_type",
+            "unique": false,
+            "columnNames": [
+              "type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipt_items_type` ON `${TABLE_NAME}` (`type`)"
+          },
+          {
+            "name": "index_service_receipt_items_source_id",
+            "unique": false,
+            "columnNames": [
+              "source_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipt_items_source_id` ON `${TABLE_NAME}` (`source_id`)"
+          },
+          {
+            "name": "index_service_receipt_items_sort_order",
+            "unique": false,
+            "columnNames": [
+              "sort_order"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipt_items_sort_order` ON `${TABLE_NAME}` (`sort_order`)"
+          },
+          {
+            "name": "index_service_receipt_items_is_deleted",
+            "unique": false,
+            "columnNames": [
+              "is_deleted"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_service_receipt_items_is_deleted` ON `${TABLE_NAME}` (`is_deleted`)"
+          }
+        ]
+      },
+      {
+        "tableName": "payments",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `client_id` TEXT NOT NULL, `visit_id` TEXT, `service_receipt_id` TEXT, `amount_cents` INTEGER NOT NULL, `method` TEXT NOT NULL, `paid_at` INTEGER NOT NULL, `reference` TEXT, `notes` TEXT, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `is_deleted` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "visitId",
+            "columnName": "visit_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "serviceReceiptId",
+            "columnName": "service_receipt_id",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "amountCents",
+            "columnName": "amount_cents",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "method",
+            "columnName": "method",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "paidAt",
+            "columnName": "paid_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reference",
+            "columnName": "reference",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDeleted",
+            "columnName": "is_deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_payments_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_payments_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "index_payments_visit_id",
+            "unique": false,
+            "columnNames": [
+              "visit_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_payments_visit_id` ON `${TABLE_NAME}` (`visit_id`)"
+          },
+          {
+            "name": "index_payments_service_receipt_id",
+            "unique": false,
+            "columnNames": [
+              "service_receipt_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_payments_service_receipt_id` ON `${TABLE_NAME}` (`service_receipt_id`)"
+          },
+          {
+            "name": "index_payments_paid_at",
+            "unique": false,
+            "columnNames": [
+              "paid_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_payments_paid_at` ON `${TABLE_NAME}` (`paid_at`)"
+          },
+          {
+            "name": "index_payments_method",
+            "unique": false,
+            "columnNames": [
+              "method"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_payments_method` ON `${TABLE_NAME}` (`method`)"
+          },
+          {
+            "name": "index_payments_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_payments_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_payments_is_deleted",
+            "unique": false,
+            "columnNames": [
+              "is_deleted"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_payments_is_deleted` ON `${TABLE_NAME}` (`is_deleted`)"
+          }
+        ]
+      },
+      {
+        "tableName": "receipt_sequence",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `next_number` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nextNumber",
+            "columnName": "next_number",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "electrical_rule_configs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`code` TEXT NOT NULL, `name` TEXT NOT NULL, `enabled` INTEGER NOT NULL, `severity` TEXT NOT NULL, `numeric_value` REAL, `secondary_numeric_value` REAL, `unit` TEXT, `finding_title` TEXT NOT NULL, `finding_description_template` TEXT NOT NULL, `recommendation_template` TEXT, `config_version` INTEGER NOT NULL, PRIMARY KEY(`code`))",
+        "fields": [
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "enabled",
+            "columnName": "enabled",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "severity",
+            "columnName": "severity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numericValue",
+            "columnName": "numeric_value",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "secondaryNumericValue",
+            "columnName": "secondary_numeric_value",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "findingTitle",
+            "columnName": "finding_title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "findingDescriptionTemplate",
+            "columnName": "finding_description_template",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "recommendationTemplate",
+            "columnName": "recommendation_template",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "configVersion",
+            "columnName": "config_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "code"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0be2a9d90db293fd6dccece1fe516112')"
+    ]
+  }
+}

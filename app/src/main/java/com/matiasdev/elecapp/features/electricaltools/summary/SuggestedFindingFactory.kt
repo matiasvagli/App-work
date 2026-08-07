@@ -5,8 +5,11 @@ import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculatio
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculationType
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalClassification
 import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
+import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
+import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import java.time.Instant
 import java.util.UUID
 
@@ -39,6 +42,15 @@ object SuggestedFindingFactory {
                 "${TechnicalValueFormatter.withUnit(input.conductorSectionMm2, "mm²")}, se obtuvo una caída aproximada de " +
                 "${TechnicalValueFormatter.withUnit(result.voltageDropVolts, "V")} (${TechnicalValueFormatter.withUnit(result.voltageDropPercent, "%")}).",
             recommendation = "Verificar la sección y longitud del tendido, el estado de conexiones, la carga real del circuito y las condiciones de instalación antes de definir una corrección.",
+            sourceType = FindingSourceType.RULE_SUGGESTION,
+            sourceSection = InspectionSection.FINDINGS,
+            sourceEntityId = calculation.id,
+            sourceValue = result.voltageDropPercent,
+            sourceUnit = "%",
+            ruleCode = "VOLTAGE_DROP",
+            reviewStatus = FindingReviewStatus.PENDING,
+            includeInReport = false,
+            technicianNotes = null,
             sortOrder = Int.MAX_VALUE,
             createdAt = now,
             updatedAt = now,

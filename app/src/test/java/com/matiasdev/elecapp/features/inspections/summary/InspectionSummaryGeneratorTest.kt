@@ -8,11 +8,14 @@ import com.matiasdev.elecapp.features.electricaltools.domain.TechnicianConclusio
 import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
 import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
+import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
+import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelCircuit
@@ -300,6 +303,90 @@ class InspectionSummaryGeneratorTest {
         assertTrue(summary.contains("Fase-tierra: 219 V"))
         assertTrue(summary.contains("Resultado orientativo: requiere revisión"))
         assertFalse(summary.contains("puesta a tierra correcta"))
+    }
+
+    @Test
+    fun `summary separates not verified and avoids definitive text for unconfirmed suggestions`() {
+        val now = Instant.parse("2026-08-04T14:30:00Z")
+        val summary = InspectionSummaryGenerator.generate(
+            completeAggregate().copy(
+                findings = listOf(
+                    InspectionFinding(
+                        id = "suggested-1",
+                        inspectionId = "inspection-1",
+                        category = FindingCategory.PROTECTIONS,
+                        severity = FindingSeverity.RECOMMENDED,
+                        title = "Tablero principal",
+                        description = "La tensión se encuentra fuera del rango configurado.",
+                        recommendation = null,
+                        sourceType = FindingSourceType.RULE_SUGGESTION,
+                        sourceSection = InspectionSection.MAIN_PANEL,
+                        sourceEntityId = "measurement-1",
+                        sourceValue = 260.0,
+                        sourceUnit = "V",
+                        ruleCode = "SUPPLY_VOLTAGE_RANGE",
+                        reviewStatus = FindingReviewStatus.PENDING,
+                        includeInReport = true,
+                        technicianNotes = null,
+                        sortOrder = 0,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                    InspectionFinding(
+                        id = "review-1",
+                        inspectionId = "inspection-1",
+                        category = FindingCategory.CIRCUITS,
+                        severity = FindingSeverity.OK,
+                        title = "Tablero principal",
+                        description = "Revisar el valor ingresado antes de incluirlo en el informe.",
+                        recommendation = null,
+                        sourceType = FindingSourceType.DATA_REVIEW,
+                        sourceSection = InspectionSection.MAIN_PANEL,
+                        sourceEntityId = "circuit-1",
+                        sourceValue = 198.0,
+                        sourceUnit = "A",
+                        ruleCode = null,
+                        reviewStatus = FindingReviewStatus.PENDING,
+                        includeInReport = true,
+                        technicianNotes = null,
+                        sortOrder = 1,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                    InspectionFinding(
+                        id = "not-verified-1",
+                        inspectionId = "inspection-1",
+                        category = FindingCategory.GROUNDING,
+                        severity = FindingSeverity.OK,
+                        title = "Tablero principal",
+                        description = "No se verificó la existencia de bornera de tierra.",
+                        recommendation = null,
+                        sourceType = FindingSourceType.NOT_VERIFIED,
+                        sourceSection = InspectionSection.MAIN_PANEL,
+                        sourceEntityId = "panel-ground-bar",
+                        sourceValue = null,
+                        sourceUnit = null,
+                        ruleCode = null,
+                        reviewStatus = FindingReviewStatus.PENDING,
+                        includeInReport = true,
+                        technicianNotes = null,
+                        sortOrder = 2,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                ),
+            ),
+            testVisit(),
+            ZoneId.of("UTC"),
+        )
+
+        assertTrue(summary.contains("Sugerencia de la app, requiere validación del técnico"))
+        assertTrue(summary.contains("NO VERIFICADO"))
+        assertTrue(summary.contains("No se verificó la existencia de bornera de tierra."))
+        assertFalse(summary.contains("Revisar el valor ingresado antes de incluirlo en el informe."))
     }
 
     private fun visualAggregate(

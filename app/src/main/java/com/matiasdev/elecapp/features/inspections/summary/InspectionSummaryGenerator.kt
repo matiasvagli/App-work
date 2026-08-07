@@ -4,7 +4,10 @@ import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
 import com.matiasdev.elecapp.features.electricaltools.summary.TechnicalCalculationTextGenerator
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
+import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
+import com.matiasdev.elecapp.features.inspections.domain.InspectionFindingProposalBuilder
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
@@ -27,9 +30,10 @@ object InspectionSummaryGenerator {
         zoneId: ZoneId = ZoneId.systemDefault(),
         calculations: List<TechnicalCalculation> = aggregate.calculations,
     ): String {
-        val inspection = aggregate.inspection
+        val aggregateWithFindings = InspectionFindingProposalBuilder.mergeIntoAggregate(aggregate)
+        val inspection = aggregateWithFindings.inspection
         if (inspection.scope == InspectionScope.VISUAL_INSPECTION) {
-            return generateVisualInspection(aggregate, visit, zoneId, calculations)
+            return generateVisualInspection(aggregateWithFindings, visit, zoneId, calculations)
         }
         return buildString {
             appendHeader(inspection, visit, zoneId)
@@ -37,11 +41,11 @@ object InspectionSummaryGenerator {
             appendLine("TIPO DE RELEVAMIENTO")
             appendLine(inspection.inspectionType.label())
             appendGeneralData(inspection)
-            appendPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
-            appendMainPanel(aggregate.mainPanel, aggregate.mainPanelMeasurements, aggregate.mainPanelCircuits)
+            appendPillar(inspection, aggregateWithFindings.pillar, aggregateWithFindings.pillarMeasurements)
+            appendMainPanel(aggregateWithFindings.mainPanel, aggregateWithFindings.mainPanelMeasurements, aggregateWithFindings.mainPanelCircuits)
             appendCalculations(calculations)
-            appendFindings(aggregate)
-            appendUnverified(aggregate)
+            appendFindings(aggregateWithFindings)
+            appendUnverified(aggregateWithFindings)
             appendTechnicalComment(inspection)
             appendLine()
             appendLine("ACLARACIÓN")
@@ -197,8 +201,8 @@ object InspectionSummaryGenerator {
         panel.circuitCount?.let { appendLine("- Cantidad de circuitos: $it") }
         appendMainPanelCircuits(circuits)
         appendLine("- Colores de conductores: ${panel.conductorColorStatus.label().lowercase()}")
-        appendLine("- Barra de neutro: ${panel.neutralBarPresent.label().lowercase()}")
-        appendLine("- Barra de tierra: ${panel.groundBarPresent.label().lowercase()}")
+        appendLine("- Bornera de neutro: ${panel.neutralBarPresent.label().lowercase()}")
+        appendLine("- Bornera de tierra: ${panel.groundBarPresent.label().lowercase()}")
         appendLine("- Neutro y tierra separados: ${panel.neutralAndGroundSeparated.label().lowercase()}")
         appendLine("- Conductores de protección presentes: ${panel.protectionConductorsPresent.label().lowercase()}")
         appendLine("- Empalmes improvisados: ${panel.improvisedConnections.label().lowercase()}")
@@ -227,8 +231,8 @@ object InspectionSummaryGenerator {
         if (panel.conductorColorStatus != com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.UNKNOWN) {
             appendLine("- Colores visibles: ${panel.conductorColorStatus.label()}")
         }
-        appendVisualYesNo("- Barra de neutro visible", panel.neutralBarPresent)
-        appendVisualYesNo("- Barra de tierra visible", panel.groundBarPresent)
+        appendVisualYesNo("- Bornera de neutro visible", panel.neutralBarPresent)
+        appendVisualYesNo("- Bornera de tierra visible", panel.groundBarPresent)
         appendVisualYesNo("- Neutro y tierra aparentemente separados", panel.neutralAndGroundSeparated)
         appendVisualYesNoPartial("- Conductores de protección presentes", panel.protectionConductorsPresent)
         appendVisualYesNo("- Empalmes improvisados visibles", panel.improvisedConnections)
@@ -243,24 +247,32 @@ object InspectionSummaryGenerator {
     private fun StringBuilder.appendFindings(aggregate: InspectionAggregate) {
         appendLine()
         appendLine("HALLAZGOS")
-        if (aggregate.findings.isEmpty()) {
+        val reportFindings = aggregate.findings.filter { it.includeInReport && it.sourceType != FindingSourceType.NOT_VERIFIED && it.sourceType != FindingSourceType.DATA_REVIEW }
+        if (reportFindings.isEmpty()) {
             appendLine("- Sin hallazgos registrados")
             return
         }
-        aggregate.findings.forEach { finding ->
+        reportFindings.forEach { finding ->
             appendLine("[${finding.severity.label().uppercase()}] ${finding.title}")
             appendLine("Categoría: ${finding.category.label()}")
-            appendLine("Descripción: ${finding.description}")
+            val prefix = if (finding.sourceType == FindingSourceType.RULE_SUGGESTION && finding.reviewStatus != FindingReviewStatus.CONFIRMED) {
+                "Sugerencia de la app, requiere validación del técnico: "
+            } else {
+                ""
+            }
+            appendLine("Descripción: $prefix${finding.description}")
             appendLineIfNotBlank("Recomendación", finding.recommendation)
+            appendLineIfNotBlank("Observación", finding.technicianNotes)
             appendLine()
         }
     }
 
     private fun StringBuilder.appendVisualFindings(aggregate: InspectionAggregate) {
-        if (aggregate.findings.isEmpty()) return
+        val reportFindings = aggregate.findings.filter { it.includeInReport && it.sourceType != FindingSourceType.NOT_VERIFIED && it.sourceType != FindingSourceType.DATA_REVIEW }
+        if (reportFindings.isEmpty()) return
         appendLine()
         appendLine("HALLAZGOS")
-        aggregate.findings.forEach { finding ->
+        reportFindings.forEach { finding ->
             appendLine("[${finding.severity.label().uppercase()}] ${finding.title}")
             appendLine("Categoría: ${finding.category.label()}")
             appendLine("Descripción: ${finding.description}")
@@ -297,7 +309,8 @@ object InspectionSummaryGenerator {
     private fun StringBuilder.appendUnverified(aggregate: InspectionAggregate) {
         appendLine("NO VERIFICADO")
         appendLine("Estos elementos no fueron verificados durante la visita.")
-        if (aggregate.unverifiedItems.isEmpty()) {
+        val findingItems = aggregate.findings.filter { it.includeInReport && it.sourceType == FindingSourceType.NOT_VERIFIED }
+        if (aggregate.unverifiedItems.isEmpty() && findingItems.isEmpty()) {
             appendLine("- Sin elementos registrados")
             return
         }
@@ -305,16 +318,19 @@ object InspectionSummaryGenerator {
             val suffix = item.description?.takeIf(String::isNotBlank)?.let { ": $it" }.orEmpty()
             appendLine("- ${item.type.label()}$suffix")
         }
+        findingItems.forEach { appendLine("- ${it.description}") }
     }
 
     private fun StringBuilder.appendVisualUnverified(aggregate: InspectionAggregate) {
-        if (aggregate.unverifiedItems.isEmpty()) return
+        val findingItems = aggregate.findings.filter { it.includeInReport && it.sourceType == FindingSourceType.NOT_VERIFIED }
+        if (aggregate.unverifiedItems.isEmpty() && findingItems.isEmpty()) return
         appendLine()
         appendLine("NO VERIFICADO")
         aggregate.unverifiedItems.forEach { item ->
             val suffix = item.description?.takeIf(String::isNotBlank)?.let { ": $it" }.orEmpty()
             appendLine("- ${item.type.label()}$suffix")
         }
+        findingItems.forEach { appendLine("- ${it.description}") }
     }
 
     private fun StringBuilder.appendVisualObservation(inspection: ElectricalInspection) {

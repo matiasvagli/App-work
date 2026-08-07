@@ -10,6 +10,7 @@ enum class InspectionSection {
     GENERAL,
     PILLAR,
     MAIN_PANEL,
+    GROUNDING_SOON,
     FINDINGS,
     UNVERIFIED,
     VISUAL_COMPLEMENTARY,
@@ -37,9 +38,9 @@ object InspectionProgressCalculator {
         if (inspection.scope == InspectionScope.VISUAL_INSPECTION) {
             return InspectionProgress(
                 sections = listOf(
-                    generalProgress(inspection),
                     visualPillarProgress(aggregate.pillar),
                     visualMainPanelProgress(aggregate.mainPanel),
+                    groundingSoonProgress(),
                     findingsProgress(aggregate.findings),
                     visualComplementaryProgress(inspection, aggregate.unverifiedItems),
                     finalReportProgress(inspection),
@@ -49,9 +50,9 @@ object InspectionProgressCalculator {
         if (inspection.scope == InspectionScope.SECTOR_ASSESSMENT) {
             return InspectionProgress(
                 sections = buildList {
-                    add(generalProgress(inspection))
                     if (inspection.isPillarRelevantForSector()) add(pillarProgress(aggregate.pillar))
                     if (inspection.isMainPanelRelevantForSector()) add(mainPanelProgress(aggregate.mainPanel))
+                    add(groundingSoonProgress())
                     add(findingsProgress(aggregate.findings))
                     add(unverifiedProgress(aggregate.unverifiedItems))
                     add(technicalCommentProgress(inspection))
@@ -61,14 +62,22 @@ object InspectionProgressCalculator {
         }
         return InspectionProgress(
             sections = listOf(
-                generalProgress(inspection),
                 pillarProgress(aggregate.pillar),
                 mainPanelProgress(aggregate.mainPanel),
+                groundingSoonProgress(),
                 findingsProgress(aggregate.findings),
                 unverifiedProgress(aggregate.unverifiedItems),
                 technicalCommentProgress(inspection),
                 finalReportProgress(inspection),
             ),
+        )
+    }
+
+    private fun groundingSoonProgress(): InspectionSectionProgress {
+        return InspectionSectionProgress(
+            InspectionSection.GROUNDING_SOON,
+            InspectionSectionStatus.COMPLETE,
+            "Próximamente · Registro de jabalina, conductor de protección y mediciones con telurómetro.",
         )
     }
 

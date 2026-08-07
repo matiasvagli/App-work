@@ -173,6 +173,12 @@ enum class DifferentialTestResult {
 enum class FindingCategory {
     PILLAR,
     MAIN_PANEL,
+    CIRCUITS,
+    CONDUCTORS,
+    PROTECTIONS,
+    GROUNDING,
+    EQUIPMENT,
+    VISIBLE_RISK,
     GENERAL,
     OTHER,
 }
@@ -180,7 +186,23 @@ enum class FindingCategory {
 enum class FindingSeverity {
     OK,
     RECOMMENDED,
+    PRIORITY,
     URGENT,
+}
+
+enum class FindingSourceType {
+    MANUAL,
+    OBSERVATION_CONFIRMED,
+    RULE_SUGGESTION,
+    DATA_REVIEW,
+    NOT_VERIFIED,
+}
+
+enum class FindingReviewStatus {
+    PENDING,
+    CONFIRMED,
+    EXCLUDED,
+    RESOLVED,
 }
 
 enum class UnverifiedItemType {

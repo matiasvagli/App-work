@@ -34,6 +34,7 @@ class FakeInspectionRepository : InspectionRepository {
     private val mainPanelCircuits = MutableStateFlow<List<MainPanelCircuit>>(emptyList())
     private val findings = MutableStateFlow<List<InspectionFinding>>(emptyList())
     private val unverifiedItems = MutableStateFlow<List<InspectionUnverifiedItem>>(emptyList())
+    private val aggregateVersion = MutableStateFlow(0)
 
     override fun observeInspectionList(status: InspectionStatus?, query: String): Flow<List<InspectionListItem>> {
         return inspections.map { values ->
@@ -67,7 +68,9 @@ class FakeInspectionRepository : InspectionRepository {
     }
 
     override fun observeAggregate(inspectionId: String): Flow<InspectionAggregate?> {
-        return inspections.map { values -> aggregateFor(values.firstOrNull { it.id == inspectionId && !it.isDeleted }) }
+        return kotlinx.coroutines.flow.combine(inspections, aggregateVersion) { values, _ ->
+            aggregateFor(values.firstOrNull { it.id == inspectionId && !it.isDeleted })
+        }
     }
 
     override suspend fun findAggregate(inspectionId: String): InspectionAggregate? {
@@ -117,52 +120,68 @@ class FakeInspectionRepository : InspectionRepository {
 
     override suspend fun saveInspection(inspection: ElectricalInspection) {
         inspections.value = inspections.value.filterNot { it.id == inspection.id }.plus(inspection)
+        touchAggregate()
     }
 
     override suspend fun savePillar(pillar: PillarInspection) {
         pillars.value = pillars.value.filterNot { it.inspectionId == pillar.inspectionId }.plus(pillar)
+        touchAggregate()
     }
 
     override suspend fun savePillarMeasurement(measurement: PillarMeasurement) {
         pillarMeasurements.value = pillarMeasurements.value.filterNot { it.id == measurement.id }.plus(measurement)
+        touchAggregate()
     }
 
     override suspend fun softDeletePillarMeasurement(id: String) {
         pillarMeasurements.value = pillarMeasurements.value.map { if (it.id == id) it.copy(isDeleted = true) else it }
+        touchAggregate()
     }
 
     override suspend fun saveMainPanel(mainPanel: MainPanelInspection) {
         panels.value = panels.value.filterNot { it.inspectionId == mainPanel.inspectionId }.plus(mainPanel)
+        touchAggregate()
     }
 
     override suspend fun saveMainPanelMeasurement(measurement: MainPanelMeasurement) {
         mainPanelMeasurements.value = mainPanelMeasurements.value.filterNot { it.id == measurement.id }.plus(measurement)
+        touchAggregate()
     }
 
     override suspend fun softDeleteMainPanelMeasurement(id: String) {
         mainPanelMeasurements.value = mainPanelMeasurements.value.map { if (it.id == id) it.copy(isDeleted = true) else it }
+        touchAggregate()
     }
 
     override suspend fun saveMainPanelCircuit(circuit: MainPanelCircuit) {
         mainPanelCircuits.value = mainPanelCircuits.value.filterNot { it.id == circuit.id }.plus(circuit)
+        touchAggregate()
     }
 
     override suspend fun softDeleteMainPanelCircuit(id: String) {
         mainPanelCircuits.value = mainPanelCircuits.value.map { if (it.id == id) it.copy(isDeleted = true) else it }
+        touchAggregate()
     }
 
     override suspend fun saveFinding(finding: InspectionFinding) {
         findings.value = findings.value.filterNot { it.id == finding.id }.plus(finding)
+        touchAggregate()
     }
 
     override suspend fun softDeleteFinding(id: String) {
         findings.value = findings.value.map { if (it.id == id) it.copy(isDeleted = true) else it }
+        touchAggregate()
     }
 
     override suspend fun saveUnverifiedItems(inspectionId: String, items: List<InspectionUnverifiedItem>) {
         unverifiedItems.value = unverifiedItems.value
             .map { if (it.inspectionId == inspectionId) it.copy(isDeleted = true) else it }
             .plus(items)
+        touchAggregate()
+    }
+
+    private fun touchAggregate() {
+        aggregateVersion.value = aggregateVersion.value + 1
     }
 
     private fun aggregateFor(inspection: ElectricalInspection?): InspectionAggregate? {

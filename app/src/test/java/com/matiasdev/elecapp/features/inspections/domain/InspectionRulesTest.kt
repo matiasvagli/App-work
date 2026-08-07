@@ -22,6 +22,8 @@ class InspectionRulesTest {
         val progress = InspectionProgressCalculator.calculate(aggregate)
 
         assertEquals(7, progress.totalCount)
+        assertFalse(progress.sections.any { it.section == InspectionSection.GENERAL })
+        assertTrue(progress.sections.indexOfFirst { it.section == InspectionSection.GROUNDING_SOON } < progress.sections.indexOfFirst { it.section == InspectionSection.FINDINGS })
         assertTrue(progress.completedCount >= 5)
         assertEquals(InspectionSectionStatus.COMPLETE, progress.sections.first { it.section == InspectionSection.PILLAR }.status)
         assertEquals(InspectionSectionStatus.COMPLETE, progress.sections.first { it.section == InspectionSection.MAIN_PANEL }.status)
@@ -82,7 +84,17 @@ class InspectionRulesTest {
         val progress = InspectionProgressCalculator.calculate(aggregate)
 
         assertTrue(progress.sections.any { it.section == InspectionSection.VISUAL_COMPLEMENTARY })
+        assertFalse(progress.sections.any { it.section == InspectionSection.GENERAL })
+        assertTrue(progress.sections.any { it.section == InspectionSection.GROUNDING_SOON })
         assertFalse(progress.sections.any { it.section == InspectionSection.UNVERIFIED })
+    }
+
+    @Test
+    fun `grounding soon card does not block completion`() {
+        val result = InspectionCompletionRules.validate(completeAggregate())
+
+        assertTrue(result.canComplete)
+        assertFalse(result.missingItems.any { it.contains("Puesta a tierra") })
     }
 
     @Test

@@ -9,6 +9,10 @@ import com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus
 import com.matiasdev.elecapp.features.inspections.domain.ConductorCondition
 import com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
+import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
+import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
+import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
+import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
@@ -587,5 +591,173 @@ class InspectionViewModelTest {
         val aggregate = repository.findAggregate(inspection.id)
         assertEquals(MainPanelMeasurementType.PROTECTION_VOLTAGE_PHASE_GROUND, aggregate?.mainPanelMeasurements?.single()?.type)
         assertEquals(ProtectionConductorCheckResult.REQUIRES_REVIEW, aggregate?.mainPanel?.protectionConductorCheckResult)
+    }
+
+    @Test
+    fun `findings groups confirmed observations from loaded sections`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        PillarInspectionViewModel(repository, inspection.id, dispatcher).update {
+            copy(conductorCondition = ConductorCondition.DETERIORATED)
+        }
+        MainPanelInspectionViewModel(repository, inspection.id, dispatcher).update {
+            copy(
+                differentialPresent = YesNoUnknown.YES,
+                differentialTestResult = DifferentialTestResult.FAILED,
+                improvisedConnections = YesNoUnknown.YES,
+            )
+        }
+
+        val viewModel = FindingsViewModel(repository, inspection.id, dispatcher)
+        val confirmed = viewModel.uiState.value.confirmed
+
+        assertTrue(confirmed.any { it.description.contains("Conductores") })
+        assertTrue(confirmed.any { it.description.contains("prueba manual") })
+        assertTrue(confirmed.any { it.description.contains("empalmes") })
+        assertTrue(confirmed.all { it.sourceType == FindingSourceType.OBSERVATION_CONFIRMED })
+
+        val missingDifferentialRepository = FakeInspectionRepository()
+        val missingDifferentialInspection = missingDifferentialRepository.startOrGetInspection(testVisit(), testClient())
+        MainPanelInspectionViewModel(missingDifferentialRepository, missingDifferentialInspection.id, dispatcher).update {
+            copy(differentialPresent = YesNoUnknown.NO)
+        }
+        assertTrue(
+            FindingsViewModel(missingDifferentialRepository, missingDifferentialInspection.id, dispatcher)
+                .uiState.value.confirmed.any { it.description.contains("interruptor diferencial") },
+        )
+    }
+
+    @Test
+    fun `findings groups rule suggestions and data review without including them in report`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val panelViewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        panelViewModel.updateMeasurementDraft(MainPanelMeasurementSection.INPUT_VOLTAGE, MainPanelMeasurementType.INPUT_VOLTAGE_LN, "180", MeasurementOrigin.MEASURED)
+        panelViewModel.saveMeasurement()
+        panelViewModel.updateCircuitCount("1")
+        val circuit = repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()!!
+        panelViewModel.updateCircuit(
+            circuit.copy(
+                destination = CircuitDestination.OUTLETS,
+                conductorSectionMm2 = 2.5,
+                consumptionAmps = 198.0,
+                consumptionOrigin = MeasurementOrigin.MEASURED,
+            ),
+        )
+
+        val viewModel = FindingsViewModel(repository, inspection.id, dispatcher)
+        val state = viewModel.uiState.value
+
+        assertEquals(1, state.suggested.size)
+        assertEquals(FindingSourceType.RULE_SUGGESTION, state.suggested.single().sourceType)
+        assertFalse(state.suggested.single().includeInReport)
+        assertTrue(state.suggested.single().description.contains("180 V"))
+        assertEquals(1, state.dataReview.size)
+        assertEquals(FindingSourceType.DATA_REVIEW, state.dataReview.single().sourceType)
+        assertFalse(state.dataReview.single().includeInReport)
+        assertTrue(state.dataReview.single().description.contains("198 A"))
+    }
+
+    @Test
+    fun `findings keep not verified separate from confirmed failures`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        MainPanelInspectionViewModel(repository, inspection.id, dispatcher).update {
+            copy(groundBarPresent = YesNoUnknown.UNKNOWN, neutralBarPresent = YesNoUnknown.UNKNOWN)
+        }
+
+        val viewModel = FindingsViewModel(repository, inspection.id, dispatcher)
+        val state = viewModel.uiState.value
+
+        assertTrue(state.notVerified.any { it.description.contains("bornera de tierra") })
+        assertTrue(state.notVerified.any { it.description.contains("bornera de neutro") })
+        assertFalse(state.confirmed.any { it.description.contains("bornera de tierra") })
+        assertTrue(state.notVerified.all { it.sourceType == FindingSourceType.NOT_VERIFIED })
+    }
+
+    @Test
+    fun `findings manual item can be saved edited prioritized and excluded`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = FindingsViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.update {
+            copy(
+                category = FindingCategory.MAIN_PANEL,
+                severity = FindingSeverity.RECOMMENDED,
+                description = "Identificación deficiente de circuitos.",
+                technicianNotes = "Rotular al finalizar.",
+            )
+        }
+        viewModel.saveManual()
+        val created = repository.findAggregate(inspection.id)?.findings?.single()!!
+
+        assertEquals(FindingSourceType.MANUAL, created.sourceType)
+        assertTrue(created.includeInReport)
+        assertEquals("Rotular al finalizar.", created.technicianNotes)
+
+        viewModel.changePriority(created, FindingSeverity.PRIORITY)
+        val prioritized = repository.findAggregate(inspection.id)?.findings?.single()!!
+        assertEquals(FindingSeverity.PRIORITY, prioritized.severity)
+
+        viewModel.edit(prioritized)
+        viewModel.update { copy(description = "Circuitos sin identificación clara.") }
+        viewModel.saveManual()
+        val edited = repository.findAggregate(inspection.id)?.findings?.single()!!
+        assertEquals("Circuitos sin identificación clara.", edited.description)
+
+        viewModel.excludeFromReport(edited)
+        val excluded = repository.findAggregate(inspection.id)?.findings?.single()!!
+        assertFalse(excluded.includeInReport)
+        assertEquals(FindingReviewStatus.EXCLUDED, excluded.reviewStatus)
+    }
+
+    @Test
+    fun `findings automatic decisions do not duplicate when recalculated`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val panelViewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+        panelViewModel.updateMeasurementDraft(MainPanelMeasurementSection.INPUT_VOLTAGE, MainPanelMeasurementType.INPUT_VOLTAGE_LN, "180", MeasurementOrigin.MEASURED)
+        panelViewModel.saveMeasurement()
+        val firstViewModel = FindingsViewModel(repository, inspection.id, dispatcher)
+        val suggestion = firstViewModel.uiState.value.suggested.single()
+
+        firstViewModel.confirmSuggestion(suggestion)
+        val secondViewModel = FindingsViewModel(repository, inspection.id, dispatcher)
+        val state = secondViewModel.uiState.value
+
+        assertEquals(1, state.confirmed.count { it.id == suggestion.id })
+        assertTrue(repository.findAggregate(inspection.id)?.findings.orEmpty().count { it.id == suggestion.id } == 1)
+    }
+
+    @Test
+    fun `visual inspection findings avoid mandatory calculations while general assessment shows all groups`() = runTest(dispatcher) {
+        val visualRepository = FakeInspectionRepository()
+        val visualInspection = visualRepository.startOrGetInspection(testVisit(), testClient(), InspectionScope.VISUAL_INSPECTION)
+        MainPanelInspectionViewModel(visualRepository, visualInspection.id, dispatcher).update {
+            copy(exposedPartsOrDamagedInsulation = YesNoUnknown.YES)
+        }
+        val visualState = FindingsViewModel(visualRepository, visualInspection.id, dispatcher).uiState.value
+
+        assertTrue(visualState.confirmed.any { it.severity == FindingSeverity.URGENT })
+        assertTrue(visualState.suggested.isEmpty())
+
+        val generalRepository = FakeInspectionRepository()
+        val generalInspection = generalRepository.startOrGetInspection(testVisit(), testClient(), InspectionScope.GENERAL_ASSESSMENT)
+        val panelViewModel = MainPanelInspectionViewModel(generalRepository, generalInspection.id, dispatcher)
+        panelViewModel.update { copy(exposedPartsOrDamagedInsulation = YesNoUnknown.YES, groundBarPresent = YesNoUnknown.UNKNOWN) }
+        panelViewModel.updateMeasurementDraft(MainPanelMeasurementSection.INPUT_VOLTAGE, MainPanelMeasurementType.INPUT_VOLTAGE_LN, "260", MeasurementOrigin.MEASURED)
+        panelViewModel.saveMeasurement()
+        panelViewModel.updateCircuitCount("1")
+        val circuit = generalRepository.findAggregate(generalInspection.id)?.mainPanelCircuits?.single()!!
+        panelViewModel.updateCircuit(circuit.copy(conductorSectionMm2 = 1.5, consumptionAmps = 198.0, consumptionOrigin = MeasurementOrigin.MEASURED))
+
+        val generalState = FindingsViewModel(generalRepository, generalInspection.id, dispatcher).uiState.value
+
+        assertTrue(generalState.confirmed.isNotEmpty())
+        assertTrue(generalState.suggested.isNotEmpty())
+        assertTrue(generalState.dataReview.isNotEmpty())
+        assertTrue(generalState.notVerified.isNotEmpty())
     }
 }
