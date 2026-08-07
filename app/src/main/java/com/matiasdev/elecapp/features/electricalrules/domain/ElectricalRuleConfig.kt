@@ -63,7 +63,7 @@ object DefaultElectricalRuleConfigs {
         maxCurrentRule(
             code = ElectricalRuleCode.MAX_CURRENT_COPPER_2_5_MM2,
             sectionLabel = "2,5 mm²",
-            maxCurrent = 20.0,
+            maxCurrent = 16.0,
         ),
         maxCurrentRule(
             code = ElectricalRuleCode.MAX_CURRENT_COPPER_4_MM2,

@@ -50,11 +50,12 @@ class InspectionOverviewViewModel(
             combine(
                 inspectionRepository.observeAggregate(inspectionId),
                 technicalCalculationRepository.observeByInspection(inspectionId),
-            ) { aggregate, calculations -> aggregate to calculations }
+                electricalRuleConfigRepository.observeAll(),
+            ) { aggregate, calculations, rules -> Triple(aggregate, calculations, rules) }
                 .catch { error ->
                     _uiState.update { it.copy(isLoading = false, errorMessage = error.message ?: "No se pudo cargar") }
                 }
-                .collect { (aggregate, calculations) ->
+                .collect { (aggregate, calculations, rules) ->
                     val visit = aggregate?.inspection?.visitId?.let { visitRepository.findActiveById(it) }
                     val measurementReviewSummary = ElectricalMeasurementReviewEvaluator.evaluateSupplyVoltage(
                         calculations = calculations,
@@ -66,7 +67,7 @@ class InspectionOverviewViewModel(
                             aggregate = aggregate,
                             visit = visit,
                             calculations = calculations,
-                            autoCalculations = aggregate?.let(AutoInspectionCalculationBuilder::build).orEmpty(),
+                            autoCalculations = aggregate?.let { AutoInspectionCalculationBuilder.build(it, rules) }.orEmpty(),
                             measurementReviewSummary = measurementReviewSummary,
                             measurementReviewExpanded = if (measurementReviewSummary.hasAnomalies) {
                                 it.measurementReviewExpanded

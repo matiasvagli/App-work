@@ -169,8 +169,32 @@ private fun MainPanelMeasurementType.isVoltageMeasurement(): Boolean = this in s
 private fun InspectionAggregate.dataReviewFindings(): List<InspectionFinding> = buildList {
     val now = Instant.now()
     mainPanelCircuits.forEach { circuit ->
+        val breaker = circuit.breakerAmps ?: circuit.breakerOtherAmps
         val section = circuit.conductorSectionMm2 ?: circuit.conductorOtherSectionMm2
         val consumption = circuit.consumptionAmps
+        if (
+            breaker != null && consumption != null &&
+            circuit.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED &&
+            consumption > breaker
+        ) {
+            add(
+                proposal(
+                    id = "auto:rule:circuit:${circuit.id}:consumption-breaker",
+                    category = FindingCategory.PROTECTIONS,
+                    severity = FindingSeverity.PRIORITY,
+                    description = "El consumo registrado (${consumption.formatNumber()} A) supera la corriente nominal de la térmica (${breaker} A). Verificar medición, distribución de cargas y actuación de la protección.",
+                    sectionName = "Tablero principal",
+                    now = now,
+                    sourceType = FindingSourceType.RULE_SUGGESTION,
+                    sourceEntityId = circuit.id,
+                    sourceValue = consumption,
+                    sourceUnit = "A",
+                    ruleCode = "CIRCUIT_CONSUMPTION_BREAKER",
+                    includeInReport = true,
+                    reviewStatus = FindingReviewStatus.PENDING,
+                ),
+            )
+        }
         if (section != null && section <= 2.5 && consumption != null && consumption >= 80.0) {
             add(
                 proposal(

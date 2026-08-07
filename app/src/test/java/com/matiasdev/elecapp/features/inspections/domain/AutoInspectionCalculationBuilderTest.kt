@@ -21,6 +21,32 @@ class AutoInspectionCalculationBuilderTest {
     }
 
     @Test
+    fun acceptsBreakerAtOrBelowConfiguredConductorMaximum() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                circuits = listOf(
+                    circuit(breakerAmps = 10, conductorSectionMm2 = 2.5),
+                    circuit(id = "circuit-2", breakerAmps = 16, conductorSectionMm2 = 2.5),
+                    circuit(id = "circuit-3", breakerAmps = 25, conductorSectionMm2 = 4.0),
+                ),
+            ),
+        ).filter { it.id.endsWith(":protection") }
+
+        assertEquals(3, calculations.size)
+        assertTrue(calculations.all { it.classification == TechnicalClassification.ACCEPTABLE })
+    }
+
+    @Test
+    fun comparesMeasuredConsumptionAgainstCircuitBreaker() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(circuits = listOf(circuit(breakerAmps = 16, conductorSectionMm2 = 2.5, consumptionAmps = 18.0))),
+        )
+
+        val result = calculations.first { it.id.endsWith(":consumption-breaker") }
+        assertEquals(TechnicalClassification.CRITICAL_REVIEW, result.classification)
+    }
+
+    @Test
     fun buildsMeasuredVoltageDropWhenPillarAndPanelVoltagesExist() {
         val calculations = AutoInspectionCalculationBuilder.build(
             aggregate(
@@ -143,10 +169,12 @@ class AutoInspectionCalculationBuilderTest {
     )
 
     private fun circuit(
+        id: String = "circuit-1",
         breakerAmps: Int?,
         conductorSectionMm2: Double?,
+        consumptionAmps: Double? = null,
     ) = MainPanelCircuit(
-        id = "circuit-1",
+        id = id,
         inspectionId = "inspection-1",
         sortOrder = 0,
         destination = CircuitDestination.LIGHTING,
@@ -158,8 +186,8 @@ class AutoInspectionCalculationBuilderTest {
         conductorOtherSectionMm2 = null,
         conductorMaterial = ConductorMaterial.COPPER,
         conductorMaterialOther = null,
-        consumptionAmps = null,
-        consumptionOrigin = MeasurementOrigin.NOT_VERIFIED,
+        consumptionAmps = consumptionAmps,
+        consumptionOrigin = if (consumptionAmps == null) MeasurementOrigin.NOT_VERIFIED else MeasurementOrigin.MEASURED,
         notes = null,
         createdAt = now,
         updatedAt = now,

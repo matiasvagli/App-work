@@ -1,6 +1,9 @@
 package com.matiasdev.elecapp.features.inspections.domain
 
 import com.matiasdev.elecapp.features.electricaltools.calculators.VoltageDropCalculator
+import com.matiasdev.elecapp.features.electricalrules.domain.ConductorAmpacityReference
+import com.matiasdev.elecapp.features.electricalrules.domain.DefaultElectricalRuleConfigs
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfig
 import com.matiasdev.elecapp.features.electricaltools.domain.CalculationSource
 import com.matiasdev.elecapp.features.electricaltools.domain.ElectricalSystemType
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalClassification
@@ -20,19 +23,26 @@ data class AutoInspectionCalculation(
 )
 
 object AutoInspectionCalculationBuilder {
-    fun build(aggregate: InspectionAggregate): List<AutoInspectionCalculation> = buildList {
-        addAll(buildProtectionCompatibility(aggregate))
+    fun build(
+        aggregate: InspectionAggregate,
+        rules: List<ElectricalRuleConfig> = DefaultElectricalRuleConfigs.all,
+    ): List<AutoInspectionCalculation> = buildList {
+        addAll(buildProtectionCompatibility(aggregate, rules))
+        addAll(buildConsumptionCompatibility(aggregate))
         buildMeasuredVoltageDrop(aggregate)?.let(::add)
         buildCalculatedVoltageDrop(aggregate)?.let(::add)
         buildGroundingAssessment(aggregate)?.let(::add)
     }.distinctBy { it.id }
 
-    private fun buildProtectionCompatibility(aggregate: InspectionAggregate): List<AutoInspectionCalculation> = buildList {
+    private fun buildProtectionCompatibility(
+        aggregate: InspectionAggregate,
+        rules: List<ElectricalRuleConfig>,
+    ): List<AutoInspectionCalculation> = buildList {
         aggregate.pillar?.let { pillar ->
             val breaker = pillar.mainBreakerAmps ?: pillar.mainBreakerOtherAmps
             val section = pillar.conductorSectionMm2 ?: pillar.conductorOtherSectionMm2
             if (breaker != null && section != null) {
-                add(protectionCalculation("auto:pillar:protection", "Pilar: térmica y cable", breaker, section, pillar.conductorMaterial))
+                add(protectionCalculation("auto:pillar:protection", "Pilar: térmica y cable", breaker, section, pillar.conductorMaterial, rules))
             }
         }
         aggregate.mainPanelCircuits.filterNot(MainPanelCircuit::isDeleted).forEach { circuit ->
@@ -40,7 +50,31 @@ object AutoInspectionCalculationBuilder {
             val section = circuit.conductorSectionMm2 ?: circuit.conductorOtherSectionMm2
             if (breaker != null && section != null) {
                 val destination = circuit.destinationOther?.takeIf(String::isNotBlank) ?: circuit.destination.name.lowercase()
-                add(protectionCalculation("auto:circuit:${circuit.id}:protection", "Circuito $destination: térmica y cable", breaker, section, circuit.conductorMaterial))
+                add(protectionCalculation("auto:circuit:${circuit.id}:protection", "Circuito $destination: térmica y cable", breaker, section, circuit.conductorMaterial, rules))
+            }
+        }
+    }
+
+    private fun buildConsumptionCompatibility(aggregate: InspectionAggregate): List<AutoInspectionCalculation> = buildList {
+        aggregate.mainPanelCircuits.filterNot(MainPanelCircuit::isDeleted).forEach { circuit ->
+            val breaker = circuit.breakerAmps ?: circuit.breakerOtherAmps
+            val consumption = circuit.consumptionAmps
+            if (breaker != null && consumption != null && circuit.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED) {
+                val destination = circuit.destinationOther?.takeIf(String::isNotBlank) ?: circuit.destination.name.lowercase()
+                val classification = if (consumption <= breaker) {
+                    TechnicalClassification.ACCEPTABLE
+                } else {
+                    TechnicalClassification.CRITICAL_REVIEW
+                }
+                add(
+                    AutoInspectionCalculation(
+                        id = "auto:circuit:${circuit.id}:consumption-breaker",
+                        title = "Circuito $destination: consumo y térmica",
+                        primaryResult = "${TechnicalValueFormatter.withUnit(consumption, "A")} sobre ${breaker} A · ${classification.shortLabel()}",
+                        detail = "El consumo ${circuit.consumptionOrigin.basicLabel()} se compara con la corriente nominal de la térmica.",
+                        classification = classification,
+                    ),
+                )
             }
         }
     }
@@ -51,8 +85,12 @@ object AutoInspectionCalculationBuilder {
         breakerAmps: Int,
         sectionMm2: Double,
         material: ConductorMaterial,
+        rules: List<ElectricalRuleConfig>,
     ): AutoInspectionCalculation {
-        val reference = ampacityReference(sectionMm2, material)
+        val reference = when (material) {
+            ConductorMaterial.COPPER -> ConductorAmpacityReference.maximumCopperAmps(sectionMm2, rules)
+            else -> null
+        }
         val classification = when {
             reference == null -> TechnicalClassification.NOT_CLASSIFIED
             breakerAmps <= reference -> TechnicalClassification.ACCEPTABLE
@@ -181,24 +219,6 @@ object AutoInspectionCalculationBuilder {
         )
     }?.value
 
-    private fun ampacityReference(sectionMm2: Double, material: ConductorMaterial): Double? {
-        val copper = when {
-            sectionMm2 <= 1.5 -> 10.0
-            sectionMm2 <= 2.5 -> 16.0
-            sectionMm2 <= 4.0 -> 20.0
-            sectionMm2 <= 6.0 -> 25.0
-            sectionMm2 <= 10.0 -> 40.0
-            sectionMm2 <= 16.0 -> 55.0
-            sectionMm2 <= 25.0 -> 75.0
-            else -> null
-        } ?: return null
-        return when (material) {
-            ConductorMaterial.COPPER -> copper
-            ConductorMaterial.ALUMINUM -> copper * 0.75
-            ConductorMaterial.OTHER, ConductorMaterial.UNKNOWN -> null
-        }
-    }
-
     private fun ConductorMaterial.toTechnicalMaterial(): TechnicalConductorMaterial? = when (this) {
         ConductorMaterial.COPPER -> TechnicalConductorMaterial.COPPER
         ConductorMaterial.ALUMINUM -> TechnicalConductorMaterial.ALUMINUM
@@ -234,5 +254,13 @@ object AutoInspectionCalculationBuilder {
         YesNoPartialUnknown.NO -> "no"
         YesNoPartialUnknown.PARTIAL -> "parcial"
         YesNoPartialUnknown.UNKNOWN -> "sin verificar"
+    }
+
+    private fun MeasurementOrigin.basicLabel(): String = when (this) {
+        MeasurementOrigin.MEASURED -> "medido"
+        MeasurementOrigin.ESTIMATED -> "estimado"
+        MeasurementOrigin.CALCULATED -> "calculado"
+        MeasurementOrigin.DECLARED_BY_CLIENT -> "declarado"
+        MeasurementOrigin.NOT_VERIFIED -> "no verificado"
     }
 }
