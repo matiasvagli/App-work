@@ -86,6 +86,23 @@ class InspectionRulesTest {
     }
 
     @Test
+    fun `sector assessment only includes pillar when reviewed sector is relevant`() {
+        val unrelated = completeAggregate().copy(
+            inspection = testInspection().copy(
+                scope = InspectionScope.SECTOR_ASSESSMENT,
+                reviewedElement = "Circuito de cocina",
+                taskDescription = "Se revisa toma y térmica del sector.",
+            ),
+        )
+        val related = unrelated.copy(
+            inspection = unrelated.inspection.copy(reviewedElement = "Pilar y medidor"),
+        )
+
+        assertFalse(InspectionProgressCalculator.calculate(unrelated).sections.any { it.section == InspectionSection.PILLAR })
+        assertTrue(InspectionProgressCalculator.calculate(related).sections.any { it.section == InspectionSection.PILLAR })
+    }
+
+    @Test
     fun `reopen decision clears completed timestamp`() {
         val completed = testInspection().copy(status = InspectionStatus.COMPLETED, completedAt = Instant.parse("2026-08-04T15:00:00Z"))
         val reopened = completed.copy(status = InspectionStatus.DRAFT, completedAt = null)
@@ -103,16 +120,29 @@ fun completeAggregate(): InspectionAggregate {
             inspectionId = "inspection-1",
             reviewStatus = InspectionSectionReviewStatus.REVIEWED,
             exists = true,
+            propertyType = PropertyType.HOUSE,
+            propertyTypeOther = null,
+            supplyType = SupplyType.SINGLE_PHASE,
             accessible = AccessStatus.PARTIAL,
             generalCondition = GeneralCondition.POOR,
             mainBreakerPresent = YesNoUnknown.YES,
             mainBreakerAmps = 40,
+            mainBreakerOtherAmps = null,
+            differentialPresent = YesNoUnknown.UNKNOWN,
+            differentialRatedAmps = null,
+            differentialOtherRatedAmps = null,
+            differentialSensitivityMa = null,
+            differentialOtherSensitivityMa = null,
+            differentialTestResult = DifferentialTestResult.NOT_TESTED,
             conductorSectionMm2 = 4.0,
+            conductorOtherSectionMm2 = null,
             conductorMaterial = ConductorMaterial.COPPER,
+            conductorMaterialOther = null,
             conductorCondition = ConductorCondition.DETERIORATED,
             neutralIdentified = YesNoUnknown.UNKNOWN,
             groundingVisible = YesNoUnknown.UNKNOWN,
             protectionCompatibility = ProtectionCompatibility.REQUIRES_VERIFICATION,
+            protectionCompatibilityNotes = null,
             notes = "Pilar con acceso parcial.",
             createdAt = now,
             updatedAt = now,

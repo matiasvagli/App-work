@@ -12,6 +12,7 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
 import com.matiasdev.elecapp.features.inspections.domain.PropertyType
 import com.matiasdev.elecapp.features.inspections.domain.SupplyType
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.map
 class FakeInspectionRepository : InspectionRepository {
     private val inspections = MutableStateFlow<List<ElectricalInspection>>(emptyList())
     private val pillars = MutableStateFlow<List<PillarInspection>>(emptyList())
+    private val pillarMeasurements = MutableStateFlow<List<PillarMeasurement>>(emptyList())
     private val panels = MutableStateFlow<List<MainPanelInspection>>(emptyList())
     private val findings = MutableStateFlow<List<InspectionFinding>>(emptyList())
     private val unverifiedItems = MutableStateFlow<List<InspectionUnverifiedItem>>(emptyList())
@@ -117,6 +119,14 @@ class FakeInspectionRepository : InspectionRepository {
         pillars.value = pillars.value.filterNot { it.inspectionId == pillar.inspectionId }.plus(pillar)
     }
 
+    override suspend fun savePillarMeasurement(measurement: PillarMeasurement) {
+        pillarMeasurements.value = pillarMeasurements.value.filterNot { it.id == measurement.id }.plus(measurement)
+    }
+
+    override suspend fun softDeletePillarMeasurement(id: String) {
+        pillarMeasurements.value = pillarMeasurements.value.map { if (it.id == id) it.copy(isDeleted = true) else it }
+    }
+
     override suspend fun saveMainPanel(mainPanel: MainPanelInspection) {
         panels.value = panels.value.filterNot { it.inspectionId == mainPanel.inspectionId }.plus(mainPanel)
     }
@@ -140,6 +150,7 @@ class FakeInspectionRepository : InspectionRepository {
         return InspectionAggregate(
             inspection = inspection,
             pillar = pillars.value.firstOrNull { it.inspectionId == inspection.id },
+            pillarMeasurements = pillarMeasurements.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })),
             mainPanel = panels.value.firstOrNull { it.inspectionId == inspection.id },
             findings = findings.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedBy { it.sortOrder },
             unverifiedItems = unverifiedItems.value.filter { it.inspectionId == inspection.id && !it.isDeleted },

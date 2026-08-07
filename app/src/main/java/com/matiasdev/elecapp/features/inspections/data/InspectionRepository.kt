@@ -9,6 +9,7 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import kotlinx.coroutines.flow.Flow
@@ -39,6 +40,10 @@ interface InspectionRepository {
     suspend fun saveInspection(inspection: ElectricalInspection)
 
     suspend fun savePillar(pillar: PillarInspection)
+
+    suspend fun savePillarMeasurement(measurement: PillarMeasurement)
+
+    suspend fun softDeletePillarMeasurement(id: String)
 
     suspend fun saveMainPanel(mainPanel: MainPanelInspection)
 

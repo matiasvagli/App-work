@@ -16,6 +16,9 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
+import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
+import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType
 import com.matiasdev.elecapp.features.inspections.domain.PropertyType
 import com.matiasdev.elecapp.features.inspections.domain.SupplyType
 import com.matiasdev.elecapp.features.inspections.domain.UnverifiedItemType
@@ -131,6 +134,73 @@ class InspectionSummaryGeneratorTest {
         )
 
         assertTrue(summary.contains("Estado de revisión: No se verificó"))
+    }
+
+    @Test
+    fun `pillar summary omits contradictory dependencies and duplicate breaker rows`() {
+        val summary = InspectionSummaryGenerator.generate(
+            completeAggregate().copy(
+                pillar = completeAggregate().pillar?.copy(
+                    mainBreakerPresent = YesNoUnknown.YES,
+                    mainBreakerAmps = 25,
+                    differentialPresent = YesNoUnknown.NO,
+                    differentialRatedAmps = null,
+                    differentialSensitivityMa = null,
+                ),
+                mainPanel = null,
+            ),
+            testVisit(),
+            ZoneId.of("UTC"),
+        )
+
+        assertTrue(summary.contains("Térmica principal: 25 A"))
+        assertFalse(summary.contains("Térmica principal: sí"))
+        assertTrue(summary.contains("Interruptor diferencial en pilar: no"))
+        assertFalse(summary.contains("Sensibilidad: 30 mA"))
+        assertFalse(summary.contains("Neutro identificado"))
+        assertFalse(summary.contains("Puesta a tierra visible"))
+    }
+
+    @Test
+    fun `pillar summary lists only performed three phase measurements with units and origin`() {
+        val now = Instant.parse("2026-08-04T14:30:00Z")
+        val summary = InspectionSummaryGenerator.generate(
+            completeAggregate().copy(
+                pillar = completeAggregate().pillar?.copy(supplyType = SupplyType.THREE_PHASE),
+                pillarMeasurements = listOf(
+                    PillarMeasurement(
+                        id = "measurement-1",
+                        inspectionId = "inspection-1",
+                        type = PillarMeasurementType.VOLTAGE_L1_L2,
+                        value = 381.0,
+                        unit = "V",
+                        origin = MeasurementOrigin.MEASURED,
+                        sortOrder = 0,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                    PillarMeasurement(
+                        id = "measurement-2",
+                        inspectionId = "inspection-1",
+                        type = PillarMeasurementType.CURRENT_L1,
+                        value = 16.5,
+                        unit = "A",
+                        origin = MeasurementOrigin.DECLARED_BY_CLIENT,
+                        sortOrder = 1,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                ),
+            ),
+            testVisit(),
+            ZoneId.of("UTC"),
+        )
+
+        assertTrue(summary.contains("L1-L2: 381 V (medido)"))
+        assertTrue(summary.contains("Corriente L1: 16,5 A (declarado por el cliente)"))
+        assertFalse(summary.contains("L2-L3"))
     }
 
     private fun visualAggregate(

@@ -66,9 +66,9 @@ fun PropertyType.label(): String = when (this) {
 
 fun AccessStatus.label(): String = when (this) {
     AccessStatus.UNKNOWN -> "No verificado"
-    AccessStatus.YES -> "Sí"
-    AccessStatus.NO -> "No"
-    AccessStatus.PARTIAL -> "Parcial"
+    AccessStatus.YES -> "Accesible"
+    AccessStatus.NO -> "No accesible"
+    AccessStatus.PARTIAL -> "Acceso parcial"
 }
 
 fun YesNoUnknown.label(): String = when (this) {
@@ -87,12 +87,15 @@ fun YesNoPartialUnknown.label(): String = when (this) {
 fun ConductorMaterial.label(): String = when (this) {
     ConductorMaterial.COPPER -> "Cobre"
     ConductorMaterial.ALUMINUM -> "Aluminio"
+    ConductorMaterial.OTHER -> "Otro"
     ConductorMaterial.UNKNOWN -> "No verificado"
 }
 
 fun ConductorCondition.label(): String = when (this) {
     ConductorCondition.GOOD -> "Bueno"
-    ConductorCondition.DETERIORATED -> "Deteriorados"
+    ConductorCondition.FAIR -> "Regular"
+    ConductorCondition.DETERIORATED -> "Deteriorado"
+    ConductorCondition.VISIBLE_RISK -> "Riesgo visible"
     ConductorCondition.EXPOSED -> "Expuestos"
     ConductorCondition.OVERHEATED -> "Con recalentamiento"
     ConductorCondition.NOT_ASSESSED -> "No evaluado"
@@ -102,7 +105,7 @@ fun ProtectionCompatibility.label(): String = when (this) {
     ProtectionCompatibility.COMPATIBLE -> "Compatible"
     ProtectionCompatibility.INCOMPATIBLE -> "Incompatible"
     ProtectionCompatibility.REQUIRES_VERIFICATION -> "Requiere verificación"
-    ProtectionCompatibility.NOT_ASSESSED -> "No evaluado"
+    ProtectionCompatibility.NOT_ASSESSED -> "No verificada"
 }
 
 fun DifferentialTestResult.label(): String = when (this) {
@@ -139,9 +142,32 @@ fun UnverifiedItemType.label(): String = when (this) {
 }
 
 fun InspectionSectionReviewStatus.label(): String = when (this) {
-    InspectionSectionReviewStatus.REVIEWED -> "Sí"
+    InspectionSectionReviewStatus.REVIEWED -> "Corresponde"
     InspectionSectionReviewStatus.NOT_APPLICABLE -> "No corresponde"
     InspectionSectionReviewStatus.NOT_VERIFIED -> "No se verificó"
+}
+
+fun com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.label(): String = when (this) {
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.SINGLE_PHASE_VOLTAGE_LN -> "Tensión fase-neutro"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.SINGLE_PHASE_CURRENT -> "Consumo"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.VOLTAGE_L1_N -> "L1-N"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.VOLTAGE_L2_N -> "L2-N"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.VOLTAGE_L3_N -> "L3-N"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.VOLTAGE_L1_L2 -> "L1-L2"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.VOLTAGE_L2_L3 -> "L2-L3"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.VOLTAGE_L3_L1 -> "L3-L1"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.CURRENT_L1 -> "Corriente L1"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.CURRENT_L2 -> "Corriente L2"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.CURRENT_L3 -> "Corriente L3"
+    com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType.CURRENT_NEUTRAL -> "Corriente neutro"
+}
+
+fun com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin.label(): String = when (this) {
+    com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin.MEASURED -> "Medido"
+    com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin.ESTIMATED -> "Estimado"
+    com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin.CALCULATED -> "Calculado"
+    com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin.DECLARED_BY_CLIENT -> "Declarado por el cliente"
+    com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin.NOT_VERIFIED -> "No verificado"
 }
 
 fun InspectionSection.label(): String = when (this) {

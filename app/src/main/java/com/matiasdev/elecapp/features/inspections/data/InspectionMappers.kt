@@ -20,6 +20,9 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
+import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
+import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
 import com.matiasdev.elecapp.features.inspections.domain.PropertyType
 import com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility
@@ -87,16 +90,29 @@ fun PillarInspectionEntity.toDomain(): PillarInspection = PillarInspection(
     inspectionId = inspectionId,
     reviewStatus = enumValue(reviewStatus, InspectionSectionReviewStatus.REVIEWED),
     exists = exists,
+    propertyType = propertyType?.let { enumValue(it, PropertyType.UNKNOWN) },
+    propertyTypeOther = propertyTypeOther,
+    supplyType = supplyType?.let { enumValue(it, SupplyType.UNKNOWN) },
     accessible = enumValue(accessible, AccessStatus.NO),
     generalCondition = enumValue(generalCondition, GeneralCondition.NOT_ASSESSED),
     mainBreakerPresent = enumValue(mainBreakerPresent, YesNoUnknown.UNKNOWN),
     mainBreakerAmps = mainBreakerAmps,
+    mainBreakerOtherAmps = mainBreakerOtherAmps,
+    differentialPresent = enumValue(differentialPresent, YesNoUnknown.UNKNOWN),
+    differentialRatedAmps = differentialRatedAmps,
+    differentialOtherRatedAmps = differentialOtherRatedAmps,
+    differentialSensitivityMa = differentialSensitivityMa,
+    differentialOtherSensitivityMa = differentialOtherSensitivityMa,
+    differentialTestResult = enumValue(differentialTestResult, DifferentialTestResult.NOT_TESTED),
     conductorSectionMm2 = conductorSectionMm2,
+    conductorOtherSectionMm2 = conductorOtherSectionMm2,
     conductorMaterial = enumValue(conductorMaterial, ConductorMaterial.UNKNOWN),
+    conductorMaterialOther = conductorMaterialOther,
     conductorCondition = enumValue(conductorCondition, ConductorCondition.NOT_ASSESSED),
     neutralIdentified = enumValue(neutralIdentified, YesNoUnknown.UNKNOWN),
     groundingVisible = enumValue(groundingVisible, YesNoUnknown.UNKNOWN),
     protectionCompatibility = enumValue(protectionCompatibility, ProtectionCompatibility.NOT_ASSESSED),
+    protectionCompatibilityNotes = protectionCompatibilityNotes,
     notes = notes,
     createdAt = Instant.ofEpochMilli(createdAt),
     updatedAt = Instant.ofEpochMilli(updatedAt),
@@ -106,19 +122,58 @@ fun PillarInspection.toEntity(): PillarInspectionEntity = PillarInspectionEntity
     inspectionId = inspectionId,
     reviewStatus = reviewStatus.name,
     exists = exists,
+    propertyType = propertyType?.name,
+    propertyTypeOther = propertyTypeOther,
+    supplyType = supplyType?.name,
     accessible = accessible.name,
     generalCondition = generalCondition.name,
     mainBreakerPresent = mainBreakerPresent.name,
     mainBreakerAmps = mainBreakerAmps,
+    mainBreakerOtherAmps = mainBreakerOtherAmps,
+    differentialPresent = differentialPresent.name,
+    differentialRatedAmps = differentialRatedAmps,
+    differentialOtherRatedAmps = differentialOtherRatedAmps,
+    differentialSensitivityMa = differentialSensitivityMa,
+    differentialOtherSensitivityMa = differentialOtherSensitivityMa,
+    differentialTestResult = differentialTestResult.name,
     conductorSectionMm2 = conductorSectionMm2,
+    conductorOtherSectionMm2 = conductorOtherSectionMm2,
     conductorMaterial = conductorMaterial.name,
+    conductorMaterialOther = conductorMaterialOther,
     conductorCondition = conductorCondition.name,
     neutralIdentified = neutralIdentified.name,
     groundingVisible = groundingVisible.name,
     protectionCompatibility = protectionCompatibility.name,
+    protectionCompatibilityNotes = protectionCompatibilityNotes,
     notes = notes,
     createdAt = createdAt.toEpochMilli(),
     updatedAt = updatedAt.toEpochMilli(),
+)
+
+fun PillarMeasurementEntity.toDomain(): PillarMeasurement = PillarMeasurement(
+    id = id,
+    inspectionId = inspectionId,
+    type = enumValue(type, PillarMeasurementType.SINGLE_PHASE_VOLTAGE_LN),
+    value = value,
+    unit = unit,
+    origin = enumValue(origin, MeasurementOrigin.MEASURED),
+    sortOrder = sortOrder,
+    createdAt = Instant.ofEpochMilli(createdAt),
+    updatedAt = Instant.ofEpochMilli(updatedAt),
+    isDeleted = isDeleted,
+)
+
+fun PillarMeasurement.toEntity(): PillarMeasurementEntity = PillarMeasurementEntity(
+    id = id,
+    inspectionId = inspectionId,
+    type = type.name,
+    value = value,
+    unit = unit,
+    origin = origin.name,
+    sortOrder = sortOrder,
+    createdAt = createdAt.toEpochMilli(),
+    updatedAt = updatedAt.toEpochMilli(),
+    isDeleted = isDeleted,
 )
 
 fun MainPanelInspectionEntity.toDomain(): MainPanelInspection = MainPanelInspection(

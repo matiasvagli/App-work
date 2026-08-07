@@ -8,6 +8,8 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
+import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import java.time.ZoneId
@@ -32,7 +34,7 @@ object InspectionSummaryGenerator {
             appendLine("TIPO DE RELEVAMIENTO")
             appendLine(inspection.inspectionType.label())
             appendGeneralData(inspection)
-            appendPillar(aggregate.pillar)
+            appendPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
             appendMainPanel(aggregate.mainPanel)
             appendCalculations(calculations)
             appendFindings(aggregate)
@@ -64,7 +66,7 @@ object InspectionSummaryGenerator {
             appendLineIfNotBlank("Sector o elemento revisado", inspection.reviewedElement)
             appendLineIfNotBlank("Descripción", inspection.taskDescription)
             appendVisualGeneralData(inspection)
-            appendVisualPillar(aggregate.pillar)
+            appendVisualPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
             appendVisualMainPanel(aggregate.mainPanel)
             appendVisualCalculations(calculations)
             appendVisualFindings(aggregate)
@@ -125,27 +127,32 @@ object InspectionSummaryGenerator {
         rows.forEach(::appendLine)
     }
 
-    private fun StringBuilder.appendPillar(pillar: PillarInspection?) {
+    private fun StringBuilder.appendPillar(inspection: ElectricalInspection, pillar: PillarInspection?, measurements: List<PillarMeasurement>) {
         appendLine()
         appendLine("PILAR Y ACOMETIDA")
         if (pillar == null) {
             appendLine("- No evaluado")
             return
         }
-        appendLine("- Existencia: ${pillar.exists?.let { if (it) "sí" else "no" } ?: "no verificada"}")
+        if (pillar.reviewStatus != InspectionSectionReviewStatus.REVIEWED) {
+            appendLine("- Estado de la sección: ${pillar.reviewStatus.label()}")
+            appendLineIfNotBlank("- Observación", pillar.notes)
+            return
+        }
+        appendLine("- Tipo de inmueble: ${pillar.propertyTypeLabel(inspection)}")
+        appendLine("- Suministro: ${(pillar.supplyType ?: inspection.supplyType).label()}")
         appendLine("- Accesibilidad: ${pillar.accessible.label().lowercase()}")
         appendCondition("- Estado general", pillar.generalCondition)
-        appendLine("- Térmica principal: ${pillar.mainBreakerPresent.label().lowercase()}")
-        pillar.mainBreakerAmps?.let { appendLine("- Térmica principal: $it A") }
-        pillar.conductorSectionMm2?.let { appendLine("- Conductores observados: $it mm², ${pillar.conductorMaterial.label().lowercase()}") }
-        appendLine("- Estado de conductores: ${pillar.conductorCondition.label().lowercase()}")
-        appendLine("- Neutro identificado: ${pillar.neutralIdentified.label().lowercase()}")
-        appendLine("- Puesta a tierra visible: ${pillar.groundingVisible.label().lowercase()}")
+        appendProtection("- Térmica principal", pillar.mainBreakerPresent, pillar.mainBreakerAmps ?: pillar.mainBreakerOtherAmps, "A")
+        appendPillarDifferential(pillar)
+        appendPillarMeasurements(measurements)
+        appendPillarConductor(pillar)
         appendLine("- Compatibilidad protección/conductor: ${pillar.protectionCompatibility.label().lowercase()}")
+        appendLineIfNotBlank("- Observación de compatibilidad", pillar.protectionCompatibilityNotes)
         appendLineIfNotBlank("- Observación", pillar.notes)
     }
 
-    private fun StringBuilder.appendVisualPillar(pillar: PillarInspection?) {
+    private fun StringBuilder.appendVisualPillar(inspection: ElectricalInspection, pillar: PillarInspection?, measurements: List<PillarMeasurement>) {
         if (pillar == null || !pillar.hasVisualContent()) return
         appendLine()
         appendLine("PILAR Y ACOMETIDA")
@@ -153,17 +160,18 @@ object InspectionSummaryGenerator {
             appendLine("- Estado de revisión: ${pillar.reviewStatus.label()}")
             return
         }
-        pillar.exists?.let { appendLine("- Existencia: ${if (it) "Sí" else "No"}") }
+        appendLine("- Tipo de inmueble: ${pillar.propertyTypeLabel(inspection)}")
+        if ((pillar.supplyType ?: inspection.supplyType) != com.matiasdev.elecapp.features.inspections.domain.SupplyType.UNKNOWN) {
+            appendLine("- Suministro: ${(pillar.supplyType ?: inspection.supplyType).label()}")
+        }
         appendVisualAccess("- Accesibilidad", pillar.accessible)
         appendVisualCondition("- Estado general", pillar.generalCondition)
-        appendVisualYesNo("- Térmica principal visible", pillar.mainBreakerPresent)
-        pillar.mainBreakerAmps?.let { appendLine("- Corriente nominal: $it A") }
-        pillar.conductorSectionMm2?.let { appendLine("- Sección visible del conductor: ${formatNumber(it)} mm²") }
-        appendVisualEnum("- Material del conductor", pillar.conductorMaterial, com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.UNKNOWN)
-        appendVisualEnum("- Estado visible de los conductores", pillar.conductorCondition, com.matiasdev.elecapp.features.inspections.domain.ConductorCondition.NOT_ASSESSED)
-        appendVisualYesNo("- Neutro identificado", pillar.neutralIdentified)
-        appendVisualYesNo("- Puesta a tierra visible", pillar.groundingVisible)
+        appendProtection("- Térmica principal visible", pillar.mainBreakerPresent, pillar.mainBreakerAmps ?: pillar.mainBreakerOtherAmps, "A")
+        appendPillarDifferential(pillar)
+        appendPillarMeasurements(measurements)
+        appendPillarConductor(pillar)
         appendVisualEnum("- Compatibilidad protección/conductor", pillar.protectionCompatibility, com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility.NOT_ASSESSED)
+        appendLineIfNotBlank("- Observación de compatibilidad", pillar.protectionCompatibilityNotes)
         appendLineIfNotBlank("- Observaciones", pillar.notes)
     }
 
@@ -349,16 +357,22 @@ object InspectionSummaryGenerator {
     private fun PillarInspection.hasVisualContent(): Boolean {
         return reviewStatus != InspectionSectionReviewStatus.REVIEWED ||
             exists != null ||
+            propertyType != null ||
+            supplyType != null ||
             accessible != com.matiasdev.elecapp.features.inspections.domain.AccessStatus.UNKNOWN ||
             generalCondition != GeneralCondition.NOT_ASSESSED ||
             mainBreakerPresent != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
             mainBreakerAmps != null ||
+            mainBreakerOtherAmps != null ||
+            differentialPresent != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
+            differentialRatedAmps != null ||
+            differentialSensitivityMa != null ||
             conductorSectionMm2 != null ||
+            conductorOtherSectionMm2 != null ||
             conductorMaterial != com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.UNKNOWN ||
             conductorCondition != com.matiasdev.elecapp.features.inspections.domain.ConductorCondition.NOT_ASSESSED ||
-            neutralIdentified != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
-            groundingVisible != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
             protectionCompatibility != com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility.NOT_ASSESSED ||
+            !protectionCompatibilityNotes.isNullOrBlank() ||
             !notes.isNullOrBlank()
     }
 
@@ -380,6 +394,70 @@ object InspectionSummaryGenerator {
             overheatingSigns != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
             protectionCompatibility != com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility.NOT_ASSESSED ||
             !notes.isNullOrBlank()
+    }
+
+    private fun StringBuilder.appendProtection(
+        label: String,
+        present: com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown,
+        value: Int?,
+        unit: String,
+    ) {
+        when {
+            present == com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.YES && value != null -> appendLine("$label: $value $unit")
+            present != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN -> appendLine("$label: ${present.label().lowercase()}")
+        }
+    }
+
+    private fun StringBuilder.appendPillarDifferential(pillar: PillarInspection) {
+        val present = pillar.differentialPresent
+        if (present == com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN) return
+        if (present != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.YES) {
+            appendLine("- Interruptor diferencial en pilar: ${present.label().lowercase()}")
+            return
+        }
+        val details = buildList {
+            (pillar.differentialRatedAmps ?: pillar.differentialOtherRatedAmps)?.let { add("$it A") }
+            (pillar.differentialSensitivityMa ?: pillar.differentialOtherSensitivityMa)?.let { add("$it mA") }
+            add("prueba manual: ${pillar.differentialTestResult.label().lowercase()}")
+        }
+        appendLine("- Interruptor diferencial en pilar: ${details.joinToString(", ")}")
+    }
+
+    private fun StringBuilder.appendPillarMeasurements(measurements: List<PillarMeasurement>) {
+        val active = measurements
+            .filterNot { it.isDeleted }
+            .filter { it.value != null || it.origin == MeasurementOrigin.NOT_VERIFIED }
+            .sortedWith(compareBy({ it.sortOrder }, { it.createdAt }))
+        if (active.isEmpty()) return
+        appendLine("- Mediciones registradas:")
+        active.forEach { measurement ->
+            val value = measurement.value?.let { "${formatNumber(it)} ${measurement.unit}" } ?: "no verificado"
+            appendLine("  - ${measurement.type.label()}: $value (${measurement.origin.label().lowercase()})")
+        }
+    }
+
+    private fun StringBuilder.appendPillarConductor(pillar: PillarInspection) {
+        val section = pillar.conductorSectionMm2 ?: pillar.conductorOtherSectionMm2
+        val material = when {
+            pillar.conductorMaterial == com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.OTHER && !pillar.conductorMaterialOther.isNullOrBlank() -> pillar.conductorMaterialOther
+            pillar.conductorMaterial != com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.UNKNOWN -> pillar.conductorMaterial.label().lowercase()
+            else -> null
+        }
+        if (section != null || material != null) {
+            appendLine("- Conductores observados: ${listOfNotNull(section?.let { "${formatNumber(it)} mm²" }, material).joinToString(", ")}")
+        }
+        if (pillar.conductorCondition != com.matiasdev.elecapp.features.inspections.domain.ConductorCondition.NOT_ASSESSED) {
+            appendLine("- Estado de conductores: ${pillar.conductorCondition.label().lowercase()}")
+        }
+    }
+
+    private fun PillarInspection.propertyTypeLabel(inspection: ElectricalInspection): String {
+        val type = propertyType ?: inspection.propertyType
+        return if (type == com.matiasdev.elecapp.features.inspections.domain.PropertyType.OTHER && !propertyTypeOther.isNullOrBlank()) {
+            "Otro: $propertyTypeOther"
+        } else {
+            type.label()
+        }
     }
 
     private fun formatNumber(value: Double): String {

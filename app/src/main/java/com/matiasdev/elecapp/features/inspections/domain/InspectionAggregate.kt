@@ -9,4 +9,5 @@ data class InspectionAggregate(
     val findings: List<InspectionFinding>,
     val unverifiedItems: List<InspectionUnverifiedItem>,
     val calculations: List<TechnicalCalculation> = emptyList(),
+    val pillarMeasurements: List<PillarMeasurement> = emptyList(),
 )

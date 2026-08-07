@@ -46,6 +46,19 @@ object InspectionProgressCalculator {
                 ),
             )
         }
+        if (inspection.scope == InspectionScope.SECTOR_ASSESSMENT) {
+            return InspectionProgress(
+                sections = buildList {
+                    add(generalProgress(inspection))
+                    if (inspection.isPillarRelevantForSector()) add(pillarProgress(aggregate.pillar))
+                    add(mainPanelProgress(aggregate.mainPanel))
+                    add(findingsProgress(aggregate.findings))
+                    add(unverifiedProgress(aggregate.unverifiedItems))
+                    add(technicalCommentProgress(inspection))
+                    add(finalReportProgress(inspection))
+                },
+            )
+        }
         return InspectionProgress(
             sections = listOf(
                 generalProgress(inspection),
@@ -57,6 +70,13 @@ object InspectionProgressCalculator {
                 finalReportProgress(inspection),
             ),
         )
+    }
+
+    fun ElectricalInspection.isPillarRelevantForSector(): Boolean {
+        val text = listOfNotNull(reviewedElement, taskDescription, reviewReason, visitReasonSnapshot)
+            .joinToString(" ")
+            .lowercase()
+        return listOf("pilar", "acometida", "suministro", "medidor", "entrada").any { it in text }
     }
 
     private fun generalProgress(inspection: ElectricalInspection): InspectionSectionProgress {
@@ -87,6 +107,8 @@ object InspectionProgressCalculator {
     private fun pillarProgress(pillar: PillarInspection?): InspectionSectionProgress {
         return when {
             pillar == null -> InspectionSectionProgress(InspectionSection.PILLAR, InspectionSectionStatus.NOT_STARTED, "")
+            pillar.reviewStatus != InspectionSectionReviewStatus.REVIEWED ->
+                InspectionSectionProgress(InspectionSection.PILLAR, InspectionSectionStatus.COMPLETE, pillar.reviewStatus.summary())
             pillar.generalCondition != GeneralCondition.NOT_ASSESSED || pillar.exists == false ->
                 InspectionSectionProgress(InspectionSection.PILLAR, InspectionSectionStatus.COMPLETE, pillar.generalCondition.name)
             else -> InspectionSectionProgress(InspectionSection.PILLAR, InspectionSectionStatus.INCOMPLETE, "Sin estado observado")

@@ -60,6 +60,15 @@ interface InspectionDao {
     @Query("SELECT * FROM pillar_inspections WHERE inspection_id = :inspectionId LIMIT 1")
     fun observePillar(inspectionId: String): Flow<PillarInspectionEntity?>
 
+    @Query(
+        """
+        SELECT * FROM pillar_measurements
+        WHERE inspection_id = :inspectionId AND is_deleted = 0
+        ORDER BY sort_order ASC, created_at ASC
+        """,
+    )
+    fun observePillarMeasurements(inspectionId: String): Flow<List<PillarMeasurementEntity>>
+
     @Query("SELECT * FROM main_panel_inspections WHERE inspection_id = :inspectionId LIMIT 1")
     fun observeMainPanel(inspectionId: String): Flow<MainPanelInspectionEntity?>
 
@@ -83,6 +92,15 @@ interface InspectionDao {
 
     @Query("SELECT * FROM pillar_inspections WHERE inspection_id = :inspectionId LIMIT 1")
     suspend fun findPillar(inspectionId: String): PillarInspectionEntity?
+
+    @Query(
+        """
+        SELECT * FROM pillar_measurements
+        WHERE inspection_id = :inspectionId AND is_deleted = 0
+        ORDER BY sort_order ASC, created_at ASC
+        """,
+    )
+    suspend fun findPillarMeasurements(inspectionId: String): List<PillarMeasurementEntity>
 
     @Query("SELECT * FROM main_panel_inspections WHERE inspection_id = :inspectionId LIMIT 1")
     suspend fun findMainPanel(inspectionId: String): MainPanelInspectionEntity?
@@ -112,6 +130,9 @@ interface InspectionDao {
     suspend fun upsertPillar(pillar: PillarInspectionEntity)
 
     @Upsert
+    suspend fun upsertPillarMeasurement(measurement: PillarMeasurementEntity)
+
+    @Upsert
     suspend fun upsertMainPanel(mainPanel: MainPanelInspectionEntity)
 
     @Upsert
@@ -122,6 +143,9 @@ interface InspectionDao {
 
     @Query("UPDATE inspection_findings SET is_deleted = 1, updated_at = :updatedAt WHERE id = :id")
     suspend fun softDeleteFinding(id: String, updatedAt: Long)
+
+    @Query("UPDATE pillar_measurements SET is_deleted = 1, updated_at = :updatedAt WHERE id = :id")
+    suspend fun softDeletePillarMeasurement(id: String, updatedAt: Long)
 
     @Query("UPDATE inspection_unverified_items SET is_deleted = 1, updated_at = :updatedAt WHERE id = :id")
     suspend fun softDeleteUnverifiedItem(id: String, updatedAt: Long)

@@ -47,13 +47,15 @@ class RoomInspectionRepository(
             } else {
                 combine(
                     dao.observePillar(inspectionId),
+                    dao.observePillarMeasurements(inspectionId),
                     dao.observeMainPanel(inspectionId),
                     dao.observeFindings(inspectionId),
                     dao.observeUnverifiedItems(inspectionId),
-                ) { pillar, panel, findings, unverified ->
+                ) { pillar, pillarMeasurements, panel, findings, unverified ->
                     InspectionAggregate(
                         inspection = inspection.toDomain(),
                         pillar = pillar?.toDomain(),
+                        pillarMeasurements = pillarMeasurements.map(PillarMeasurementEntity::toDomain),
                         mainPanel = panel?.toDomain(),
                         findings = findings.map(InspectionFindingEntity::toDomain),
                         unverifiedItems = unverified.map(InspectionUnverifiedItemEntity::toDomain),
@@ -68,6 +70,7 @@ class RoomInspectionRepository(
         return InspectionAggregate(
             inspection = inspection,
             pillar = dao.findPillar(inspectionId)?.toDomain(),
+            pillarMeasurements = dao.findPillarMeasurements(inspectionId).map(PillarMeasurementEntity::toDomain),
             mainPanel = dao.findMainPanel(inspectionId)?.toDomain(),
             findings = dao.findFindings(inspectionId).map(InspectionFindingEntity::toDomain),
             unverifiedItems = dao.findUnverifiedItems(inspectionId).map(InspectionUnverifiedItemEntity::toDomain),
@@ -121,6 +124,14 @@ class RoomInspectionRepository(
 
     override suspend fun savePillar(pillar: PillarInspection) {
         dao.upsertPillar(pillar.copy(updatedAt = Instant.now()).toEntity())
+    }
+
+    override suspend fun savePillarMeasurement(measurement: com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement) {
+        dao.upsertPillarMeasurement(measurement.copy(updatedAt = Instant.now()).toEntity())
+    }
+
+    override suspend fun softDeletePillarMeasurement(id: String) {
+        dao.softDeletePillarMeasurement(id, Instant.now().toEpochMilli())
     }
 
     override suspend fun saveMainPanel(mainPanel: MainPanelInspection) {

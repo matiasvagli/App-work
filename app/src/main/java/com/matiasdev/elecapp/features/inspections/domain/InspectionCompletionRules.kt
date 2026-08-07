@@ -15,8 +15,10 @@ object InspectionCompletionRules {
             if (inspection.clientNameSnapshot.isBlank() || inspection.visitReasonSnapshot.isBlank()) {
                 add("Datos generales")
             }
+            val pillarIsRequired = inspection.scope != InspectionScope.SECTOR_ASSESSMENT ||
+                InspectionProgressCalculator.run { inspection.isPillarRelevantForSector() }
             val pillar = aggregate.pillar
-            if (pillar == null || (pillar.exists != false && pillar.generalCondition == GeneralCondition.NOT_ASSESSED)) {
+            if (pillarIsRequired && (pillar == null || (pillar.reviewStatus == InspectionSectionReviewStatus.REVIEWED && pillar.generalCondition == GeneralCondition.NOT_ASSESSED))) {
                 add("Estado de pilar o marcado como no evaluado")
             }
             val panel = aggregate.mainPanel
