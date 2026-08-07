@@ -61,7 +61,7 @@ class AutoInspectionCalculationBuilderTest {
     }
 
     @Test
-    fun buildsBasicGroundingAssessmentFromPanelChecks() {
+    fun doesNotAcceptGroundingWithoutResistanceMeasurement() {
         val calculations = AutoInspectionCalculationBuilder.build(
             aggregate(
                 panel = panel(
@@ -74,13 +74,34 @@ class AutoInspectionCalculationBuilderTest {
         )
 
         val grounding = calculations.first { it.id == "auto:grounding:basic" }
-        assertEquals(TechnicalClassification.ACCEPTABLE, grounding.classification)
+        assertEquals(TechnicalClassification.NOT_CLASSIFIED, grounding.classification)
+    }
+
+    @Test
+    fun acceptsGroundingWithCompleteChecksAndResistanceWithinConfiguredMaximum() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                grounding = grounding(resistanceOhms = 18.0),
+                panel = panel(
+                    groundBarPresent = YesNoUnknown.YES,
+                    neutralAndGroundSeparated = YesNoUnknown.YES,
+                    protectionConductorsPresent = YesNoPartialUnknown.YES,
+                ),
+                panelMeasurements = listOf(neutralGroundVoltage(1.0)),
+            ),
+        )
+
+        assertEquals(
+            TechnicalClassification.ACCEPTABLE,
+            calculations.first { it.id == "auto:grounding:basic" }.classification,
+        )
     }
 
     private fun aggregate(
         inspection: ElectricalInspection = testInspection(),
         pillar: PillarInspection? = null,
         panel: MainPanelInspection? = panel(),
+        grounding: GroundingInspection? = null,
         circuits: List<MainPanelCircuit> = emptyList(),
         pillarMeasurements: List<PillarMeasurement> = emptyList(),
         panelMeasurements: List<MainPanelMeasurement> = emptyList(),
@@ -88,6 +109,7 @@ class AutoInspectionCalculationBuilderTest {
         inspection = inspection,
         pillar = pillar,
         mainPanel = panel,
+        grounding = grounding,
         findings = emptyList(),
         unverifiedItems = emptyList(),
         pillarMeasurements = pillarMeasurements,
@@ -192,6 +214,19 @@ class AutoInspectionCalculationBuilderTest {
         createdAt = now,
         updatedAt = now,
         isDeleted = false,
+    )
+
+    private fun grounding(resistanceOhms: Double) = GroundingInspection(
+        inspectionId = "inspection-1",
+        electrodePresent = YesNoUnknown.YES,
+        inspectionChamberAccessible = YesNoUnknown.YES,
+        mainGroundConductorPresent = YesNoUnknown.YES,
+        protectiveConductorContinuity = YesNoUnknown.YES,
+        resistanceOhms = resistanceOhms,
+        resistanceOrigin = MeasurementOrigin.MEASURED,
+        notes = null,
+        createdAt = now,
+        updatedAt = now,
     )
 
     private fun pillarVoltage(value: Double) = PillarMeasurement(

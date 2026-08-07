@@ -17,6 +17,7 @@ import com.matiasdev.elecapp.features.finance.data.ServiceReceiptItemEntity
 import com.matiasdev.elecapp.features.finance.data.VisitCompletionDao
 import com.matiasdev.elecapp.features.finance.data.VisitCompletionEntity
 import com.matiasdev.elecapp.features.inspections.data.ElectricalInspectionEntity
+import com.matiasdev.elecapp.features.inspections.data.GroundingInspectionEntity
 import com.matiasdev.elecapp.features.inspections.data.InspectionDao
 import com.matiasdev.elecapp.features.inspections.data.InspectionFindingEntity
 import com.matiasdev.elecapp.features.inspections.data.InspectionUnverifiedItemEntity
@@ -44,6 +45,7 @@ import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionEntity
         VisitEntity::class,
         VisitReminderEntity::class,
         ElectricalInspectionEntity::class,
+        GroundingInspectionEntity::class,
         PillarInspectionEntity::class,
         PillarMeasurementEntity::class,
         MainPanelInspectionEntity::class,
@@ -64,7 +66,7 @@ import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionEntity
         ReceiptSequenceEntity::class,
         ElectricalRuleConfigEntity::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -24,7 +24,7 @@ class InspectionRulesTest {
         assertEquals(6, progress.totalCount)
         assertFalse(progress.sections.any { it.section == InspectionSection.GENERAL })
         assertFalse(progress.sections.any { it.section == InspectionSection.UNVERIFIED })
-        assertTrue(progress.sections.indexOfFirst { it.section == InspectionSection.GROUNDING_SOON } < progress.sections.indexOfFirst { it.section == InspectionSection.FINDINGS })
+        assertTrue(progress.sections.indexOfFirst { it.section == InspectionSection.GROUNDING } < progress.sections.indexOfFirst { it.section == InspectionSection.FINDINGS })
         assertTrue(progress.completedCount >= 5)
         assertEquals(InspectionSectionStatus.COMPLETE, progress.sections.first { it.section == InspectionSection.PILLAR }.status)
         assertEquals(InspectionSectionStatus.COMPLETE, progress.sections.first { it.section == InspectionSection.MAIN_PANEL }.status)
@@ -86,7 +86,7 @@ class InspectionRulesTest {
 
         assertTrue(progress.sections.any { it.section == InspectionSection.VISUAL_COMPLEMENTARY })
         assertFalse(progress.sections.any { it.section == InspectionSection.GENERAL })
-        assertTrue(progress.sections.any { it.section == InspectionSection.GROUNDING_SOON })
+        assertTrue(progress.sections.any { it.section == InspectionSection.GROUNDING })
         assertFalse(progress.sections.any { it.section == InspectionSection.UNVERIFIED })
     }
 
@@ -256,6 +256,18 @@ fun completeAggregate(): InspectionAggregate {
                 updatedAt = now,
                 isDeleted = false,
             ),
+        ),
+        grounding = GroundingInspection(
+            inspectionId = "inspection-1",
+            electrodePresent = YesNoUnknown.YES,
+            inspectionChamberAccessible = YesNoUnknown.YES,
+            mainGroundConductorPresent = YesNoUnknown.YES,
+            protectiveConductorContinuity = YesNoUnknown.YES,
+            resistanceOhms = 18.0,
+            resistanceOrigin = MeasurementOrigin.MEASURED,
+            notes = null,
+            createdAt = now,
+            updatedAt = now,
         ),
     )
 }

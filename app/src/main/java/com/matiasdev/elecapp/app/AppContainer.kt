@@ -21,6 +21,7 @@ import com.matiasdev.elecapp.features.clients.data.MIGRATION_12_13
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_13_14
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_14_15
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_15_16
+import com.matiasdev.elecapp.features.clients.data.MIGRATION_16_17
 import com.matiasdev.elecapp.features.clients.data.RoomClientRepository
 import com.matiasdev.elecapp.features.electricalrules.data.RoomElectricalRuleConfigRepository
 import com.matiasdev.elecapp.features.electricalrules.data.insertDefaultElectricalRuleConfigsIgnoringExisting
@@ -67,6 +68,7 @@ class AppContainer(context: Context) {
         MIGRATION_13_14,
         MIGRATION_14_15,
         MIGRATION_15_16,
+        MIGRATION_16_17,
     ).addCallback(
         object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {

@@ -5,6 +5,7 @@ import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculatio
 import com.matiasdev.elecapp.features.electricaltools.summary.TechnicalCalculationTextGenerator
 import com.matiasdev.elecapp.features.inspections.domain.AutoInspectionCalculation
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.GroundingInspection
 import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
@@ -44,6 +45,7 @@ object InspectionSummaryGenerator {
             appendLine(inspection.inspectionType.label())
             appendPillar(inspection, aggregateWithFindings.pillar, aggregateWithFindings.pillarMeasurements)
             appendMainPanel(aggregateWithFindings.mainPanel, aggregateWithFindings.mainPanelMeasurements, aggregateWithFindings.mainPanelCircuits)
+            appendGrounding(aggregateWithFindings.grounding)
             appendMeasurementsAndCalculations(aggregateWithFindings, calculations, autoCalculations)
             appendFindings(aggregateWithFindings)
             appendUnverified(aggregateWithFindings)
@@ -76,6 +78,7 @@ object InspectionSummaryGenerator {
             appendLineIfNotBlank("Descripción", inspection.taskDescription)
             appendVisualPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
             appendVisualMainPanel(aggregate.mainPanel, aggregate.mainPanelMeasurements, aggregate.mainPanelCircuits)
+            appendGrounding(aggregate.grounding, visual = true)
             appendVisualMeasurementsAndCalculations(aggregate, calculations, autoCalculations)
             appendVisualFindings(aggregate)
             appendVisualUnverified(aggregate)
@@ -216,6 +219,26 @@ object InspectionSummaryGenerator {
         appendLineIfNotBlank("- Observación de cableado y riesgos", panel.wiringRisksNotes)
         appendProtectionConductorCheck(panel, measurements.filter { it.section == MainPanelMeasurementSection.PROTECTION_CONDUCTOR_CHECK })
         appendLineIfNotBlank("- Observaciones", panel.notes)
+    }
+
+    private fun StringBuilder.appendGrounding(grounding: GroundingInspection?, visual: Boolean = false) {
+        if (grounding == null && visual) return
+        appendLine()
+        appendLine("PUESTA A TIERRA")
+        if (grounding == null) {
+            appendLine("- No verificada")
+            return
+        }
+        appendLine("- Electrodo o jabalina visible: ${grounding.electrodePresent.label().lowercase()}")
+        appendLine("- Cámara de inspección accesible: ${grounding.inspectionChamberAccessible.label().lowercase()}")
+        appendLine("- Conductor principal de tierra visible: ${grounding.mainGroundConductorPresent.label().lowercase()}")
+        appendLine("- Continuidad del conductor de protección: ${grounding.protectiveConductorContinuity.label().lowercase()}")
+        if (grounding.resistanceOrigin == MeasurementOrigin.NOT_VERIFIED || grounding.resistanceOhms == null) {
+            appendLine("- Resistencia de puesta a tierra: no verificada con telurómetro")
+        } else {
+            appendLine("- Resistencia de puesta a tierra: ${formatNumber(grounding.resistanceOhms)} Ω (${grounding.resistanceOrigin.label().lowercase()})")
+        }
+        appendLineIfNotBlank("- Observaciones", grounding.notes)
     }
 
     private fun StringBuilder.appendFindings(aggregate: InspectionAggregate) {

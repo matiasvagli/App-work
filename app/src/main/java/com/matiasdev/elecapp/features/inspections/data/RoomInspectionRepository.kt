@@ -5,6 +5,7 @@ import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
+import com.matiasdev.elecapp.features.inspections.domain.GroundingInspection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
@@ -49,6 +50,7 @@ class RoomInspectionRepository(
                     dao.observePillar(inspectionId),
                     dao.observePillarMeasurements(inspectionId),
                     dao.observeMainPanel(inspectionId),
+                    dao.observeGrounding(inspectionId),
                     dao.observeMainPanelMeasurements(inspectionId),
                     dao.observeMainPanelCircuits(inspectionId),
                     dao.observeFindings(inspectionId),
@@ -57,15 +59,17 @@ class RoomInspectionRepository(
                     val pillar = values[0] as PillarInspectionEntity?
                     val pillarMeasurements = values[1] as List<PillarMeasurementEntity>
                     val panel = values[2] as MainPanelInspectionEntity?
-                    val mainPanelMeasurements = values[3] as List<MainPanelMeasurementEntity>
-                    val mainPanelCircuits = values[4] as List<MainPanelCircuitEntity>
-                    val findings = values[5] as List<InspectionFindingEntity>
-                    val unverified = values[6] as List<InspectionUnverifiedItemEntity>
+                    val grounding = values[3] as GroundingInspectionEntity?
+                    val mainPanelMeasurements = values[4] as List<MainPanelMeasurementEntity>
+                    val mainPanelCircuits = values[5] as List<MainPanelCircuitEntity>
+                    val findings = values[6] as List<InspectionFindingEntity>
+                    val unverified = values[7] as List<InspectionUnverifiedItemEntity>
                     InspectionAggregate(
                         inspection = inspection.toDomain(),
                         pillar = pillar?.toDomain(),
                         pillarMeasurements = pillarMeasurements.map(PillarMeasurementEntity::toDomain),
                         mainPanel = panel?.toDomain(),
+                        grounding = grounding?.toDomain(),
                         mainPanelMeasurements = mainPanelMeasurements.map(MainPanelMeasurementEntity::toDomain),
                         mainPanelCircuits = mainPanelCircuits.map(MainPanelCircuitEntity::toDomain),
                         findings = findings.map(InspectionFindingEntity::toDomain),
@@ -83,6 +87,7 @@ class RoomInspectionRepository(
             pillar = dao.findPillar(inspectionId)?.toDomain(),
             pillarMeasurements = dao.findPillarMeasurements(inspectionId).map(PillarMeasurementEntity::toDomain),
             mainPanel = dao.findMainPanel(inspectionId)?.toDomain(),
+            grounding = dao.findGrounding(inspectionId)?.toDomain(),
             mainPanelMeasurements = dao.findMainPanelMeasurements(inspectionId).map(MainPanelMeasurementEntity::toDomain),
             mainPanelCircuits = dao.findMainPanelCircuits(inspectionId).map(MainPanelCircuitEntity::toDomain),
             findings = dao.findFindings(inspectionId).map(InspectionFindingEntity::toDomain),
@@ -149,6 +154,10 @@ class RoomInspectionRepository(
 
     override suspend fun saveMainPanel(mainPanel: MainPanelInspection) {
         dao.upsertMainPanel(mainPanel.copy(updatedAt = Instant.now()).toEntity())
+    }
+
+    override suspend fun saveGrounding(grounding: GroundingInspection) {
+        dao.upsertGrounding(grounding.copy(updatedAt = Instant.now()).toEntity())
     }
 
     override suspend fun saveMainPanelMeasurement(measurement: com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurement) {

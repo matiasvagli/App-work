@@ -37,6 +37,7 @@ object AppRoutes {
     const val INSPECTION_GENERAL = "inspections/{inspectionId}/general"
     const val INSPECTION_PILLAR = "inspections/{inspectionId}/pillar"
     const val INSPECTION_MAIN_PANEL = "inspections/{inspectionId}/main-panel"
+    const val INSPECTION_GROUNDING = "inspections/{inspectionId}/grounding"
     const val INSPECTION_FINDINGS = "inspections/{inspectionId}/findings"
     const val INSPECTION_VISUAL_COMPLEMENTARY = "inspections/{inspectionId}/visual-complementary"
     const val INSPECTION_TECHNICAL_COMMENT = "inspections/{inspectionId}/technical-comment"
@@ -198,6 +199,8 @@ object AppRoutes {
     fun inspectionPillar(inspectionId: String): String = "inspections/$inspectionId/pillar"
 
     fun inspectionMainPanel(inspectionId: String): String = "inspections/$inspectionId/main-panel"
+
+    fun inspectionGrounding(inspectionId: String): String = "inspections/$inspectionId/grounding"
 
     fun inspectionFindings(inspectionId: String): String = "inspections/$inspectionId/findings"
 

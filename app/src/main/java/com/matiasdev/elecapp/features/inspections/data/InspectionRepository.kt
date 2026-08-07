@@ -4,6 +4,7 @@ import com.matiasdev.elecapp.features.clients.domain.Client
 import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
+import com.matiasdev.elecapp.features.inspections.domain.GroundingInspection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
@@ -48,6 +49,8 @@ interface InspectionRepository {
     suspend fun softDeletePillarMeasurement(id: String)
 
     suspend fun saveMainPanel(mainPanel: MainPanelInspection)
+
+    suspend fun saveGrounding(grounding: GroundingInspection)
 
     suspend fun saveMainPanelMeasurement(measurement: MainPanelMeasurement)
 

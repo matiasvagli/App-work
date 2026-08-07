@@ -295,6 +295,7 @@ data class ElectricalRuleSectionUi(
 enum class ElectricalRuleSectionType {
     SUPPLY_VOLTAGE,
     VOLTAGE_DROP,
+    GROUNDING,
     CONDUCTOR_PROTECTION,
 }
 
@@ -374,6 +375,11 @@ private fun List<ElectricalRuleConfig>.toSections(): List<ElectricalRuleSectionU
             type = ElectricalRuleSectionType.VOLTAGE_DROP,
             title = "Caída de tensión",
             rules = listOfNotNull(item(ElectricalRuleCode.MAX_FEEDER_VOLTAGE_DROP_PERCENT)),
+        ),
+        ElectricalRuleSectionUi(
+            type = ElectricalRuleSectionType.GROUNDING,
+            title = "Puesta a tierra",
+            rules = listOfNotNull(item(ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS)),
         ),
         ElectricalRuleSectionUi(
             type = ElectricalRuleSectionType.CONDUCTOR_PROTECTION,

@@ -408,6 +408,7 @@ private fun numericSupportingText(code: ElectricalRuleCode): String {
         ElectricalRuleCode.MAX_SUPPLY_VOLTAGE,
         -> "La tensión mínima debe ser menor que la máxima."
         ElectricalRuleCode.MAX_FEEDER_VOLTAGE_DROP_PERCENT -> "Rango sugerido de trabajo: mayor que 0 % y hasta 20 %."
+        ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS -> "Referencia configurable para relevamientos comunes. Validar según instalación y jurisdicción."
         else -> "Debe ser mayor que 0."
     }
 }

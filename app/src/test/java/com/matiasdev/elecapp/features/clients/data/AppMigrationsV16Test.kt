@@ -26,7 +26,7 @@ class AppMigrationsV16Test {
     }
 }
 
-private class RecordingDatabaseV16 : SupportSQLiteDatabase {
+class RecordingDatabaseV16 : SupportSQLiteDatabase {
     val sql = mutableListOf<String>()
     override val isDbLockedByCurrentThread: Boolean = false
     override val isReadOnly: Boolean = false

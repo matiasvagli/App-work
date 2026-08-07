@@ -13,6 +13,7 @@ import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
 import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.GroundingInspection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
 import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
 import com.matiasdev.elecapp.features.inspections.domain.InspectionProgress
@@ -41,6 +42,32 @@ import com.matiasdev.elecapp.features.inspections.domain.UnverifiedItemType
 import com.matiasdev.elecapp.features.inspections.domain.YesNoPartialUnknown
 import com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown
 import java.time.Instant
+
+fun GroundingInspectionEntity.toDomain(): GroundingInspection = GroundingInspection(
+    inspectionId = inspectionId,
+    electrodePresent = enumValue(electrodePresent, YesNoUnknown.UNKNOWN),
+    inspectionChamberAccessible = enumValue(inspectionChamberAccessible, YesNoUnknown.UNKNOWN),
+    mainGroundConductorPresent = enumValue(mainGroundConductorPresent, YesNoUnknown.UNKNOWN),
+    protectiveConductorContinuity = enumValue(protectiveConductorContinuity, YesNoUnknown.UNKNOWN),
+    resistanceOhms = resistanceOhms,
+    resistanceOrigin = enumValue(resistanceOrigin, MeasurementOrigin.NOT_VERIFIED),
+    notes = notes,
+    createdAt = Instant.ofEpochMilli(createdAt),
+    updatedAt = Instant.ofEpochMilli(updatedAt),
+)
+
+fun GroundingInspection.toEntity(): GroundingInspectionEntity = GroundingInspectionEntity(
+    inspectionId = inspectionId,
+    electrodePresent = electrodePresent.name,
+    inspectionChamberAccessible = inspectionChamberAccessible.name,
+    mainGroundConductorPresent = mainGroundConductorPresent.name,
+    protectiveConductorContinuity = protectiveConductorContinuity.name,
+    resistanceOhms = resistanceOhms,
+    resistanceOrigin = resistanceOrigin.name,
+    notes = notes,
+    createdAt = createdAt.toEpochMilli(),
+    updatedAt = updatedAt.toEpochMilli(),
+)
 
 fun ElectricalInspectionEntity.toDomain(): ElectricalInspection = ElectricalInspection(
     id = id,

@@ -10,7 +10,7 @@ enum class InspectionSection {
     GENERAL,
     PILLAR,
     MAIN_PANEL,
-    GROUNDING_SOON,
+    GROUNDING,
     FINDINGS,
     UNVERIFIED,
     VISUAL_COMPLEMENTARY,
@@ -40,7 +40,7 @@ object InspectionProgressCalculator {
                 sections = listOf(
                     visualPillarProgress(aggregate.pillar),
                     visualMainPanelProgress(aggregate.mainPanel),
-                    groundingSoonProgress(),
+                    groundingProgress(aggregate.grounding),
                     findingsProgress(aggregate.findings),
                     visualComplementaryProgress(inspection, aggregate.unverifiedItems),
                     finalReportProgress(inspection),
@@ -52,7 +52,7 @@ object InspectionProgressCalculator {
                 sections = buildList {
                     if (inspection.isPillarRelevantForSector()) add(pillarProgress(aggregate.pillar))
                     if (inspection.isMainPanelRelevantForSector()) add(mainPanelProgress(aggregate.mainPanel))
-                    add(groundingSoonProgress())
+                    add(groundingProgress(aggregate.grounding))
                     add(findingsProgress(aggregate.findings))
                     add(technicalCommentProgress(inspection))
                     add(finalReportProgress(inspection))
@@ -63,7 +63,7 @@ object InspectionProgressCalculator {
             sections = listOf(
                 pillarProgress(aggregate.pillar),
                 mainPanelProgress(aggregate.mainPanel),
-                groundingSoonProgress(),
+                groundingProgress(aggregate.grounding),
                 findingsProgress(aggregate.findings),
                 technicalCommentProgress(inspection),
                 finalReportProgress(inspection),
@@ -71,12 +71,13 @@ object InspectionProgressCalculator {
         )
     }
 
-    private fun groundingSoonProgress(): InspectionSectionProgress {
-        return InspectionSectionProgress(
-            InspectionSection.GROUNDING_SOON,
-            InspectionSectionStatus.COMPLETE,
-            "Próximamente · Registro de jabalina, conductor de protección y mediciones con telurómetro.",
-        )
+    private fun groundingProgress(grounding: GroundingInspection?): InspectionSectionProgress = when {
+        grounding == null -> InspectionSectionProgress(InspectionSection.GROUNDING, InspectionSectionStatus.NOT_STARTED, "")
+        grounding.resistanceOrigin == MeasurementOrigin.NOT_VERIFIED ->
+            InspectionSectionProgress(InspectionSection.GROUNDING, InspectionSectionStatus.COMPLETE, "Inspección visual · resistencia no verificada")
+        grounding.resistanceOhms != null ->
+            InspectionSectionProgress(InspectionSection.GROUNDING, InspectionSectionStatus.COMPLETE, "${grounding.resistanceOhms.formatOhms()} Ω")
+        else -> InspectionSectionProgress(InspectionSection.GROUNDING, InspectionSectionStatus.INCOMPLETE, "Falta el valor de resistencia")
     }
 
     fun ElectricalInspection.isPillarRelevantForSector(): Boolean {
@@ -201,4 +202,9 @@ object InspectionProgressCalculator {
         InspectionSectionReviewStatus.NOT_APPLICABLE -> "No corresponde"
         InspectionSectionReviewStatus.NOT_VERIFIED -> "No se verificó"
     }
+}
+
+private fun Double.formatOhms(): String {
+    val whole = toLong()
+    return if (this == whole.toDouble()) whole.toString() else toString().replace('.', ',')
 }

@@ -55,6 +55,19 @@ object DefaultElectricalRuleConfigs {
             recommendationTemplate = "Verificar tensión en origen y destino, longitud, sección, corriente y estado de conexiones.",
             configVersion = CONFIG_VERSION,
         ),
+        ElectricalRuleConfig(
+            code = ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS,
+            name = "Resistencia máxima de puesta a tierra",
+            enabled = true,
+            severity = ElectricalRuleSeverity.IMPORTANT,
+            numericValue = 40.0,
+            secondaryNumericValue = null,
+            unit = "Ω",
+            findingTitle = "Resistencia de puesta a tierra a revisar",
+            findingDescriptionTemplate = "La resistencia medida supera el límite configurado de {limit} {unit}.",
+            recommendationTemplate = "Verificar la medición con telurómetro, el electrodo, sus conexiones y la continuidad del sistema de protección.",
+            configVersion = CONFIG_VERSION,
+        ),
         maxCurrentRule(
             code = ElectricalRuleCode.MAX_CURRENT_COPPER_1_5_MM2,
             sectionLabel = "1,5 mm²",
@@ -100,5 +113,5 @@ object DefaultElectricalRuleConfigs {
         configVersion = CONFIG_VERSION,
     )
 
-    private const val CONFIG_VERSION = 1
+    private const val CONFIG_VERSION = 2
 }

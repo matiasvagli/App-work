@@ -144,6 +144,35 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
                 )
             }
         }
+    grounding?.let { grounding ->
+        val resistance = grounding.resistanceOhms
+        val limit = DefaultElectricalRuleConfigs.all.firstOrNull {
+            it.code == ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS && it.enabled
+        }?.numericValue
+        if (
+            resistance != null && limit != null &&
+            grounding.resistanceOrigin != MeasurementOrigin.NOT_VERIFIED &&
+            resistance > limit
+        ) {
+            add(
+                proposal(
+                    id = "auto:rule:grounding:resistance",
+                    category = FindingCategory.GROUNDING,
+                    severity = FindingSeverity.PRIORITY,
+                    description = "La resistencia de puesta a tierra registrada (${resistance.formatNumber()} Ω) supera el máximo configurado (${limit.formatNumber()} Ω). Requiere verificación técnica.",
+                    sectionName = "Puesta a tierra",
+                    now = now,
+                    sourceType = FindingSourceType.RULE_SUGGESTION,
+                    sourceEntityId = grounding.inspectionId,
+                    sourceValue = resistance,
+                    sourceUnit = "Ω",
+                    ruleCode = ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS.name,
+                    includeInReport = true,
+                    reviewStatus = FindingReviewStatus.PENDING,
+                ),
+            )
+        }
+    }
 }
 
 private fun PillarMeasurementType.isVoltageMeasurement(): Boolean = this in setOf(
@@ -283,6 +312,7 @@ private fun InspectionAggregate.proposal(
 private fun String.toInspectionSection(): InspectionSection? = when (this) {
     "Pilar y acometida" -> InspectionSection.PILLAR
     "Tablero principal" -> InspectionSection.MAIN_PANEL
+    "Puesta a tierra" -> InspectionSection.GROUNDING
     "No verificado" -> InspectionSection.UNVERIFIED
     else -> null
 }

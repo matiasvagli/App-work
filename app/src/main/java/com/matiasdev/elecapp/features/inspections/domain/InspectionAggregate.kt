@@ -12,4 +12,5 @@ data class InspectionAggregate(
     val pillarMeasurements: List<PillarMeasurement> = emptyList(),
     val mainPanelMeasurements: List<MainPanelMeasurement> = emptyList(),
     val mainPanelCircuits: List<MainPanelCircuit> = emptyList(),
+    val grounding: GroundingInspection? = null,
 )

@@ -72,6 +72,9 @@ interface InspectionDao {
     @Query("SELECT * FROM main_panel_inspections WHERE inspection_id = :inspectionId LIMIT 1")
     fun observeMainPanel(inspectionId: String): Flow<MainPanelInspectionEntity?>
 
+    @Query("SELECT * FROM grounding_inspections WHERE inspection_id = :inspectionId LIMIT 1")
+    fun observeGrounding(inspectionId: String): Flow<GroundingInspectionEntity?>
+
     @Query(
         """
         SELECT * FROM main_panel_measurements
@@ -123,6 +126,9 @@ interface InspectionDao {
     @Query("SELECT * FROM main_panel_inspections WHERE inspection_id = :inspectionId LIMIT 1")
     suspend fun findMainPanel(inspectionId: String): MainPanelInspectionEntity?
 
+    @Query("SELECT * FROM grounding_inspections WHERE inspection_id = :inspectionId LIMIT 1")
+    suspend fun findGrounding(inspectionId: String): GroundingInspectionEntity?
+
     @Query(
         """
         SELECT * FROM main_panel_measurements
@@ -170,6 +176,9 @@ interface InspectionDao {
 
     @Upsert
     suspend fun upsertMainPanel(mainPanel: MainPanelInspectionEntity)
+
+    @Upsert
+    suspend fun upsertGrounding(grounding: GroundingInspectionEntity)
 
     @Upsert
     suspend fun upsertMainPanelMeasurement(measurement: MainPanelMeasurementEntity)

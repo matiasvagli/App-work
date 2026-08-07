@@ -25,6 +25,7 @@ import com.matiasdev.elecapp.features.home.ui.HomeScreen
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.ui.FindingsScreen
+import com.matiasdev.elecapp.features.inspections.ui.GroundingInspectionScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionFinalReportScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionGeneralScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionManualCalculationType
@@ -474,9 +475,20 @@ fun ElecNavHost(
                 inspectionId = inspectionId,
                 onBackClick = { navController.navigateUp() },
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionPillar(inspectionId)) },
-                onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionFindings(inspectionId)) },
+                onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionGrounding(inspectionId)) },
                 onHomeClick = { navController.navigateSingleTop(AppRoutes.HOME) },
                 onCalculateVoltageDropClick = { navController.navigate(AppRoutes.electricalToolsVoltageDrop(inspectionId = inspectionId)) },
+            )
+        }
+        composable(AppRoutes.INSPECTION_GROUNDING, AppRoutes.inspectionIdArguments) { backStackEntry ->
+            val inspectionId = backStackEntry.inspectionId()
+            GroundingInspectionScreen(
+                repository = inspectionRepository,
+                inspectionId = inspectionId,
+                onBackClick = { navController.navigateUp() },
+                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionMainPanel(inspectionId)) },
+                onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionFindings(inspectionId)) },
+                onHomeClick = { navController.navigateHomeClearingStack() },
             )
         }
         composable(AppRoutes.INSPECTION_FINDINGS, AppRoutes.inspectionIdArguments) { backStackEntry ->
@@ -485,7 +497,7 @@ fun ElecNavHost(
                 repository = inspectionRepository,
                 inspectionId = inspectionId,
                 onBackClick = { navController.navigateUp() },
-                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionMainPanel(inspectionId)) },
+                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionGrounding(inspectionId)) },
                 onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionFinalReport(inspectionId)) },
                 onHomeClick = { navController.navigateSingleTop(AppRoutes.HOME) },
                 onAddToQuoteClick = { navController.navigate(AppRoutes.quoteCreate(inspectionId = inspectionId)) },
@@ -514,7 +526,7 @@ private fun inspectionSectionRoute(inspectionId: String, section: InspectionSect
         InspectionSection.GENERAL -> AppRoutes.inspectionGeneral(inspectionId)
         InspectionSection.PILLAR -> AppRoutes.inspectionPillar(inspectionId)
         InspectionSection.MAIN_PANEL -> AppRoutes.inspectionMainPanel(inspectionId)
-        InspectionSection.GROUNDING_SOON -> AppRoutes.inspectionOverview(inspectionId)
+        InspectionSection.GROUNDING -> AppRoutes.inspectionGrounding(inspectionId)
         InspectionSection.FINDINGS -> AppRoutes.inspectionFindings(inspectionId)
         InspectionSection.UNVERIFIED -> AppRoutes.inspectionOverview(inspectionId)
         InspectionSection.VISUAL_COMPLEMENTARY -> AppRoutes.inspectionVisualComplementary(inspectionId)

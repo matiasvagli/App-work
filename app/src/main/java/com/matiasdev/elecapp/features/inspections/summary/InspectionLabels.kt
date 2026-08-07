@@ -228,7 +228,7 @@ fun InspectionSection.label(): String = when (this) {
     InspectionSection.GENERAL -> "Datos generales"
     InspectionSection.PILLAR -> "Pilar y acometida"
     InspectionSection.MAIN_PANEL -> "Tablero principal"
-    InspectionSection.GROUNDING_SOON -> "Puesta a tierra"
+    InspectionSection.GROUNDING -> "Puesta a tierra"
     InspectionSection.FINDINGS -> "Hallazgos"
     InspectionSection.UNVERIFIED -> "No verificado"
     InspectionSection.VISUAL_COMPLEMENTARY -> "Observaciones y no verificados"

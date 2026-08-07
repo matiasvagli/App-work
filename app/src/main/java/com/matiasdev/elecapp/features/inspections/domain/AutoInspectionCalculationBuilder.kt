@@ -31,7 +31,7 @@ object AutoInspectionCalculationBuilder {
         addAll(buildConsumptionCompatibility(aggregate))
         buildMeasuredVoltageDrop(aggregate)?.let(::add)
         buildCalculatedVoltageDrop(aggregate)?.let(::add)
-        buildGroundingAssessment(aggregate)?.let(::add)
+        buildGroundingAssessment(aggregate, rules)?.let(::add)
     }.distinctBy { it.id }
 
     private fun buildProtectionCompatibility(
@@ -164,23 +164,39 @@ object AutoInspectionCalculationBuilder {
         )
     }
 
-    private fun buildGroundingAssessment(aggregate: InspectionAggregate): AutoInspectionCalculation? {
-        val panel = aggregate.mainPanel ?: return null
-        val checked = listOf(panel.groundBarPresent, panel.neutralAndGroundSeparated).any { it != YesNoUnknown.UNKNOWN } ||
-            panel.protectionConductorsPresent != YesNoPartialUnknown.UNKNOWN ||
-            panel.protectionConductorCheckResult != ProtectionConductorCheckResult.NOT_VERIFIED ||
+    private fun buildGroundingAssessment(
+        aggregate: InspectionAggregate,
+        rules: List<ElectricalRuleConfig>,
+    ): AutoInspectionCalculation? {
+        val panel = aggregate.mainPanel
+        val grounding = aggregate.grounding
+        val checked = grounding != null ||
+            panel?.let { listOf(it.groundBarPresent, it.neutralAndGroundSeparated).any { value -> value != YesNoUnknown.UNKNOWN } } == true ||
+            panel?.protectionConductorsPresent != null && panel.protectionConductorsPresent != YesNoPartialUnknown.UNKNOWN ||
+            panel?.protectionConductorCheckResult != null && panel.protectionConductorCheckResult != ProtectionConductorCheckResult.NOT_VERIFIED ||
             aggregate.mainPanelMeasurements.any { it.type == MainPanelMeasurementType.PROTECTION_VOLTAGE_NEUTRAL_GROUND && it.value != null && !it.isDeleted }
         if (!checked) return null
         val neutralGround = aggregate.mainPanelMeasurements
             .firstOrNull { it.type == MainPanelMeasurementType.PROTECTION_VOLTAGE_NEUTRAL_GROUND && it.value != null && !it.isDeleted }
             ?.value
+        val resistanceLimit = rules.firstOrNull { it.code == com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS && it.enabled }?.numericValue
+        val measuredResistance = grounding?.resistanceOhms?.takeIf { grounding.resistanceOrigin != MeasurementOrigin.NOT_VERIFIED }
         val classification = when {
-            panel.groundBarPresent == YesNoUnknown.NO ||
-                panel.neutralAndGroundSeparated == YesNoUnknown.NO ||
-                panel.protectionConductorsPresent == YesNoPartialUnknown.NO ||
-                panel.protectionConductorCheckResult == ProtectionConductorCheckResult.REQUIRES_REVIEW ||
+            grounding?.electrodePresent == YesNoUnknown.NO ||
+                grounding?.mainGroundConductorPresent == YesNoUnknown.NO ||
+                grounding?.protectiveConductorContinuity == YesNoUnknown.NO ||
+                panel?.groundBarPresent == YesNoUnknown.NO ||
+                panel?.neutralAndGroundSeparated == YesNoUnknown.NO ||
+                panel?.protectionConductorsPresent == YesNoPartialUnknown.NO ||
+                panel?.protectionConductorCheckResult == ProtectionConductorCheckResult.REQUIRES_REVIEW ||
+                (measuredResistance != null && resistanceLimit != null && measuredResistance > resistanceLimit) ||
                 (neutralGround != null && neutralGround > 5.0) -> TechnicalClassification.CRITICAL_REVIEW
-            panel.groundBarPresent == YesNoUnknown.YES &&
+            measuredResistance == null -> TechnicalClassification.NOT_CLASSIFIED
+            (resistanceLimit == null || measuredResistance <= resistanceLimit) &&
+                grounding?.electrodePresent == YesNoUnknown.YES &&
+                grounding.mainGroundConductorPresent == YesNoUnknown.YES &&
+                grounding.protectiveConductorContinuity == YesNoUnknown.YES &&
+                panel?.groundBarPresent == YesNoUnknown.YES &&
                 panel.neutralAndGroundSeparated == YesNoUnknown.YES &&
                 (panel.protectionConductorsPresent == YesNoPartialUnknown.YES || panel.protectionConductorsPresent == YesNoPartialUnknown.PARTIAL) &&
                 (neutralGround == null || neutralGround <= 2.0) -> TechnicalClassification.ACCEPTABLE
@@ -188,14 +204,18 @@ object AutoInspectionCalculationBuilder {
         }
         return AutoInspectionCalculation(
             id = "auto:grounding:basic",
-            title = "Puesta a tierra básica",
+            title = "Puesta a tierra",
             primaryResult = classification.shortLabel(),
             detail = listOfNotNull(
-                "Bornera: ${panel.groundBarPresent.basicLabel()}",
-                "neutro/tierra separados: ${panel.neutralAndGroundSeparated.basicLabel()}",
-                "conductores PE: ${panel.protectionConductorsPresent.basicLabel()}",
+                grounding?.let { "Electrodo: ${it.electrodePresent.basicLabel()}" },
+                grounding?.let { "conductor principal: ${it.mainGroundConductorPresent.basicLabel()}" },
+                panel?.let { "bornera: ${it.groundBarPresent.basicLabel()}" },
+                panel?.let { "neutro/tierra separados: ${it.neutralAndGroundSeparated.basicLabel()}" },
+                panel?.let { "conductores PE: ${it.protectionConductorsPresent.basicLabel()}" },
+                measuredResistance?.let { "resistencia ${TechnicalValueFormatter.withUnit(it, "Ω")}" },
+                resistanceLimit?.let { "máximo configurado ${TechnicalValueFormatter.withUnit(it, "Ω")}" },
                 neutralGround?.let { "N-PE ${TechnicalValueFormatter.withUnit(it, "V")}" },
-                "orientativo; no reemplaza telurómetro",
+                if (measuredResistance == null) "resistencia no verificada con telurómetro" else null,
             ).joinToString(" · "),
             classification = classification,
         )

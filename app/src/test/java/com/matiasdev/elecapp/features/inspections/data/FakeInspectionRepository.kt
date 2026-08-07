@@ -3,6 +3,7 @@ package com.matiasdev.elecapp.features.inspections.data
 import com.matiasdev.elecapp.features.clients.domain.Client
 import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
+import com.matiasdev.elecapp.features.inspections.domain.GroundingInspection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
 import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
@@ -30,6 +31,7 @@ class FakeInspectionRepository : InspectionRepository {
     private val pillars = MutableStateFlow<List<PillarInspection>>(emptyList())
     private val pillarMeasurements = MutableStateFlow<List<PillarMeasurement>>(emptyList())
     private val panels = MutableStateFlow<List<MainPanelInspection>>(emptyList())
+    private val groundings = MutableStateFlow<List<GroundingInspection>>(emptyList())
     private val mainPanelMeasurements = MutableStateFlow<List<MainPanelMeasurement>>(emptyList())
     private val mainPanelCircuits = MutableStateFlow<List<MainPanelCircuit>>(emptyList())
     private val findings = MutableStateFlow<List<InspectionFinding>>(emptyList())
@@ -143,6 +145,11 @@ class FakeInspectionRepository : InspectionRepository {
         touchAggregate()
     }
 
+    override suspend fun saveGrounding(grounding: GroundingInspection) {
+        groundings.value = groundings.value.filterNot { it.inspectionId == grounding.inspectionId }.plus(grounding)
+        touchAggregate()
+    }
+
     override suspend fun saveMainPanelMeasurement(measurement: MainPanelMeasurement) {
         mainPanelMeasurements.value = mainPanelMeasurements.value.filterNot { it.id == measurement.id }.plus(measurement)
         touchAggregate()
@@ -191,6 +198,7 @@ class FakeInspectionRepository : InspectionRepository {
             pillar = pillars.value.firstOrNull { it.inspectionId == inspection.id },
             pillarMeasurements = pillarMeasurements.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })),
             mainPanel = panels.value.firstOrNull { it.inspectionId == inspection.id },
+            grounding = groundings.value.firstOrNull { it.inspectionId == inspection.id },
             mainPanelMeasurements = mainPanelMeasurements.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })),
             mainPanelCircuits = mainPanelCircuits.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })),
             findings = findings.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedBy { it.sortOrder },
