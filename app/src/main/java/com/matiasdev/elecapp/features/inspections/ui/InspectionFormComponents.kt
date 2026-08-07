@@ -2,9 +2,11 @@ package com.matiasdev.elecapp.features.inspections.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -13,6 +15,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -97,4 +100,24 @@ fun InspectionTextField(
         supportingText = error?.let { { Text(it) } },
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
     )
+}
+
+@Composable
+fun InspectionSectionNavigation(
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    previousLabel: String = "Atrás",
+    nextLabel: String = "Siguiente",
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        TextButton(onClick = onPreviousClick) {
+            Text(previousLabel)
+        }
+        Button(onClick = onNextClick) {
+            Text(nextLabel)
+        }
+    }
 }

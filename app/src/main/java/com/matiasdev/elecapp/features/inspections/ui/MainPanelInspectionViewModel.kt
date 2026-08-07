@@ -69,6 +69,7 @@ data class MainPanelInspectionUiState(
     val notes: String = "",
     val measurements: List<MainPanelMeasurement> = emptyList(),
     val circuits: List<MainPanelCircuit> = emptyList(),
+    val circuitConsumptionInputs: Map<String, String> = emptyMap(),
     val expandedCircuitIds: Set<String> = emptySet(),
     val editingMeasurementId: String? = null,
     val measurementSection: MainPanelMeasurementSection = MainPanelMeasurementSection.INPUT_VOLTAGE,
@@ -224,6 +225,14 @@ class MainPanelInspectionViewModel(
         }
     }
 
+    fun updateCircuitConsumption(circuit: MainPanelCircuit, value: String) {
+        val filtered = value.filter { it.isDigit() || it == '.' || it == ',' }
+        _uiState.update {
+            it.copy(circuitConsumptionInputs = it.circuitConsumptionInputs + (circuit.id to filtered))
+        }
+        updateCircuit(circuit.copy(consumptionAmps = filtered.replace(",", ".").toDoubleOrNull()))
+    }
+
     fun editMeasurement(measurement: MainPanelMeasurement) {
         _uiState.update {
             it.copy(
@@ -331,9 +340,13 @@ class MainPanelInspectionViewModel(
     private suspend fun refreshCollections() {
         val aggregate = repository.findAggregate(inspectionId)
         _uiState.update {
+            val circuits = aggregate?.mainPanelCircuits.orEmpty()
             it.copy(
                 measurements = aggregate?.mainPanelMeasurements.orEmpty(),
-                circuits = aggregate?.mainPanelCircuits.orEmpty(),
+                circuits = circuits,
+                circuitConsumptionInputs = circuits.associate { circuit ->
+                    circuit.id to (it.circuitConsumptionInputs[circuit.id] ?: circuit.consumptionAmps?.toInputText().orEmpty())
+                },
                 saved = true,
             )
         }
@@ -364,6 +377,11 @@ class MainPanelInspectionViewModel(
             ),
         )
     }
+}
+
+private fun Double.toInputText(): String {
+    val whole = toLong()
+    return if (this == whole.toDouble()) whole.toString() else toString()
 }
 
 private fun MainPanelInspectionUiState.normalized(): MainPanelInspectionUiState {

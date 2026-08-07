@@ -550,6 +550,26 @@ class InspectionViewModelTest {
     }
 
     @Test
+    fun `main panel circuit consumption keeps typed decimal text while saving numeric value`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.updateCircuitCount("1")
+        val circuit = repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()!!
+        viewModel.updateCircuit(circuit.copy(consumptionOrigin = MeasurementOrigin.MEASURED))
+        val editable = repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()!!
+
+        viewModel.updateCircuitConsumption(editable, "2")
+        assertEquals("2", viewModel.uiState.value.circuitConsumptionInputs[editable.id])
+        assertEquals(2.0, repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()?.consumptionAmps)
+
+        viewModel.updateCircuitConsumption(editable, "2,5")
+        assertEquals("2,5", viewModel.uiState.value.circuitConsumptionInputs[editable.id])
+        assertEquals(2.5, repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()?.consumptionAmps)
+    }
+
+    @Test
     fun `main panel stores visible wiring risk quick answers`() = runTest(dispatcher) {
         val repository = FakeInspectionRepository()
         val inspection = repository.startOrGetInspection(testVisit(), testClient())

@@ -452,10 +452,24 @@ fun ElecNavHost(
             InspectionGeneralScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
         }
         composable(AppRoutes.INSPECTION_PILLAR, AppRoutes.inspectionIdArguments) { backStackEntry ->
-            PillarInspectionScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
+            val inspectionId = backStackEntry.inspectionId()
+            PillarInspectionScreen(
+                repository = inspectionRepository,
+                inspectionId = inspectionId,
+                onBackClick = { navController.navigateUp() },
+                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(inspectionId)) },
+                onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionMainPanel(inspectionId)) },
+            )
         }
         composable(AppRoutes.INSPECTION_MAIN_PANEL, AppRoutes.inspectionIdArguments) { backStackEntry ->
-            MainPanelInspectionScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
+            val inspectionId = backStackEntry.inspectionId()
+            MainPanelInspectionScreen(
+                repository = inspectionRepository,
+                inspectionId = inspectionId,
+                onBackClick = { navController.navigateUp() },
+                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionPillar(inspectionId)) },
+                onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionFindings(inspectionId)) },
+            )
         }
         composable(AppRoutes.INSPECTION_FINDINGS, AppRoutes.inspectionIdArguments) { backStackEntry ->
             val inspectionId = backStackEntry.inspectionId()

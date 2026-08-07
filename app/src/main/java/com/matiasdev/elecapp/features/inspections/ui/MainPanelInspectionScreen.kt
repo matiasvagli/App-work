@@ -60,6 +60,8 @@ fun MainPanelInspectionScreen(
     repository: InspectionRepository,
     inspectionId: String,
     onBackClick: () -> Unit,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MainPanelInspectionViewModel = viewModel(factory = MainPanelInspectionViewModelFactory(repository, inspectionId)),
 ) {
@@ -78,13 +80,19 @@ fun MainPanelInspectionScreen(
         if (uiState.isLoading) {
             CircularProgressIndicator(Modifier.padding(padding).padding(24.dp))
         } else {
-            MainPanelForm(uiState, viewModel, Modifier.padding(padding))
+            MainPanelForm(uiState, viewModel, onPreviousClick, onNextClick, Modifier.padding(padding))
         }
     }
 }
 
 @Composable
-private fun MainPanelForm(uiState: MainPanelInspectionUiState, viewModel: MainPanelInspectionViewModel, modifier: Modifier) {
+private fun MainPanelForm(
+    uiState: MainPanelInspectionUiState,
+    viewModel: MainPanelInspectionViewModel,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    modifier: Modifier,
+) {
     Column(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -111,6 +119,7 @@ private fun MainPanelForm(uiState: MainPanelInspectionUiState, viewModel: MainPa
         }
         if (uiState.reviewStatus != InspectionSectionReviewStatus.REVIEWED || uiState.accessible == AccessStatus.NO) {
             SavedIndicator(uiState)
+            InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick)
             return@Column
         }
         InspectionFormBlock("Tensión de entrada al tablero") {
@@ -186,6 +195,7 @@ private fun MainPanelForm(uiState: MainPanelInspectionUiState, viewModel: MainPa
             InspectionTextField("Observación", uiState.notes, { viewModel.update { copy(notes = it) } }, minLines = 3)
         }
         SavedIndicator(uiState)
+        InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick)
     }
 }
 
@@ -205,14 +215,14 @@ private fun CircuitList(uiState: MainPanelInspectionUiState, viewModel: MainPane
                 }
             }
             if (circuit.id in uiState.expandedCircuitIds) {
-                CircuitEditor(circuit, viewModel)
+                CircuitEditor(circuit, uiState.circuitConsumptionInputs[circuit.id].orEmpty(), viewModel)
             }
         }
     }
 }
 
 @Composable
-private fun CircuitEditor(circuit: MainPanelCircuit, viewModel: MainPanelInspectionViewModel) {
+private fun CircuitEditor(circuit: MainPanelCircuit, consumptionInput: String, viewModel: MainPanelInspectionViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         InspectionDropdownField("Identificación o destino", circuit.destination, CircuitDestination.entries.toList(), CircuitDestination::label) {
             viewModel.updateCircuit(circuit.copy(destination = it, destinationOther = null))
@@ -255,7 +265,7 @@ private fun CircuitEditor(circuit: MainPanelCircuit, viewModel: MainPanelInspect
             viewModel.updateCircuit(circuit.copy(consumptionOrigin = it, consumptionAmps = if (it == MeasurementOrigin.NOT_VERIFIED) null else circuit.consumptionAmps))
         }
         if (circuit.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED) {
-            DecimalField("Consumo del circuito A", circuit.consumptionAmps?.toString().orEmpty(), { value -> viewModel.updateCircuit(circuit.copy(consumptionAmps = value.replace(",", ".").toDoubleOrNull())) }, null)
+            DecimalField("Consumo del circuito A", consumptionInput, { value -> viewModel.updateCircuitConsumption(circuit, value) }, null)
         }
         InspectionTextField("Observación", circuit.notes.orEmpty(), { viewModel.updateCircuit(circuit.copy(notes = it.trim().ifBlank { null })) }, minLines = 2)
     }
