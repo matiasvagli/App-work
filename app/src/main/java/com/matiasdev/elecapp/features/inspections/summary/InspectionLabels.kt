@@ -170,6 +170,53 @@ fun com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin.label():
     com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin.NOT_VERIFIED -> "No verificado"
 }
 
+fun com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.label(): String = when (this) {
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.INPUT_VOLTAGE_LN -> "Tensión fase-neutro"
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.INPUT_VOLTAGE_L1_N -> "L1-N"
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.INPUT_VOLTAGE_L2_N -> "L2-N"
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.INPUT_VOLTAGE_L3_N -> "L3-N"
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.INPUT_VOLTAGE_L1_L2 -> "L1-L2"
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.INPUT_VOLTAGE_L2_L3 -> "L2-L3"
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.INPUT_VOLTAGE_L3_L1 -> "L3-L1"
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.PROTECTION_VOLTAGE_PHASE_GROUND -> "Fase-tierra"
+    com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.PROTECTION_VOLTAGE_NEUTRAL_GROUND -> "Neutro-tierra"
+}
+
+fun com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.label(): String = when (this) {
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.LIGHTING -> "Iluminación"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.OUTLETS -> "Tomacorrientes"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.AIR_CONDITIONING -> "Aire acondicionado"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.KITCHEN -> "Cocina"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.OVEN -> "Horno"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.PUMP -> "Bomba"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.EXTERIOR -> "Exterior"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.GATE -> "Portón"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.WATER_HEATER -> "Termotanque"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.RESERVE -> "Reserva"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED -> "Sin identificar"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.OTHER -> "Otro"
+}
+
+fun com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.label(): String = when (this) {
+    com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.B -> "B"
+    com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.C -> "C"
+    com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.D -> "D"
+    com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN -> "No verificada"
+}
+
+fun com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.label(): String = when (this) {
+    com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.COMPLIANT -> "Acordes"
+    com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.PARTIALLY_COMPLIANT -> "Parcialmente acordes"
+    com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.INCORRECT_OR_MIXED -> "Incorrectos o mezclados"
+    com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.UNKNOWN -> "No verificados"
+}
+
+fun com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.label(): String = when (this) {
+    com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.APPARENT_PRESENCE -> "Presencia aparente"
+    com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.REQUIRES_REVIEW -> "Requiere revisión"
+    com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.NOT_VERIFIED -> "No verificado"
+}
+
 fun InspectionSection.label(): String = when (this) {
     InspectionSection.GENERAL -> "Datos generales"
     InspectionSection.PILLAR -> "Pilar y acometida"

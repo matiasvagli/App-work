@@ -12,6 +12,8 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelCircuit
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
 import com.matiasdev.elecapp.features.inspections.domain.PropertyType
@@ -28,6 +30,8 @@ class FakeInspectionRepository : InspectionRepository {
     private val pillars = MutableStateFlow<List<PillarInspection>>(emptyList())
     private val pillarMeasurements = MutableStateFlow<List<PillarMeasurement>>(emptyList())
     private val panels = MutableStateFlow<List<MainPanelInspection>>(emptyList())
+    private val mainPanelMeasurements = MutableStateFlow<List<MainPanelMeasurement>>(emptyList())
+    private val mainPanelCircuits = MutableStateFlow<List<MainPanelCircuit>>(emptyList())
     private val findings = MutableStateFlow<List<InspectionFinding>>(emptyList())
     private val unverifiedItems = MutableStateFlow<List<InspectionUnverifiedItem>>(emptyList())
 
@@ -131,6 +135,22 @@ class FakeInspectionRepository : InspectionRepository {
         panels.value = panels.value.filterNot { it.inspectionId == mainPanel.inspectionId }.plus(mainPanel)
     }
 
+    override suspend fun saveMainPanelMeasurement(measurement: MainPanelMeasurement) {
+        mainPanelMeasurements.value = mainPanelMeasurements.value.filterNot { it.id == measurement.id }.plus(measurement)
+    }
+
+    override suspend fun softDeleteMainPanelMeasurement(id: String) {
+        mainPanelMeasurements.value = mainPanelMeasurements.value.map { if (it.id == id) it.copy(isDeleted = true) else it }
+    }
+
+    override suspend fun saveMainPanelCircuit(circuit: MainPanelCircuit) {
+        mainPanelCircuits.value = mainPanelCircuits.value.filterNot { it.id == circuit.id }.plus(circuit)
+    }
+
+    override suspend fun softDeleteMainPanelCircuit(id: String) {
+        mainPanelCircuits.value = mainPanelCircuits.value.map { if (it.id == id) it.copy(isDeleted = true) else it }
+    }
+
     override suspend fun saveFinding(finding: InspectionFinding) {
         findings.value = findings.value.filterNot { it.id == finding.id }.plus(finding)
     }
@@ -152,6 +172,8 @@ class FakeInspectionRepository : InspectionRepository {
             pillar = pillars.value.firstOrNull { it.inspectionId == inspection.id },
             pillarMeasurements = pillarMeasurements.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })),
             mainPanel = panels.value.firstOrNull { it.inspectionId == inspection.id },
+            mainPanelMeasurements = mainPanelMeasurements.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })),
+            mainPanelCircuits = mainPanelCircuits.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })),
             findings = findings.value.filter { it.inspectionId == inspection.id && !it.isDeleted }.sortedBy { it.sortOrder },
             unverifiedItems = unverifiedItems.value.filter { it.inspectionId == inspection.id && !it.isDeleted },
         )

@@ -20,7 +20,9 @@ import com.matiasdev.elecapp.features.inspections.data.ElectricalInspectionEntit
 import com.matiasdev.elecapp.features.inspections.data.InspectionDao
 import com.matiasdev.elecapp.features.inspections.data.InspectionFindingEntity
 import com.matiasdev.elecapp.features.inspections.data.InspectionUnverifiedItemEntity
+import com.matiasdev.elecapp.features.inspections.data.MainPanelCircuitEntity
 import com.matiasdev.elecapp.features.inspections.data.MainPanelInspectionEntity
+import com.matiasdev.elecapp.features.inspections.data.MainPanelMeasurementEntity
 import com.matiasdev.elecapp.features.inspections.data.PillarMeasurementEntity
 import com.matiasdev.elecapp.features.inspections.data.PillarInspectionEntity
 import com.matiasdev.elecapp.features.materials.data.MaterialDao
@@ -45,6 +47,8 @@ import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionEntity
         PillarInspectionEntity::class,
         PillarMeasurementEntity::class,
         MainPanelInspectionEntity::class,
+        MainPanelMeasurementEntity::class,
+        MainPanelCircuitEntity::class,
         InspectionFindingEntity::class,
         InspectionUnverifiedItemEntity::class,
         QuoteEntity::class,
@@ -60,7 +64,7 @@ import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionEntity
         ReceiptSequenceEntity::class,
         ElectricalRuleConfigEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -3,6 +3,9 @@ package com.matiasdev.elecapp.features.inspections.ui
 import com.matiasdev.elecapp.features.clients.ui.MainDispatcherRule
 import com.matiasdev.elecapp.features.inspections.data.FakeInspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
+import com.matiasdev.elecapp.features.inspections.domain.BreakerCurve
+import com.matiasdev.elecapp.features.inspections.domain.CircuitDestination
+import com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus
 import com.matiasdev.elecapp.features.inspections.domain.ConductorCondition
 import com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
@@ -12,8 +15,11 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementSection
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType
 import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType
 import com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility
+import com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult
 import com.matiasdev.elecapp.features.inspections.domain.SupplyType
 import com.matiasdev.elecapp.features.inspections.domain.UnverifiedItemType
 import com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown
@@ -398,5 +404,188 @@ class InspectionViewModelTest {
         val aggregate = repository.findAggregate(inspection.id)
         assertEquals("Se observó únicamente el sector indicado.", aggregate?.inspection?.originalTechnicalComment)
         assertEquals(listOf(UnverifiedItemType.NO_MEASUREMENTS), aggregate?.unverifiedItems?.map { it.type })
+    }
+
+    @Test
+    fun `main panel monophase can be saved without measurements`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.update { copy(generalCondition = GeneralCondition.GOOD) }
+
+        val aggregate = repository.findAggregate(inspection.id)
+        assertEquals(GeneralCondition.GOOD, aggregate?.mainPanel?.generalCondition)
+        assertEquals(emptyList<Any>(), aggregate?.mainPanelMeasurements)
+    }
+
+    @Test
+    fun `main panel stores selected three phase input voltages`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient(), InspectionScope.GENERAL_ASSESSMENT)
+        repository.saveInspection(inspection.copy(supplyType = SupplyType.THREE_PHASE))
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.updateMeasurementDraft(MainPanelMeasurementSection.INPUT_VOLTAGE, MainPanelMeasurementType.INPUT_VOLTAGE_L1_L2, "380", MeasurementOrigin.MEASURED)
+        viewModel.saveMeasurement()
+        viewModel.updateMeasurementDraft(MainPanelMeasurementSection.INPUT_VOLTAGE, MainPanelMeasurementType.INPUT_VOLTAGE_L2_L3, "379", MeasurementOrigin.DECLARED_BY_CLIENT)
+        viewModel.saveMeasurement()
+
+        val measurements = repository.findAggregate(inspection.id)?.mainPanelMeasurements.orEmpty()
+        assertEquals(listOf(MainPanelMeasurementType.INPUT_VOLTAGE_L1_L2, MainPanelMeasurementType.INPUT_VOLTAGE_L2_L3), measurements.map { it.type })
+        assertEquals(listOf("V", "V"), measurements.map { it.unit })
+    }
+
+    @Test
+    fun `main panel differential ignores dependent fields when not present`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.update {
+            copy(
+                differentialPresent = YesNoUnknown.NO,
+                differentialRatedAmps = "40",
+                differentialSensitivityMa = "30",
+            )
+        }
+
+        val panel = repository.findAggregate(inspection.id)?.mainPanel
+        assertEquals(YesNoUnknown.NO, panel?.differentialPresent)
+        assertEquals(null, panel?.differentialRatedAmps)
+        assertEquals(null, panel?.differentialSensitivityMa)
+    }
+
+    @Test
+    fun `main panel differential stores rated current sensitivity and passed test`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.update {
+            copy(
+                differentialPresent = YesNoUnknown.YES,
+                differentialRatedAmps = "40",
+                differentialSensitivityMa = "30",
+                differentialTestResult = DifferentialTestResult.PASSED,
+            )
+        }
+
+        val panel = repository.findAggregate(inspection.id)?.mainPanel
+        assertEquals(40, panel?.differentialRatedAmps)
+        assertEquals(30, panel?.differentialSensitivityMa)
+        assertEquals(DifferentialTestResult.PASSED, panel?.differentialTestResult)
+    }
+
+    @Test
+    fun `main panel creates one three and several dynamic circuits`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.updateCircuitCount("1")
+        assertEquals(1, repository.findAggregate(inspection.id)?.mainPanelCircuits?.size)
+        viewModel.updateCircuitCount("3")
+        assertEquals(3, repository.findAggregate(inspection.id)?.mainPanelCircuits?.size)
+        viewModel.updateCircuitCount("5")
+        assertEquals(5, repository.findAggregate(inspection.id)?.mainPanelCircuits?.size)
+    }
+
+    @Test
+    fun `main panel reducing and increasing circuit count keeps remaining data`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.updateCircuitCount("3")
+        val first = repository.findAggregate(inspection.id)?.mainPanelCircuits?.first()!!
+        viewModel.updateCircuit(first.copy(destination = CircuitDestination.LIGHTING, breakerAmps = 10))
+        viewModel.updateCircuitCount("1")
+        viewModel.updateCircuitCount("3")
+
+        val circuits = repository.findAggregate(inspection.id)?.mainPanelCircuits.orEmpty()
+        assertEquals(CircuitDestination.LIGHTING, circuits.first().destination)
+        assertEquals(10, circuits.first().breakerAmps)
+        assertEquals(3, circuits.size)
+    }
+
+    @Test
+    fun `main panel circuit supports identified unidentified predefined custom and optional consumption`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.updateCircuitCount("2")
+        val circuits = repository.findAggregate(inspection.id)?.mainPanelCircuits.orEmpty()
+        viewModel.updateCircuit(
+            circuits[0].copy(
+                destination = CircuitDestination.LIGHTING,
+                breakerAmps = 10,
+                breakerCurve = BreakerCurve.C,
+                conductorSectionMm2 = 1.5,
+                conductorMaterial = ConductorMaterial.COPPER,
+                consumptionAmps = 4.2,
+                consumptionOrigin = MeasurementOrigin.MEASURED,
+            ),
+        )
+        viewModel.updateCircuit(
+            circuits[1].copy(
+                destination = CircuitDestination.UNIDENTIFIED,
+                breakerOtherAmps = 45,
+                conductorSectionMm2 = null,
+            ),
+        )
+
+        val saved = repository.findAggregate(inspection.id)?.mainPanelCircuits.orEmpty()
+        assertEquals(CircuitDestination.LIGHTING, saved[0].destination)
+        assertEquals(10, saved[0].breakerAmps)
+        assertEquals(4.2, saved[0].consumptionAmps)
+        assertEquals(CircuitDestination.UNIDENTIFIED, saved[1].destination)
+        assertEquals(45, saved[1].breakerOtherAmps)
+        assertEquals(null, saved[1].conductorSectionMm2)
+    }
+
+    @Test
+    fun `main panel stores visible wiring risk quick answers`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.update {
+            copy(
+                conductorColorStatus = ConductorColorStatus.INCORRECT_OR_MIXED,
+                groundBarPresent = YesNoUnknown.NO,
+                improvisedConnections = YesNoUnknown.YES,
+                overheatingSigns = YesNoUnknown.YES,
+                exposedPartsOrDamagedInsulation = YesNoUnknown.YES,
+            )
+        }
+
+        val panel = repository.findAggregate(inspection.id)?.mainPanel
+        assertEquals(ConductorColorStatus.INCORRECT_OR_MIXED, panel?.conductorColorStatus)
+        assertEquals(YesNoUnknown.NO, panel?.groundBarPresent)
+        assertEquals(YesNoUnknown.YES, panel?.improvisedConnections)
+        assertEquals(YesNoUnknown.YES, panel?.overheatingSigns)
+        assertEquals(YesNoUnknown.YES, panel?.exposedPartsOrDamagedInsulation)
+    }
+
+    @Test
+    fun `main panel protection conductor quick check does not assert grounding correctness`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.updateMeasurementDraft(
+            MainPanelMeasurementSection.PROTECTION_CONDUCTOR_CHECK,
+            MainPanelMeasurementType.PROTECTION_VOLTAGE_PHASE_GROUND,
+            "219",
+            MeasurementOrigin.MEASURED,
+        )
+        viewModel.saveMeasurement()
+        viewModel.update { copy(protectionConductorCheckResult = ProtectionConductorCheckResult.REQUIRES_REVIEW) }
+
+        val aggregate = repository.findAggregate(inspection.id)
+        assertEquals(MainPanelMeasurementType.PROTECTION_VOLTAGE_PHASE_GROUND, aggregate?.mainPanelMeasurements?.single()?.type)
+        assertEquals(ProtectionConductorCheckResult.REQUIRES_REVIEW, aggregate?.mainPanel?.protectionConductorCheckResult)
     }
 }

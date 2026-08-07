@@ -96,11 +96,63 @@ enum class PillarMeasurementType {
     CURRENT_NEUTRAL,
 }
 
+enum class MainPanelMeasurementSection {
+    INPUT_VOLTAGE,
+    PROTECTION_CONDUCTOR_CHECK,
+}
+
+enum class MainPanelMeasurementType {
+    INPUT_VOLTAGE_LN,
+    INPUT_VOLTAGE_L1_N,
+    INPUT_VOLTAGE_L2_N,
+    INPUT_VOLTAGE_L3_N,
+    INPUT_VOLTAGE_L1_L2,
+    INPUT_VOLTAGE_L2_L3,
+    INPUT_VOLTAGE_L3_L1,
+    PROTECTION_VOLTAGE_PHASE_GROUND,
+    PROTECTION_VOLTAGE_NEUTRAL_GROUND,
+}
+
 enum class MeasurementOrigin {
     MEASURED,
     ESTIMATED,
     CALCULATED,
     DECLARED_BY_CLIENT,
+    NOT_VERIFIED,
+}
+
+enum class CircuitDestination {
+    LIGHTING,
+    OUTLETS,
+    AIR_CONDITIONING,
+    KITCHEN,
+    OVEN,
+    PUMP,
+    EXTERIOR,
+    GATE,
+    WATER_HEATER,
+    RESERVE,
+    UNIDENTIFIED,
+    OTHER,
+}
+
+enum class BreakerCurve {
+    B,
+    C,
+    D,
+    UNKNOWN,
+}
+
+enum class ConductorColorStatus {
+    COMPLIANT,
+    PARTIALLY_COMPLIANT,
+    INCORRECT_OR_MIXED,
+    UNKNOWN,
+}
+
+enum class ProtectionConductorCheckResult {
+    APPARENT_PRESENCE,
+    REQUIRES_REVIEW,
     NOT_VERIFIED,
 }
 

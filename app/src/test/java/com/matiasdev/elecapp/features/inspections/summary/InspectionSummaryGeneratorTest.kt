@@ -15,7 +15,11 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelCircuit
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurement
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementSection
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType
 import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
 import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType
@@ -92,10 +96,7 @@ class InspectionSummaryGeneratorTest {
 
         assertFalse(summary.contains("PILAR Y ACOMETIDA"))
         assertTrue(summary.contains("TABLERO PRINCIPAL"))
-        assertTrue(summary.contains("Interruptor diferencial visible: Sí"))
-        assertTrue(summary.contains("Corriente nominal: 20 A"))
-        assertTrue(summary.contains("Sensibilidad: 30 mA"))
-        assertTrue(summary.contains("Prueba manual: No realizada"))
+        assertTrue(summary.contains("Interruptor diferencial: 20 A / 30 mA / prueba no realizada"))
         assertTrue(summary.contains("MEDICIONES Y CÁLCULOS"))
         assertTrue(summary.contains("[RECOMENDADO] Toma deteriorada"))
         assertTrue(summary.contains("NO VERIFICADO"))
@@ -113,17 +114,24 @@ class InspectionSummaryGeneratorTest {
                     generalCondition = GeneralCondition.NOT_ASSESSED,
                     differentialPresent = YesNoUnknown.UNKNOWN,
                     differentialRatedAmps = null,
+                    differentialOtherRatedAmps = null,
                     differentialSensitivityMa = null,
+                    differentialOtherSensitivityMa = null,
                     differentialTestResult = DifferentialTestResult.NOT_TESTED,
                     circuitCount = null,
                     circuitsIdentified = YesNoPartialUnknown.UNKNOWN,
                     neutralBarPresent = YesNoUnknown.UNKNOWN,
                     groundBarPresent = YesNoUnknown.UNKNOWN,
                     neutralAndGroundSeparated = YesNoUnknown.UNKNOWN,
+                    protectionConductorsPresent = YesNoPartialUnknown.UNKNOWN,
                     improvisedConnections = YesNoUnknown.UNKNOWN,
+                    conductorColorStatus = com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.UNKNOWN,
                     mixedOrIncorrectColors = YesNoUnknown.UNKNOWN,
                     overheatingSigns = YesNoUnknown.UNKNOWN,
+                    exposedPartsOrDamagedInsulation = YesNoUnknown.UNKNOWN,
                     protectionCompatibility = com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility.NOT_ASSESSED,
+                    wiringRisksNotes = null,
+                    protectionConductorCheckResult = com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.NOT_VERIFIED,
                     notes = null,
                     createdAt = Instant.parse("2026-08-04T14:30:00Z"),
                     updatedAt = Instant.parse("2026-08-04T14:30:00Z"),
@@ -203,6 +211,97 @@ class InspectionSummaryGeneratorTest {
         assertFalse(summary.contains("L2-L3"))
     }
 
+    @Test
+    fun `main panel summary combines differential and omits dependent fields when absent`() {
+        val summary = InspectionSummaryGenerator.generate(
+            completeAggregate().copy(
+                mainPanel = completeAggregate().mainPanel?.copy(
+                    differentialPresent = YesNoUnknown.YES,
+                    differentialRatedAmps = 40,
+                    differentialSensitivityMa = 30,
+                    differentialTestResult = DifferentialTestResult.PASSED,
+                ),
+            ),
+            testVisit(),
+            ZoneId.of("UTC"),
+        )
+
+        assertTrue(summary.contains("Interruptor diferencial: 40 A / 30 mA / prueba correcta"))
+        assertFalse(summary.contains("Corriente diferencial nominal"))
+        assertFalse(summary.contains("Sensibilidad: 30 mA"))
+    }
+
+    @Test
+    fun `main panel summary lists circuit details without empty fields`() {
+        val now = Instant.parse("2026-08-04T14:30:00Z")
+        val summary = InspectionSummaryGenerator.generate(
+            completeAggregate().copy(
+                mainPanelCircuits = listOf(
+                    MainPanelCircuit(
+                        id = "circuit-1",
+                        inspectionId = "inspection-1",
+                        sortOrder = 0,
+                        destination = com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.LIGHTING,
+                        destinationOther = null,
+                        breakerAmps = 10,
+                        breakerOtherAmps = null,
+                        breakerCurve = com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN,
+                        conductorSectionMm2 = 1.5,
+                        conductorOtherSectionMm2 = null,
+                        conductorMaterial = com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.COPPER,
+                        conductorMaterialOther = null,
+                        consumptionAmps = 4.2,
+                        consumptionOrigin = MeasurementOrigin.MEASURED,
+                        notes = null,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                ),
+            ),
+            testVisit(),
+            ZoneId.of("UTC"),
+        )
+
+        assertTrue(summary.contains("Circuito iluminación: térmica 10 A"))
+        assertTrue(summary.contains("conductor cobre 1,5 mm²"))
+        assertTrue(summary.contains("consumo medido 4,2 A"))
+    }
+
+    @Test
+    fun `main panel quick protection check does not assert grounding correctness`() {
+        val now = Instant.parse("2026-08-04T14:30:00Z")
+        val summary = InspectionSummaryGenerator.generate(
+            completeAggregate().copy(
+                mainPanel = completeAggregate().mainPanel?.copy(
+                    protectionConductorCheckResult = com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.REQUIRES_REVIEW,
+                ),
+                mainPanelMeasurements = listOf(
+                    MainPanelMeasurement(
+                        id = "measurement-panel-1",
+                        inspectionId = "inspection-1",
+                        section = MainPanelMeasurementSection.PROTECTION_CONDUCTOR_CHECK,
+                        type = MainPanelMeasurementType.PROTECTION_VOLTAGE_PHASE_GROUND,
+                        value = 219.0,
+                        unit = "V",
+                        origin = MeasurementOrigin.MEASURED,
+                        sortOrder = 0,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                ),
+            ),
+            testVisit(),
+            ZoneId.of("UTC"),
+        )
+
+        assertTrue(summary.contains("Verificación rápida del conductor de protección"))
+        assertTrue(summary.contains("Fase-tierra: 219 V"))
+        assertTrue(summary.contains("Resultado orientativo: requiere revisión"))
+        assertFalse(summary.contains("puesta a tierra correcta"))
+    }
+
     private fun visualAggregate(
         mainPanel: MainPanelInspection? = null,
         findings: List<InspectionFinding> = emptyList(),
@@ -234,17 +333,24 @@ class InspectionSummaryGeneratorTest {
             generalCondition = GeneralCondition.FAIR,
             differentialPresent = YesNoUnknown.YES,
             differentialRatedAmps = 20,
+            differentialOtherRatedAmps = null,
             differentialSensitivityMa = 30,
+            differentialOtherSensitivityMa = null,
             differentialTestResult = DifferentialTestResult.NOT_TESTED,
             circuitCount = null,
             circuitsIdentified = YesNoPartialUnknown.UNKNOWN,
             neutralBarPresent = YesNoUnknown.UNKNOWN,
             groundBarPresent = YesNoUnknown.UNKNOWN,
             neutralAndGroundSeparated = YesNoUnknown.UNKNOWN,
+            protectionConductorsPresent = YesNoPartialUnknown.UNKNOWN,
             improvisedConnections = YesNoUnknown.NO,
+            conductorColorStatus = com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.UNKNOWN,
             mixedOrIncorrectColors = YesNoUnknown.UNKNOWN,
             overheatingSigns = YesNoUnknown.NO,
+            exposedPartsOrDamagedInsulation = YesNoUnknown.UNKNOWN,
             protectionCompatibility = com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility.NOT_ASSESSED,
+            wiringRisksNotes = null,
+            protectionConductorCheckResult = com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.NOT_VERIFIED,
             notes = null,
             createdAt = now,
             updatedAt = now,

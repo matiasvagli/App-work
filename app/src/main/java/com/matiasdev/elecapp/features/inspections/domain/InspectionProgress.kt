@@ -51,7 +51,7 @@ object InspectionProgressCalculator {
                 sections = buildList {
                     add(generalProgress(inspection))
                     if (inspection.isPillarRelevantForSector()) add(pillarProgress(aggregate.pillar))
-                    add(mainPanelProgress(aggregate.mainPanel))
+                    if (inspection.isMainPanelRelevantForSector()) add(mainPanelProgress(aggregate.mainPanel))
                     add(findingsProgress(aggregate.findings))
                     add(unverifiedProgress(aggregate.unverifiedItems))
                     add(technicalCommentProgress(inspection))
@@ -77,6 +77,13 @@ object InspectionProgressCalculator {
             .joinToString(" ")
             .lowercase()
         return listOf("pilar", "acometida", "suministro", "medidor", "entrada").any { it in text }
+    }
+
+    fun ElectricalInspection.isMainPanelRelevantForSector(): Boolean {
+        val text = listOfNotNull(reviewedElement, taskDescription, reviewReason, visitReasonSnapshot)
+            .joinToString(" ")
+            .lowercase()
+        return listOf("tablero", "termica", "térmica", "diferencial", "circuito", "proteccion", "protección").any { it in text }
     }
 
     private fun generalProgress(inspection: ElectricalInspection): InspectionSectionProgress {

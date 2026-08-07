@@ -15,14 +15,15 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,12 +33,23 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
+import com.matiasdev.elecapp.features.inspections.domain.BreakerCurve
+import com.matiasdev.elecapp.features.inspections.domain.CircuitDestination
+import com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus
+import com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
-import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
+import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelCircuit
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurement
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementSection
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType
+import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
 import com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility
+import com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult
+import com.matiasdev.elecapp.features.inspections.domain.SupplyType
 import com.matiasdev.elecapp.features.inspections.domain.YesNoPartialUnknown
 import com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown
 import com.matiasdev.elecapp.features.inspections.summary.label
@@ -52,9 +64,6 @@ fun MainPanelInspectionScreen(
     viewModel: MainPanelInspectionViewModel = viewModel(factory = MainPanelInspectionViewModelFactory(repository, inspectionId)),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    LaunchedEffect(uiState.saved) {
-        if (uiState.saved) onBackClick()
-    }
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -80,73 +89,234 @@ private fun MainPanelForm(uiState: MainPanelInspectionUiState, viewModel: MainPa
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        if (uiState.scope == InspectionScope.VISUAL_INSPECTION) {
-            InspectionFormBlock("¿Se revisó el tablero principal?") {
-                InspectionDropdownField("Respuesta", uiState.reviewStatus, InspectionSectionReviewStatus.entries.toList(), InspectionSectionReviewStatus::label) {
-                    viewModel.update { copy(reviewStatus = it) }
-                }
-                if (uiState.reviewStatus == InspectionSectionReviewStatus.NOT_VERIFIED) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = uiState.addToUnverified,
-                            onCheckedChange = { checked -> viewModel.update { copy(addToUnverified = checked) } },
-                        )
-                        Text("Agregar a elementos no verificados")
-                    }
+        InspectionFormBlock("Estado general") {
+            InspectionDropdownField("Estado de la sección", uiState.reviewStatus, InspectionSectionReviewStatus.entries.toList(), InspectionSectionReviewStatus::label) {
+                viewModel.update { copy(reviewStatus = it) }
+            }
+            if (uiState.reviewStatus == InspectionSectionReviewStatus.NOT_VERIFIED && uiState.scope == InspectionScope.VISUAL_INSPECTION) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = uiState.addToUnverified,
+                        onCheckedChange = { checked -> viewModel.update { copy(addToUnverified = checked) } },
+                    )
+                    Text("Agregar a elementos no verificados")
                 }
             }
-            if (uiState.reviewStatus != InspectionSectionReviewStatus.REVIEWED) {
-                Button(onClick = viewModel::save, enabled = uiState.status == InspectionStatus.DRAFT, modifier = Modifier.fillMaxWidth()) {
-                    Text("Guardar sección")
-                }
-                return@Column
-            }
-        }
-        InspectionFormBlock("Acceso y estado") {
-            InspectionDropdownField("Accesible", uiState.accessible, AccessStatus.entries.toList(), AccessStatus::label) {
+            InspectionDropdownField("Accesibilidad", uiState.accessible, AccessStatus.entries.toList(), AccessStatus::label) {
                 viewModel.update { copy(accessible = it) }
             }
-            InspectionDropdownField("Estado general", uiState.generalCondition, GeneralCondition.entries.toList(), GeneralCondition::label) {
+            InspectionDropdownField("Estado general", uiState.generalCondition, listOf(GeneralCondition.GOOD, GeneralCondition.FAIR, GeneralCondition.POOR, GeneralCondition.NOT_ASSESSED), GeneralCondition::label) {
                 viewModel.update { copy(generalCondition = it) }
             }
         }
-        InspectionFormBlock("Diferencial y circuitos") {
-            InspectionDropdownField("Interruptor diferencial", uiState.differentialPresent, YesNoUnknown.entries.toList(), YesNoUnknown::label) {
+        if (uiState.reviewStatus != InspectionSectionReviewStatus.REVIEWED || uiState.accessible == AccessStatus.NO) {
+            SavedIndicator(uiState)
+            return@Column
+        }
+        InspectionFormBlock("Tensión de entrada al tablero") {
+            MeasurementForm(
+                uiState = uiState,
+                viewModel = viewModel,
+                section = MainPanelMeasurementSection.INPUT_VOLTAGE,
+                types = if (uiState.supplyType == SupplyType.THREE_PHASE) threePhaseInputVoltageTypes else singlePhaseInputVoltageTypes,
+            )
+            MeasurementSummary(uiState.measurements.filter { it.section == MainPanelMeasurementSection.INPUT_VOLTAGE }, viewModel)
+        }
+        InspectionFormBlock("Interruptor diferencial") {
+            InspectionDropdownField("Estado", uiState.differentialPresent, YesNoUnknown.entries.toList(), YesNoUnknown::label) {
                 viewModel.update { copy(differentialPresent = it) }
             }
-            NumberField("Corriente nominal A", uiState.differentialRatedAmps, { viewModel.update { copy(differentialRatedAmps = it.filter(Char::isDigit)) } }, uiState.ratedAmpsError)
-            NumberField("Sensibilidad mA", uiState.differentialSensitivityMa, { viewModel.update { copy(differentialSensitivityMa = it.filter(Char::isDigit)) } }, uiState.sensitivityError)
-            InspectionDropdownField("Prueba manual", uiState.differentialTestResult, DifferentialTestResult.entries.toList(), DifferentialTestResult::label) {
-                viewModel.update { copy(differentialTestResult = it) }
-            }
-            NumberField("Cantidad de circuitos", uiState.circuitCount, { viewModel.update { copy(circuitCount = it.filter(Char::isDigit)) } }, uiState.circuitCountError)
-            InspectionDropdownField("Circuitos identificados", uiState.circuitsIdentified, YesNoPartialUnknown.entries.toList(), YesNoPartialUnknown::label) {
-                viewModel.update { copy(circuitsIdentified = it) }
+            if (uiState.differentialPresent == YesNoUnknown.YES) {
+                InspectionDropdownField("Corriente nominal", uiState.differentialRatedAmps, differentialAmpOptions, ::ampOptionLabel) {
+                    viewModel.update { copy(differentialRatedAmps = it, differentialOtherRatedAmps = "") }
+                }
+                if (uiState.differentialRatedAmps == MAIN_PANEL_OTHER_VALUE) {
+                    NumberField("Otra corriente nominal", uiState.differentialOtherRatedAmps, { viewModel.update { copy(differentialOtherRatedAmps = it.filter(Char::isDigit)) } }, uiState.ratedAmpsError)
+                }
+                InspectionDropdownField("Sensibilidad diferencial", uiState.differentialSensitivityMa, differentialSensitivityOptions, ::sensitivityOptionLabel) {
+                    viewModel.update { copy(differentialSensitivityMa = it, differentialOtherSensitivityMa = "") }
+                }
+                if (uiState.differentialSensitivityMa == MAIN_PANEL_OTHER_VALUE) {
+                    NumberField("Otra sensibilidad", uiState.differentialOtherSensitivityMa, { viewModel.update { copy(differentialOtherSensitivityMa = it.filter(Char::isDigit)) } }, uiState.sensitivityError)
+                }
+                InspectionDropdownField("Prueba manual", uiState.differentialTestResult, DifferentialTestResult.entries.toList(), DifferentialTestResult::label) {
+                    viewModel.update { copy(differentialTestResult = it) }
+                }
             }
         }
-        InspectionFormBlock("Barras y riesgos visibles") {
+        InspectionFormBlock("Circuitos y protecciones") {
+            NumberField("Cantidad de circuitos", uiState.circuitCount, viewModel::updateCircuitCount, uiState.circuitCountError)
+            CircuitList(uiState, viewModel)
+        }
+        InspectionFormBlock("Cableado, barras y riesgos visibles") {
+            InspectionDropdownField("Colores de conductores", uiState.conductorColorStatus, ConductorColorStatus.entries.toList(), ConductorColorStatus::label) {
+                viewModel.update { copy(conductorColorStatus = it) }
+            }
             yesNoField("Barra de neutro", uiState.neutralBarPresent) { viewModel.update { copy(neutralBarPresent = it) } }
             yesNoField("Barra de tierra", uiState.groundBarPresent) { viewModel.update { copy(groundBarPresent = it) } }
             yesNoField("Neutro y tierra separados", uiState.neutralAndGroundSeparated) { viewModel.update { copy(neutralAndGroundSeparated = it) } }
+            InspectionDropdownField("Conductores de protección presentes", uiState.protectionConductorsPresent, YesNoPartialUnknown.entries.toList(), YesNoPartialUnknown::label) {
+                viewModel.update { copy(protectionConductorsPresent = it) }
+            }
             yesNoField("Empalmes improvisados", uiState.improvisedConnections) { viewModel.update { copy(improvisedConnections = it) } }
-            yesNoField("Colores incorrectos o mezclados", uiState.mixedOrIncorrectColors) { viewModel.update { copy(mixedOrIncorrectColors = it) } }
-            yesNoField("Signos de recalentamiento", uiState.overheatingSigns) { viewModel.update { copy(overheatingSigns = it) } }
+            yesNoField("Signos de calentamiento o recalentamiento", uiState.overheatingSigns) { viewModel.update { copy(overheatingSigns = it) } }
+            yesNoField("Partes expuestas, aislación dañada o riesgo de contacto", uiState.exposedPartsOrDamagedInsulation) {
+                viewModel.update { copy(exposedPartsOrDamagedInsulation = it) }
+            }
             InspectionDropdownField("Compatibilidad protección/conductor", uiState.protectionCompatibility, ProtectionCompatibility.entries.toList(), ProtectionCompatibility::label) {
                 viewModel.update { copy(protectionCompatibility = it) }
             }
-            InspectionTextField("Notas", uiState.notes, { viewModel.update { copy(notes = it) } }, minLines = 4)
+            InspectionTextField("Observación del bloque", uiState.wiringRisksNotes, { viewModel.update { copy(wiringRisksNotes = it) } }, minLines = 2)
         }
-        Button(onClick = viewModel::save, enabled = uiState.status == InspectionStatus.DRAFT, modifier = Modifier.fillMaxWidth()) {
-            Text("Guardar sección")
+        InspectionFormBlock("Verificación rápida del conductor de protección") {
+            Text("Verificación orientativa. No reemplaza la medición de resistencia de puesta a tierra con telurómetro ni una certificación correspondiente.")
+            MeasurementForm(
+                uiState = uiState,
+                viewModel = viewModel,
+                section = MainPanelMeasurementSection.PROTECTION_CONDUCTOR_CHECK,
+                types = protectionConductorTypes,
+                origins = listOf(MeasurementOrigin.MEASURED, MeasurementOrigin.ESTIMATED, MeasurementOrigin.NOT_VERIFIED),
+            )
+            InspectionDropdownField("Resultado orientativo", uiState.protectionConductorCheckResult, ProtectionConductorCheckResult.entries.toList(), ProtectionConductorCheckResult::label) {
+                viewModel.update { copy(protectionConductorCheckResult = it) }
+            }
+            MeasurementSummary(uiState.measurements.filter { it.section == MainPanelMeasurementSection.PROTECTION_CONDUCTOR_CHECK }, viewModel)
+        }
+        InspectionFormBlock("Observación general") {
+            InspectionTextField("Observación", uiState.notes, { viewModel.update { copy(notes = it) } }, minLines = 3)
+        }
+        SavedIndicator(uiState)
+    }
+}
+
+@Composable
+private fun CircuitList(uiState: MainPanelInspectionUiState, viewModel: MainPanelInspectionViewModel) {
+    if (uiState.circuits.isEmpty()) {
+        Text("Sin circuitos registrados")
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        uiState.circuits.forEachIndexed { index, circuit ->
+            HorizontalDivider()
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(circuit.summary(index))
+                TextButton(onClick = { viewModel.toggleCircuitExpanded(circuit.id) }) {
+                    Text(if (circuit.id in uiState.expandedCircuitIds) "Contraer" else "Editar")
+                }
+            }
+            if (circuit.id in uiState.expandedCircuitIds) {
+                CircuitEditor(circuit, viewModel)
+            }
         }
     }
+}
+
+@Composable
+private fun CircuitEditor(circuit: MainPanelCircuit, viewModel: MainPanelInspectionViewModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        InspectionDropdownField("Identificación o destino", circuit.destination, CircuitDestination.entries.toList(), CircuitDestination::label) {
+            viewModel.updateCircuit(circuit.copy(destination = it, destinationOther = null))
+        }
+        if (circuit.destination == CircuitDestination.OTHER) {
+            InspectionTextField("Otro destino", circuit.destinationOther.orEmpty(), { viewModel.updateCircuit(circuit.copy(destinationOther = it.trim().ifBlank { null })) })
+        }
+        InspectionDropdownField("Térmica", circuit.breakerAmps?.toString() ?: circuit.breakerOtherAmps?.let { MAIN_PANEL_OTHER_VALUE }.orEmpty(), breakerOptions, ::ampOptionLabel) {
+            viewModel.updateCircuit(
+                circuit.copy(
+                    breakerAmps = it.toIntOrNull(),
+                    breakerOtherAmps = if (it == MAIN_PANEL_OTHER_VALUE) 0 else null,
+                ),
+            )
+        }
+        if (circuit.breakerOtherAmps != null) {
+            NumberField("Otra térmica", circuit.breakerOtherAmps.takeIf { it > 0 }?.toString().orEmpty(), { value -> viewModel.updateCircuit(circuit.copy(breakerAmps = null, breakerOtherAmps = value.toIntOrNull() ?: 0)) }, null)
+        }
+        InspectionDropdownField("Curva", circuit.breakerCurve, BreakerCurve.entries.toList(), BreakerCurve::label) {
+            viewModel.updateCircuit(circuit.copy(breakerCurve = it))
+        }
+        InspectionDropdownField("Sección del conductor", circuit.conductorSectionMm2?.formatNumber() ?: circuit.conductorOtherSectionMm2?.let { MAIN_PANEL_OTHER_VALUE }.orEmpty(), conductorSectionOptions, ::sectionOptionLabel) {
+            viewModel.updateCircuit(
+                circuit.copy(
+                    conductorSectionMm2 = it.toDoubleOrNull(),
+                    conductorOtherSectionMm2 = if (it == MAIN_PANEL_OTHER_VALUE) 0.0 else null,
+                ),
+            )
+        }
+        if (circuit.conductorOtherSectionMm2 != null) {
+            DecimalField("Otra sección mm²", circuit.conductorOtherSectionMm2.takeIf { it > 0.0 }?.toString().orEmpty(), { value -> viewModel.updateCircuit(circuit.copy(conductorSectionMm2 = null, conductorOtherSectionMm2 = value.replace(",", ".").toDoubleOrNull() ?: 0.0)) }, null)
+        }
+        InspectionDropdownField("Material del conductor", circuit.conductorMaterial, ConductorMaterial.entries.toList(), ConductorMaterial::label) {
+            viewModel.updateCircuit(circuit.copy(conductorMaterial = it, conductorMaterialOther = null))
+        }
+        if (circuit.conductorMaterial == ConductorMaterial.OTHER) {
+            InspectionTextField("Otro material", circuit.conductorMaterialOther.orEmpty(), { viewModel.updateCircuit(circuit.copy(conductorMaterialOther = it.trim().ifBlank { null })) })
+        }
+        InspectionDropdownField("Origen del consumo", circuit.consumptionOrigin, consumptionOrigins, MeasurementOrigin::label) {
+            viewModel.updateCircuit(circuit.copy(consumptionOrigin = it, consumptionAmps = if (it == MeasurementOrigin.NOT_VERIFIED) null else circuit.consumptionAmps))
+        }
+        if (circuit.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED) {
+            DecimalField("Consumo del circuito A", circuit.consumptionAmps?.toString().orEmpty(), { value -> viewModel.updateCircuit(circuit.copy(consumptionAmps = value.replace(",", ".").toDoubleOrNull())) }, null)
+        }
+        InspectionTextField("Observación", circuit.notes.orEmpty(), { viewModel.updateCircuit(circuit.copy(notes = it.trim().ifBlank { null })) }, minLines = 2)
+    }
+}
+
+@Composable
+private fun MeasurementForm(
+    uiState: MainPanelInspectionUiState,
+    viewModel: MainPanelInspectionViewModel,
+    section: MainPanelMeasurementSection,
+    types: List<MainPanelMeasurementType>,
+    origins: List<MeasurementOrigin> = measurementOrigins,
+) {
+    val selectedType = uiState.measurementType.takeIf { it in types } ?: types.first()
+    InspectionDropdownField("Medición", selectedType, types, MainPanelMeasurementType::label) {
+        viewModel.updateMeasurementDraft(section = section, type = it)
+    }
+    InspectionDropdownField("Origen", uiState.measurementOrigin, origins, MeasurementOrigin::label) {
+        viewModel.updateMeasurementDraft(section = section, origin = it)
+    }
+    if (uiState.measurementOrigin != MeasurementOrigin.NOT_VERIFIED) {
+        DecimalField("Valor V", uiState.measurementValue, { viewModel.updateMeasurementDraft(section = section, value = it) }, uiState.measurementError)
+    }
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = { viewModel.updateMeasurementDraft(section = section, type = selectedType); viewModel.saveMeasurement() }, enabled = uiState.status == InspectionStatus.DRAFT) {
+            Text(if (uiState.editingMeasurementId == null) "Agregar tensión" else "Actualizar tensión")
+        }
+        if (uiState.editingMeasurementId != null) {
+            TextButton(onClick = viewModel::cancelMeasurementEdit) { Text("Cancelar") }
+        }
+    }
+}
+
+@Composable
+private fun MeasurementSummary(measurements: List<MainPanelMeasurement>, viewModel: MainPanelInspectionViewModel) {
+    if (measurements.isEmpty()) {
+        Text("Sin mediciones registradas")
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        measurements.forEach { measurement ->
+            HorizontalDivider()
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text("${measurement.type.label()}: ${measurement.formatValue()} (${measurement.origin.label()})", modifier = Modifier.weight(1f))
+                TextButton(onClick = { viewModel.editMeasurement(measurement) }) { Text("Editar") }
+                TextButton(onClick = { viewModel.deleteMeasurement(measurement.id) }) { Text("Eliminar") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SavedIndicator(uiState: MainPanelInspectionUiState) {
+    if (uiState.saved && uiState.status == InspectionStatus.DRAFT) Text("Cambios guardados automáticamente")
 }
 
 @Composable
 private fun NumberField(label: String, value: String, onChange: (String) -> Unit, error: String?) {
     OutlinedTextField(
         value = value,
-        onValueChange = onChange,
+        onValueChange = { onChange(it.filter(Char::isDigit)) },
         label = { Text(label) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = Modifier.fillMaxWidth(),
@@ -156,6 +326,75 @@ private fun NumberField(label: String, value: String, onChange: (String) -> Unit
 }
 
 @Composable
+private fun DecimalField(label: String, value: String, onChange: (String) -> Unit, error: String?) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onChange(it.filter { char -> char.isDigit() || char == '.' || char == ',' }) },
+        label = { Text(label) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        modifier = Modifier.fillMaxWidth(),
+        isError = error != null,
+        supportingText = error?.let { { Text(it) } },
+    )
+}
+
+@Composable
 private fun yesNoField(label: String, value: YesNoUnknown, onChange: (YesNoUnknown) -> Unit) {
     InspectionDropdownField(label, value, YesNoUnknown.entries.toList(), YesNoUnknown::label, onValueChange = onChange)
+}
+
+private val singlePhaseInputVoltageTypes = listOf(MainPanelMeasurementType.INPUT_VOLTAGE_LN)
+private val threePhaseInputVoltageTypes = listOf(
+    MainPanelMeasurementType.INPUT_VOLTAGE_L1_N,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L2_N,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L3_N,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L1_L2,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L2_L3,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L3_L1,
+)
+private val protectionConductorTypes = listOf(
+    MainPanelMeasurementType.PROTECTION_VOLTAGE_PHASE_GROUND,
+    MainPanelMeasurementType.PROTECTION_VOLTAGE_NEUTRAL_GROUND,
+)
+private val measurementOrigins = listOf(MeasurementOrigin.MEASURED, MeasurementOrigin.ESTIMATED, MeasurementOrigin.DECLARED_BY_CLIENT, MeasurementOrigin.NOT_VERIFIED)
+private val consumptionOrigins = measurementOrigins
+private val differentialAmpOptions = listOf("", "25", "40", "63", MAIN_PANEL_OTHER_VALUE)
+private val differentialSensitivityOptions = listOf("", "30", "100", "300", MAIN_PANEL_OTHER_VALUE)
+private val breakerOptions = listOf("", "6", "10", "16", "20", "25", "32", "40", "50", "63", MAIN_PANEL_OTHER_VALUE)
+private val conductorSectionOptions = listOf("", "1.5", "2.5", "4", "6", "10", "16", MAIN_PANEL_OTHER_VALUE)
+
+private fun ampOptionLabel(value: String): String = when (value) {
+    "" -> "No verificada"
+    MAIN_PANEL_OTHER_VALUE -> "Otro"
+    else -> "$value A"
+}
+
+private fun sensitivityOptionLabel(value: String): String = when (value) {
+    "" -> "No verificada"
+    MAIN_PANEL_OTHER_VALUE -> "Otro"
+    else -> "$value mA"
+}
+
+private fun sectionOptionLabel(value: String): String = when (value) {
+    "" -> "No verificada"
+    MAIN_PANEL_OTHER_VALUE -> "Otro"
+    else -> "${value.replace(".", ",")} mm²"
+}
+
+private fun MainPanelCircuit.summary(index: Int): String {
+    val destinationText = if (destination == CircuitDestination.UNIDENTIFIED) {
+        "sin identificar"
+    } else {
+        destinationOther?.takeIf(String::isNotBlank) ?: destination.label()
+    }
+    val breaker = (breakerAmps ?: breakerOtherAmps?.takeIf { it > 0 })?.let { "$it A" }
+    val section = (conductorSectionMm2 ?: conductorOtherSectionMm2?.takeIf { it > 0.0 })?.let { "${it.formatNumber()} mm²" }
+    return listOf("Circuito ${index + 1}", destinationText, breaker, section).filterNotNull().joinToString(" · ")
+}
+
+private fun MainPanelMeasurement.formatValue(): String = value?.let { "${it.formatNumber()} $unit" } ?: "No verificado"
+
+private fun Double.formatNumber(): String {
+    val whole = toLong()
+    return if (this == whole.toDouble()) whole.toString() else toString().replace(".", ",")
 }

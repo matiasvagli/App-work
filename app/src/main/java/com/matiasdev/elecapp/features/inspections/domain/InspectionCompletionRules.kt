@@ -21,8 +21,10 @@ object InspectionCompletionRules {
             if (pillarIsRequired && (pillar == null || (pillar.reviewStatus == InspectionSectionReviewStatus.REVIEWED && pillar.generalCondition == GeneralCondition.NOT_ASSESSED))) {
                 add("Estado de pilar o marcado como no evaluado")
             }
+            val mainPanelIsRequired = inspection.scope != InspectionScope.SECTOR_ASSESSMENT ||
+                InspectionProgressCalculator.run { inspection.isMainPanelRelevantForSector() }
             val panel = aggregate.mainPanel
-            if (panel == null || (panel.accessible != AccessStatus.NO && panel.generalCondition == GeneralCondition.NOT_ASSESSED)) {
+            if (mainPanelIsRequired && (panel == null || (panel.accessible != AccessStatus.NO && panel.generalCondition == GeneralCondition.NOT_ASSESSED))) {
                 add("Estado de tablero o marcado como no evaluado")
             }
             if (inspection.originalTechnicalComment.isNullOrBlank() && aggregate.findings.isEmpty()) {

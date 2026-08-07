@@ -8,6 +8,9 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSectionReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelCircuit
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurement
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementSection
 import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
 import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
@@ -35,7 +38,7 @@ object InspectionSummaryGenerator {
             appendLine(inspection.inspectionType.label())
             appendGeneralData(inspection)
             appendPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
-            appendMainPanel(aggregate.mainPanel)
+            appendMainPanel(aggregate.mainPanel, aggregate.mainPanelMeasurements, aggregate.mainPanelCircuits)
             appendCalculations(calculations)
             appendFindings(aggregate)
             appendUnverified(aggregate)
@@ -67,7 +70,7 @@ object InspectionSummaryGenerator {
             appendLineIfNotBlank("Descripción", inspection.taskDescription)
             appendVisualGeneralData(inspection)
             appendVisualPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
-            appendVisualMainPanel(aggregate.mainPanel)
+            appendVisualMainPanel(aggregate.mainPanel, aggregate.mainPanelMeasurements, aggregate.mainPanelCircuits)
             appendVisualCalculations(calculations)
             appendVisualFindings(aggregate)
             appendVisualUnverified(aggregate)
@@ -175,32 +178,39 @@ object InspectionSummaryGenerator {
         appendLineIfNotBlank("- Observaciones", pillar.notes)
     }
 
-    private fun StringBuilder.appendMainPanel(panel: MainPanelInspection?) {
+    private fun StringBuilder.appendMainPanel(panel: MainPanelInspection?, measurements: List<MainPanelMeasurement>, circuits: List<MainPanelCircuit>) {
         appendLine()
         appendLine("TABLERO PRINCIPAL")
         if (panel == null) {
             appendLine("- No evaluado")
             return
         }
+        if (panel.reviewStatus != InspectionSectionReviewStatus.REVIEWED) {
+            appendLine("- Estado de la sección: ${panel.reviewStatus.label()}")
+            appendLineIfNotBlank("- Observación", panel.notes)
+            return
+        }
         appendLine("- Accesibilidad: ${panel.accessible.label().lowercase()}")
         appendCondition("- Estado general", panel.generalCondition)
-        appendLine("- Interruptor diferencial: ${panel.differentialPresent.label().lowercase()}")
-        panel.differentialRatedAmps?.let { appendLine("- Corriente diferencial nominal: $it A") }
-        panel.differentialSensitivityMa?.let { appendLine("- Sensibilidad: $it mA") }
-        appendLine("- Prueba manual: ${panel.differentialTestResult.label().lowercase()}")
+        appendMainPanelMeasurements("Tensión de entrada", measurements.filter { it.section == MainPanelMeasurementSection.INPUT_VOLTAGE })
+        appendMainPanelDifferential(panel)
         panel.circuitCount?.let { appendLine("- Cantidad de circuitos: $it") }
-        appendLine("- Circuitos identificados: ${panel.circuitsIdentified.label().lowercase()}")
+        appendMainPanelCircuits(circuits)
+        appendLine("- Colores de conductores: ${panel.conductorColorStatus.label().lowercase()}")
         appendLine("- Barra de neutro: ${panel.neutralBarPresent.label().lowercase()}")
         appendLine("- Barra de tierra: ${panel.groundBarPresent.label().lowercase()}")
         appendLine("- Neutro y tierra separados: ${panel.neutralAndGroundSeparated.label().lowercase()}")
+        appendLine("- Conductores de protección presentes: ${panel.protectionConductorsPresent.label().lowercase()}")
         appendLine("- Empalmes improvisados: ${panel.improvisedConnections.label().lowercase()}")
-        appendLine("- Colores incorrectos o mezclados: ${panel.mixedOrIncorrectColors.label().lowercase()}")
         appendLine("- Signos de recalentamiento: ${panel.overheatingSigns.label().lowercase()}")
+        appendLine("- Partes expuestas o aislación dañada: ${panel.exposedPartsOrDamagedInsulation.label().lowercase()}")
         appendLine("- Compatibilidad protección/conductor: ${panel.protectionCompatibility.label().lowercase()}")
+        appendLineIfNotBlank("- Observación de cableado y riesgos", panel.wiringRisksNotes)
+        appendProtectionConductorCheck(panel, measurements.filter { it.section == MainPanelMeasurementSection.PROTECTION_CONDUCTOR_CHECK })
         appendLineIfNotBlank("- Observación", panel.notes)
     }
 
-    private fun StringBuilder.appendVisualMainPanel(panel: MainPanelInspection?) {
+    private fun StringBuilder.appendVisualMainPanel(panel: MainPanelInspection?, measurements: List<MainPanelMeasurement>, circuits: List<MainPanelCircuit>) {
         if (panel == null || !panel.hasVisualContent()) return
         appendLine()
         appendLine("TABLERO PRINCIPAL")
@@ -210,19 +220,23 @@ object InspectionSummaryGenerator {
         }
         appendVisualAccess("- Accesibilidad", panel.accessible)
         appendVisualCondition("- Estado general", panel.generalCondition)
-        appendVisualYesNo("- Interruptor diferencial visible", panel.differentialPresent)
-        panel.differentialRatedAmps?.let { appendLine("- Corriente nominal: $it A") }
-        panel.differentialSensitivityMa?.let { appendLine("- Sensibilidad: $it mA") }
-        appendLine("- Prueba manual: ${panel.differentialTestResult.label()}")
+        appendMainPanelMeasurements("Tensión de entrada", measurements.filter { it.section == MainPanelMeasurementSection.INPUT_VOLTAGE })
+        appendMainPanelDifferential(panel)
         panel.circuitCount?.let { appendLine("- Cantidad visible de circuitos: $it") }
-        appendVisualYesNoPartial("- Circuitos identificados", panel.circuitsIdentified)
+        appendMainPanelCircuits(circuits)
+        if (panel.conductorColorStatus != com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.UNKNOWN) {
+            appendLine("- Colores visibles: ${panel.conductorColorStatus.label()}")
+        }
         appendVisualYesNo("- Barra de neutro visible", panel.neutralBarPresent)
         appendVisualYesNo("- Barra de tierra visible", panel.groundBarPresent)
         appendVisualYesNo("- Neutro y tierra aparentemente separados", panel.neutralAndGroundSeparated)
+        appendVisualYesNoPartial("- Conductores de protección presentes", panel.protectionConductorsPresent)
         appendVisualYesNo("- Empalmes improvisados visibles", panel.improvisedConnections)
-        appendVisualYesNo("- Colores incorrectos o mezclados", panel.mixedOrIncorrectColors)
         appendVisualYesNo("- Signos visibles de recalentamiento", panel.overheatingSigns)
+        appendVisualYesNo("- Partes expuestas o aislación dañada", panel.exposedPartsOrDamagedInsulation)
         appendVisualEnum("- Compatibilidad protección/conductor", panel.protectionCompatibility, com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility.NOT_ASSESSED)
+        appendLineIfNotBlank("- Observación de cableado y riesgos", panel.wiringRisksNotes)
+        appendProtectionConductorCheck(panel, measurements.filter { it.section == MainPanelMeasurementSection.PROTECTION_CONDUCTOR_CHECK })
         appendLineIfNotBlank("- Observaciones", panel.notes)
     }
 
@@ -382,17 +396,23 @@ object InspectionSummaryGenerator {
             generalCondition != GeneralCondition.NOT_ASSESSED ||
             differentialPresent != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
             differentialRatedAmps != null ||
+            differentialOtherRatedAmps != null ||
             differentialSensitivityMa != null ||
+            differentialOtherSensitivityMa != null ||
             differentialTestResult != com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult.NOT_TESTED ||
             circuitCount != null ||
             circuitsIdentified != com.matiasdev.elecapp.features.inspections.domain.YesNoPartialUnknown.UNKNOWN ||
             neutralBarPresent != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
             groundBarPresent != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
             neutralAndGroundSeparated != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
+            protectionConductorsPresent != com.matiasdev.elecapp.features.inspections.domain.YesNoPartialUnknown.UNKNOWN ||
             improvisedConnections != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
-            mixedOrIncorrectColors != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
+            conductorColorStatus != com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus.UNKNOWN ||
             overheatingSigns != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
+            exposedPartsOrDamagedInsulation != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN ||
             protectionCompatibility != com.matiasdev.elecapp.features.inspections.domain.ProtectionCompatibility.NOT_ASSESSED ||
+            !wiringRisksNotes.isNullOrBlank() ||
+            protectionConductorCheckResult != com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.NOT_VERIFIED ||
             !notes.isNullOrBlank()
     }
 
@@ -449,6 +469,84 @@ object InspectionSummaryGenerator {
         if (pillar.conductorCondition != com.matiasdev.elecapp.features.inspections.domain.ConductorCondition.NOT_ASSESSED) {
             appendLine("- Estado de conductores: ${pillar.conductorCondition.label().lowercase()}")
         }
+    }
+
+    private fun StringBuilder.appendMainPanelDifferential(panel: MainPanelInspection) {
+        val present = panel.differentialPresent
+        if (present == com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.UNKNOWN) return
+        if (present != com.matiasdev.elecapp.features.inspections.domain.YesNoUnknown.YES) {
+            appendLine("- Interruptor diferencial: ${present.label().lowercase()}")
+            return
+        }
+        val details = buildList {
+            (panel.differentialRatedAmps ?: panel.differentialOtherRatedAmps)?.takeIf { it > 0 }?.let { add("$it A") }
+            (panel.differentialSensitivityMa ?: panel.differentialOtherSensitivityMa)?.takeIf { it > 0 }?.let { add("$it mA") }
+            add("prueba ${panel.differentialTestResult.label().lowercase()}")
+        }
+        appendLine("- Interruptor diferencial: ${details.joinToString(" / ")}")
+    }
+
+    private fun StringBuilder.appendMainPanelMeasurements(title: String, measurements: List<MainPanelMeasurement>) {
+        val active = measurements.filterNot { it.isDeleted }.filter { it.value != null || it.origin == MeasurementOrigin.NOT_VERIFIED }
+        if (active.isEmpty()) return
+        appendLine("- $title:")
+        active.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })).forEach {
+            val value = it.value?.let { measured -> "${formatNumber(measured)} ${it.unit}" } ?: "no verificado"
+            appendLine("  - ${it.type.label()}: $value (${it.origin.label().lowercase()})")
+        }
+    }
+
+    private fun StringBuilder.appendMainPanelCircuits(circuits: List<MainPanelCircuit>) {
+        val active = circuits.filterNot { it.isDeleted }.filter { it.hasContent() }
+        if (active.isEmpty()) return
+        appendLine("- Circuitos:")
+        active.sortedWith(compareBy({ it.sortOrder }, { it.createdAt })).forEachIndexed { index, circuit ->
+            appendLine("  - ${circuit.summary(index)}")
+        }
+    }
+
+    private fun StringBuilder.appendProtectionConductorCheck(panel: MainPanelInspection, measurements: List<MainPanelMeasurement>) {
+        val hasMeasurements = measurements.any { !it.isDeleted && (it.value != null || it.origin == MeasurementOrigin.NOT_VERIFIED) }
+        if (!hasMeasurements && panel.protectionConductorCheckResult == com.matiasdev.elecapp.features.inspections.domain.ProtectionConductorCheckResult.NOT_VERIFIED) return
+        appendLine("- Verificación rápida del conductor de protección:")
+        appendMainPanelMeasurements("Valores registrados", measurements)
+        appendLine("  Resultado orientativo: ${panel.protectionConductorCheckResult.label().lowercase()}")
+    }
+
+    private fun MainPanelCircuit.hasContent(): Boolean {
+        return destination != com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED ||
+            !destinationOther.isNullOrBlank() ||
+            breakerAmps != null ||
+            breakerOtherAmps?.let { it > 0 } == true ||
+            breakerCurve != com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN ||
+            conductorSectionMm2 != null ||
+            conductorOtherSectionMm2?.let { it > 0.0 } == true ||
+            conductorMaterial != com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.UNKNOWN ||
+            consumptionAmps != null ||
+            consumptionOrigin != MeasurementOrigin.NOT_VERIFIED ||
+            !notes.isNullOrBlank()
+    }
+
+    private fun MainPanelCircuit.summary(index: Int): String {
+        val destinationText = when {
+            destination == com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.OTHER && !destinationOther.isNullOrBlank() -> destinationOther
+            destination == com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED -> "Circuito ${index + 1} sin identificar"
+            else -> "Circuito ${destination.label().lowercase()}"
+        }
+        val details = buildList {
+            (breakerAmps ?: breakerOtherAmps?.takeIf { it > 0 })?.let { add("térmica $it A") }
+            if (breakerCurve != com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN) add("curva ${breakerCurve.label()}")
+            val section = conductorSectionMm2 ?: conductorOtherSectionMm2?.takeIf { it > 0.0 }
+            val material = when {
+                conductorMaterial == com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.OTHER && !conductorMaterialOther.isNullOrBlank() -> conductorMaterialOther
+                conductorMaterial != com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.UNKNOWN -> conductorMaterial.label().lowercase()
+                else -> null
+            }
+            if (section != null || material != null) add("conductor ${listOfNotNull(material, section?.let { "${formatNumber(it)} mm²" }).joinToString(" ")}")
+            consumptionAmps?.let { add("consumo ${consumptionOrigin.label().lowercase()} ${formatNumber(it)} A") }
+            notes?.takeIf(String::isNotBlank)?.let { add(it) }
+        }
+        return if (details.isEmpty()) destinationText else "$destinationText: ${details.joinToString(", ")}"
     }
 
     private fun PillarInspection.propertyTypeLabel(inspection: ElectricalInspection): String {

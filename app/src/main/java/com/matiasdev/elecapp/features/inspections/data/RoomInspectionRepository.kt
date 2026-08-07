@@ -49,14 +49,25 @@ class RoomInspectionRepository(
                     dao.observePillar(inspectionId),
                     dao.observePillarMeasurements(inspectionId),
                     dao.observeMainPanel(inspectionId),
+                    dao.observeMainPanelMeasurements(inspectionId),
+                    dao.observeMainPanelCircuits(inspectionId),
                     dao.observeFindings(inspectionId),
                     dao.observeUnverifiedItems(inspectionId),
-                ) { pillar, pillarMeasurements, panel, findings, unverified ->
+                ) { values ->
+                    val pillar = values[0] as PillarInspectionEntity?
+                    val pillarMeasurements = values[1] as List<PillarMeasurementEntity>
+                    val panel = values[2] as MainPanelInspectionEntity?
+                    val mainPanelMeasurements = values[3] as List<MainPanelMeasurementEntity>
+                    val mainPanelCircuits = values[4] as List<MainPanelCircuitEntity>
+                    val findings = values[5] as List<InspectionFindingEntity>
+                    val unverified = values[6] as List<InspectionUnverifiedItemEntity>
                     InspectionAggregate(
                         inspection = inspection.toDomain(),
                         pillar = pillar?.toDomain(),
                         pillarMeasurements = pillarMeasurements.map(PillarMeasurementEntity::toDomain),
                         mainPanel = panel?.toDomain(),
+                        mainPanelMeasurements = mainPanelMeasurements.map(MainPanelMeasurementEntity::toDomain),
+                        mainPanelCircuits = mainPanelCircuits.map(MainPanelCircuitEntity::toDomain),
                         findings = findings.map(InspectionFindingEntity::toDomain),
                         unverifiedItems = unverified.map(InspectionUnverifiedItemEntity::toDomain),
                     )
@@ -72,6 +83,8 @@ class RoomInspectionRepository(
             pillar = dao.findPillar(inspectionId)?.toDomain(),
             pillarMeasurements = dao.findPillarMeasurements(inspectionId).map(PillarMeasurementEntity::toDomain),
             mainPanel = dao.findMainPanel(inspectionId)?.toDomain(),
+            mainPanelMeasurements = dao.findMainPanelMeasurements(inspectionId).map(MainPanelMeasurementEntity::toDomain),
+            mainPanelCircuits = dao.findMainPanelCircuits(inspectionId).map(MainPanelCircuitEntity::toDomain),
             findings = dao.findFindings(inspectionId).map(InspectionFindingEntity::toDomain),
             unverifiedItems = dao.findUnverifiedItems(inspectionId).map(InspectionUnverifiedItemEntity::toDomain),
         )
@@ -136,6 +149,22 @@ class RoomInspectionRepository(
 
     override suspend fun saveMainPanel(mainPanel: MainPanelInspection) {
         dao.upsertMainPanel(mainPanel.copy(updatedAt = Instant.now()).toEntity())
+    }
+
+    override suspend fun saveMainPanelMeasurement(measurement: com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurement) {
+        dao.upsertMainPanelMeasurement(measurement.copy(updatedAt = Instant.now()).toEntity())
+    }
+
+    override suspend fun softDeleteMainPanelMeasurement(id: String) {
+        dao.softDeleteMainPanelMeasurement(id, Instant.now().toEpochMilli())
+    }
+
+    override suspend fun saveMainPanelCircuit(circuit: com.matiasdev.elecapp.features.inspections.domain.MainPanelCircuit) {
+        dao.upsertMainPanelCircuit(circuit.copy(updatedAt = Instant.now()).toEntity())
+    }
+
+    override suspend fun softDeleteMainPanelCircuit(id: String) {
+        dao.softDeleteMainPanelCircuit(id, Instant.now().toEpochMilli())
     }
 
     override suspend fun saveFinding(finding: InspectionFinding) {

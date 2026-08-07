@@ -74,6 +74,24 @@ interface InspectionDao {
 
     @Query(
         """
+        SELECT * FROM main_panel_measurements
+        WHERE inspection_id = :inspectionId AND is_deleted = 0
+        ORDER BY sort_order ASC, created_at ASC
+        """,
+    )
+    fun observeMainPanelMeasurements(inspectionId: String): Flow<List<MainPanelMeasurementEntity>>
+
+    @Query(
+        """
+        SELECT * FROM main_panel_circuits
+        WHERE inspection_id = :inspectionId AND is_deleted = 0
+        ORDER BY sort_order ASC, created_at ASC
+        """,
+    )
+    fun observeMainPanelCircuits(inspectionId: String): Flow<List<MainPanelCircuitEntity>>
+
+    @Query(
+        """
         SELECT * FROM inspection_findings
         WHERE inspection_id = :inspectionId AND is_deleted = 0
         ORDER BY sort_order ASC, created_at ASC
@@ -107,6 +125,24 @@ interface InspectionDao {
 
     @Query(
         """
+        SELECT * FROM main_panel_measurements
+        WHERE inspection_id = :inspectionId AND is_deleted = 0
+        ORDER BY sort_order ASC, created_at ASC
+        """,
+    )
+    suspend fun findMainPanelMeasurements(inspectionId: String): List<MainPanelMeasurementEntity>
+
+    @Query(
+        """
+        SELECT * FROM main_panel_circuits
+        WHERE inspection_id = :inspectionId AND is_deleted = 0
+        ORDER BY sort_order ASC, created_at ASC
+        """,
+    )
+    suspend fun findMainPanelCircuits(inspectionId: String): List<MainPanelCircuitEntity>
+
+    @Query(
+        """
         SELECT * FROM inspection_findings
         WHERE inspection_id = :inspectionId AND is_deleted = 0
         ORDER BY sort_order ASC, created_at ASC
@@ -136,6 +172,12 @@ interface InspectionDao {
     suspend fun upsertMainPanel(mainPanel: MainPanelInspectionEntity)
 
     @Upsert
+    suspend fun upsertMainPanelMeasurement(measurement: MainPanelMeasurementEntity)
+
+    @Upsert
+    suspend fun upsertMainPanelCircuit(circuit: MainPanelCircuitEntity)
+
+    @Upsert
     suspend fun upsertFinding(finding: InspectionFindingEntity)
 
     @Upsert
@@ -146,6 +188,12 @@ interface InspectionDao {
 
     @Query("UPDATE pillar_measurements SET is_deleted = 1, updated_at = :updatedAt WHERE id = :id")
     suspend fun softDeletePillarMeasurement(id: String, updatedAt: Long)
+
+    @Query("UPDATE main_panel_measurements SET is_deleted = 1, updated_at = :updatedAt WHERE id = :id")
+    suspend fun softDeleteMainPanelMeasurement(id: String, updatedAt: Long)
+
+    @Query("UPDATE main_panel_circuits SET is_deleted = 1, updated_at = :updatedAt WHERE id = :id")
+    suspend fun softDeleteMainPanelCircuit(id: String, updatedAt: Long)
 
     @Query("UPDATE inspection_unverified_items SET is_deleted = 1, updated_at = :updatedAt WHERE id = :id")
     suspend fun softDeleteUnverifiedItem(id: String, updatedAt: Long)

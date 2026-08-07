@@ -8,7 +8,9 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionListItem
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionUnverifiedItem
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelCircuit
 import com.matiasdev.elecapp.features.inspections.domain.MainPanelInspection
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurement
 import com.matiasdev.elecapp.features.inspections.domain.PillarInspection
 import com.matiasdev.elecapp.features.visits.domain.Visit
@@ -46,6 +48,14 @@ interface InspectionRepository {
     suspend fun softDeletePillarMeasurement(id: String)
 
     suspend fun saveMainPanel(mainPanel: MainPanelInspection)
+
+    suspend fun saveMainPanelMeasurement(measurement: MainPanelMeasurement)
+
+    suspend fun softDeleteMainPanelMeasurement(id: String)
+
+    suspend fun saveMainPanelCircuit(circuit: MainPanelCircuit)
+
+    suspend fun softDeleteMainPanelCircuit(id: String)
 
     suspend fun saveFinding(finding: InspectionFinding)
 

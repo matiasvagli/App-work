@@ -103,6 +103,23 @@ class InspectionRulesTest {
     }
 
     @Test
+    fun `sector assessment only includes main panel when reviewed sector is relevant`() {
+        val unrelated = completeAggregate().copy(
+            inspection = testInspection().copy(
+                scope = InspectionScope.SECTOR_ASSESSMENT,
+                reviewedElement = "Reflector exterior",
+                taskDescription = "Se revisa el artefacto.",
+            ),
+        )
+        val related = unrelated.copy(
+            inspection = unrelated.inspection.copy(reviewedElement = "Circuito de cocina"),
+        )
+
+        assertFalse(InspectionProgressCalculator.calculate(unrelated).sections.any { it.section == InspectionSection.MAIN_PANEL })
+        assertTrue(InspectionProgressCalculator.calculate(related).sections.any { it.section == InspectionSection.MAIN_PANEL })
+    }
+
+    @Test
     fun `reopen decision clears completed timestamp`() {
         val completed = testInspection().copy(status = InspectionStatus.COMPLETED, completedAt = Instant.parse("2026-08-04T15:00:00Z"))
         val reopened = completed.copy(status = InspectionStatus.DRAFT, completedAt = null)
@@ -154,17 +171,24 @@ fun completeAggregate(): InspectionAggregate {
             generalCondition = GeneralCondition.FAIR,
             differentialPresent = YesNoUnknown.YES,
             differentialRatedAmps = null,
+            differentialOtherRatedAmps = null,
             differentialSensitivityMa = 30,
+            differentialOtherSensitivityMa = null,
             differentialTestResult = DifferentialTestResult.PASSED,
             circuitCount = null,
             circuitsIdentified = YesNoPartialUnknown.NO,
             neutralBarPresent = YesNoUnknown.YES,
             groundBarPresent = YesNoUnknown.YES,
             neutralAndGroundSeparated = YesNoUnknown.UNKNOWN,
+            protectionConductorsPresent = YesNoPartialUnknown.UNKNOWN,
             improvisedConnections = YesNoUnknown.NO,
+            conductorColorStatus = ConductorColorStatus.UNKNOWN,
             mixedOrIncorrectColors = YesNoUnknown.UNKNOWN,
             overheatingSigns = YesNoUnknown.NO,
+            exposedPartsOrDamagedInsulation = YesNoUnknown.UNKNOWN,
             protectionCompatibility = ProtectionCompatibility.REQUIRES_VERIFICATION,
+            wiringRisksNotes = null,
+            protectionConductorCheckResult = ProtectionConductorCheckResult.NOT_VERIFIED,
             notes = null,
             createdAt = now,
             updatedAt = now,
