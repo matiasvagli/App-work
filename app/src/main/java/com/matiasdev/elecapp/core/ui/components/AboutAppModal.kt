@@ -142,7 +142,7 @@ fun AboutAppContent(
                 }
 
                 Text(
-                    "Matías Vagliello",
+                    "Matías Vagliviello",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Black,
                     color = MaterialTheme.colorScheme.onSurface,
