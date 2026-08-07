@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -71,6 +72,7 @@ private fun ConductorTool() {
     var current by remember { mutableStateOf("16") }
     var length by remember { mutableStateOf("20") }
     var selected by remember { mutableStateOf("PVC en cañería") }
+    val locale = LocalLocale.current.platformLocale
     val references = listOf("PVC en cañería" to 0.75, "Bandeja ventilada" to 1.0, "A confirmar en obra" to 0.6)
     val ampacity = listOf(1.5 to 10.0, 2.5 to 16.0, 4.0 to 25.0, 6.0 to 32.0, 10.0 to 40.0, 16.0 to 63.0)
     val result = current.toDoubleOrNull()?.takeIf { it > 0 }?.let { load -> ampacity.firstOrNull { it.second >= load / (references.first { it.first == selected }.second) } }
@@ -79,7 +81,7 @@ private fun ConductorTool() {
         NumberField("Longitud del tramo", length, { length = it }, "m")
         ChipRow(references.map { it.first }, selected) { selected = it }
     }
-    ResultCard("Sección inicial sugerida", result?.let { "${fmt(result.first)} mm² de cobre" } ?: "Completá una corriente positiva", "Referencia inicial: ${selected.lowercase(Locale.getDefault())}.")
+    ResultCard("Sección inicial sugerida", result?.let { "${fmt(result.first)} mm² de cobre" } ?: "Completá una corriente positiva", "Referencia inicial: ${selected.lowercase(locale)}.")
     ReferenceTable("Tabla orientativa de partida", listOf("Sección" to "Corriente", *ampacity.map { "${fmt(it.first)} mm²" to "${fmt(it.second)} A" }.toTypedArray()))
 }
 
