@@ -331,7 +331,9 @@ object InspectionSummaryGenerator {
     private fun StringBuilder.appendAutoCalculations(autoCalculations: List<AutoInspectionCalculation>) {
         autoCalculations.forEach { calculation ->
             appendLine("- [AUTO] ${calculation.title}: ${calculation.primaryResult}")
-            appendLine("  ${calculation.detail}")
+            calculation.detail.lineSequence().forEach { line ->
+                appendLine("  $line")
+            }
         }
     }
 

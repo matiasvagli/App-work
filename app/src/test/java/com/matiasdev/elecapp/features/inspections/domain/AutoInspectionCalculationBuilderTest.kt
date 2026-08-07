@@ -43,7 +43,9 @@ class AutoInspectionCalculationBuilderTest {
         )
 
         val result = calculations.first { it.id.endsWith(":consumption-breaker") }
-        assertEquals(TechnicalClassification.CRITICAL_REVIEW, result.classification)
+        assertEquals(TechnicalClassification.REQUIRES_REVIEW, result.classification)
+        assertEquals("18 A sobre 16 A · requiere revisión", result.primaryResult)
+        assertTrue(!result.detail.contains("sobrecarga", ignoreCase = true))
     }
 
     @Test
@@ -64,9 +66,59 @@ class AutoInspectionCalculationBuilderTest {
             ),
         )
 
-        assertTrue(calculations.any { it.title == "Circuito 2 sin identificar: térmica y cable" })
+        assertTrue(calculations.any { it.title == "Circuito 2 sin identificar: compatibilidad térmica-conductor" })
         assertTrue(calculations.any { it.title == "Circuito 2 sin identificar: consumo y térmica" })
         assertTrue(calculations.none { it.title.contains("unidentified") })
+    }
+
+    @Test
+    fun usesProtectionLoadPercentageLabelsInAutomaticCalculationText() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                circuits = listOf(
+                    circuit(id = "circuit-1", breakerAmps = 16, conductorSectionMm2 = 2.5, consumptionAmps = 12.0),
+                    circuit(id = "circuit-2", breakerAmps = 10, conductorSectionMm2 = 2.5, consumptionAmps = 8.0, sortOrder = 1),
+                    circuit(id = "circuit-3", breakerAmps = 10, conductorSectionMm2 = 2.5, consumptionAmps = 9.7, sortOrder = 2),
+                    circuit(id = "circuit-4", breakerAmps = 10, conductorSectionMm2 = 2.5, consumptionAmps = 10.0, sortOrder = 3),
+                ),
+            ),
+        )
+
+        val acceptable = calculations.first { it.id == "auto:circuit:circuit-1:consumption-breaker" }
+        val elevated = calculations.first { it.id == "auto:circuit:circuit-2:consumption-breaker" }
+        val nearLimit = calculations.first { it.id == "auto:circuit:circuit-3:consumption-breaker" }
+        val review = calculations.first { it.id == "auto:circuit:circuit-4:consumption-breaker" }
+
+        assertEquals("12 A sobre 16 A · aceptable", acceptable.primaryResult)
+        assertEquals("Carga medida equivalente al 75 % de la corriente nominal de la protección.", acceptable.detail)
+        assertEquals("8 A sobre 10 A · carga elevada", elevated.primaryResult)
+        assertEquals("9,7 A sobre 10 A · próximo al límite", nearLimit.primaryResult)
+        assertEquals("10 A sobre 10 A · requiere revisión", review.primaryResult)
+        assertTrue(review.detail.contains("alcanza la corriente nominal"))
+        assertTrue(!review.detail.contains("sobrecarga", ignoreCase = true))
+    }
+
+    @Test
+    fun usesNeutralProtectionConductorCompatibilityText() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                pillar = pillar(mainBreakerAmps = 32, conductorSectionMm2 = 2.5),
+                circuits = listOf(circuit(breakerAmps = 16, conductorSectionMm2 = 1.5)),
+            ),
+        )
+
+        val pillar = calculations.first { it.id == "auto:pillar:protection" }
+        val circuit = calculations.first { it.id == "auto:circuit:circuit-1:protection" }
+
+        assertEquals("Pilar: compatibilidad térmica-conductor", pillar.title)
+        assertEquals("crítico", pillar.primaryResult)
+        assertTrue(pillar.detail.contains("requiere revisión"))
+        assertTrue(pillar.detail.contains("2,5 mm² -> protección de referencia 16 A"))
+        assertTrue(pillar.detail.contains("Para 32 A -> sección de referencia 6 mm²"))
+        assertTrue(!pillar.detail.contains("bajar", ignoreCase = true))
+        assertTrue(!pillar.detail.contains("cambiar térmica", ignoreCase = true))
+        assertEquals("Circuito 1 (iluminación): compatibilidad térmica-conductor", circuit.title)
+        assertTrue(circuit.detail.contains("1,5 mm² -> protección de referencia 10 A"))
     }
 
     @Test

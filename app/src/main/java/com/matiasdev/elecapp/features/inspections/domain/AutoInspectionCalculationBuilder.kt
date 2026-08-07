@@ -1,6 +1,5 @@
 package com.matiasdev.elecapp.features.inspections.domain
 
-import com.matiasdev.elecapp.features.electricalrules.domain.ConductorAmpacityReference
 import com.matiasdev.elecapp.features.electricalrules.domain.DefaultElectricalRuleConfigs
 import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleCode
 import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfig
@@ -37,17 +36,19 @@ object AutoInspectionCalculationBuilder {
         aggregate.pillar?.let { pillar ->
             val breaker = pillar.mainBreakerAmps ?: pillar.mainBreakerOtherAmps
             val section = pillar.conductorSectionMm2 ?: pillar.conductorOtherSectionMm2
-            if (breaker != null && section != null) {
-                add(protectionCalculation("auto:pillar:protection", "Pilar: térmica y cable", breaker, section, pillar.conductorMaterial, rules))
-            }
+            ProtectionConductorCompatibilityEvaluator
+                .evaluate(breaker, section, pillar.conductorMaterial, rules)
+                ?.toAutoCalculation("auto:pillar:protection", "Pilar")
+                ?.let(::add)
         }
         aggregate.mainPanelCircuits.reportableCircuitsInReportOrder().forEachIndexed { index, circuit ->
             val breaker = circuit.breakerAmps ?: circuit.breakerOtherAmps
             val section = circuit.conductorSectionMm2 ?: circuit.conductorOtherSectionMm2
-            if (breaker != null && section != null) {
-                val circuitName = circuit.reportCircuitName(index)
-                add(protectionCalculation("auto:circuit:${circuit.id}:protection", "$circuitName: térmica y cable", breaker, section, circuit.conductorMaterial, rules))
-            }
+            val circuitName = circuit.reportCircuitName(index)
+            ProtectionConductorCompatibilityEvaluator
+                .evaluate(breaker, section, circuit.conductorMaterial, rules)
+                ?.toAutoCalculation("auto:circuit:${circuit.id}:protection", circuitName)
+                ?.let(::add)
         }
     }
 
@@ -57,48 +58,29 @@ object AutoInspectionCalculationBuilder {
             val consumption = circuit.consumptionAmps
             if (breaker != null && consumption != null && circuit.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED) {
                 val circuitName = circuit.reportCircuitName(index)
-                val classification = if (consumption <= breaker) {
-                    TechnicalClassification.ACCEPTABLE
-                } else {
-                    TechnicalClassification.CRITICAL_REVIEW
-                }
+                val evaluation = ProtectionLoadEvaluator.evaluate(consumption, breaker) ?: return@forEachIndexed
                 add(
                     AutoInspectionCalculation(
                         id = "auto:circuit:${circuit.id}:consumption-breaker",
                         title = "$circuitName: consumo y térmica",
-                        primaryResult = "${TechnicalValueFormatter.withUnit(consumption, "A")} sobre ${breaker} A · ${classification.shortLabel()}",
-                        detail = "El consumo ${circuit.consumptionOrigin.basicLabel()} se compara con la corriente nominal de la térmica.",
-                        classification = classification,
+                        primaryResult = "${TechnicalValueFormatter.withUnit(consumption, "A")} sobre ${breaker} A · ${evaluation.label}",
+                        detail = evaluation.detailText(),
+                        classification = evaluation.classification,
                     ),
                 )
             }
         }
     }
 
-    private fun protectionCalculation(
+    private fun ProtectionConductorCompatibilityEvaluation.toAutoCalculation(
         id: String,
         title: String,
-        breakerAmps: Int,
-        sectionMm2: Double,
-        material: ConductorMaterial,
-        rules: List<ElectricalRuleConfig>,
     ): AutoInspectionCalculation {
-        val reference = when (material) {
-            ConductorMaterial.COPPER -> ConductorAmpacityReference.maximumCopperAmps(sectionMm2, rules)
-            else -> null
-        }
-        val classification = when {
-            reference == null -> TechnicalClassification.NOT_CLASSIFIED
-            breakerAmps <= reference -> TechnicalClassification.ACCEPTABLE
-            breakerAmps <= reference * 1.15 -> TechnicalClassification.REQUIRES_REVIEW
-            else -> TechnicalClassification.CRITICAL_REVIEW
-        }
-        val referenceText = reference?.let { "referencia orientativa ${TechnicalValueFormatter.withUnit(it, "A", 0)}" } ?: "sin referencia para el material/sección"
         return AutoInspectionCalculation(
             id = id,
-            title = title,
-            primaryResult = "${breakerAmps} A sobre ${TechnicalValueFormatter.withUnit(sectionMm2, "mm²")} · ${classification.shortLabel()}",
-            detail = "Comparación orientativa entre calibre de protección y sección visible/declarada; $referenceText.",
+            title = "$title: compatibilidad térmica-conductor",
+            primaryResult = primaryResultText(),
+            detail = detailText(),
             classification = classification,
         )
     }

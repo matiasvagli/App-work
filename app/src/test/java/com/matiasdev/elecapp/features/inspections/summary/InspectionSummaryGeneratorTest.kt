@@ -6,6 +6,7 @@ import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculatio
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalClassification
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicianConclusion
 import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
+import com.matiasdev.elecapp.features.inspections.domain.AutoInspectionCalculationBuilder
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
 import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
 import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
@@ -380,6 +381,56 @@ class InspectionSummaryGeneratorTest {
         assertTrue(summary.contains("Cálculos técnicos"))
         assertTrue(summary.contains("- Sin cálculos registrados"))
         assertFalse(summary.contains("- Sin mediciones ni cálculos asociados"))
+    }
+
+    @Test
+    fun `automatic protection calculations are reported with neutral review text`() {
+        val now = Instant.parse("2026-08-04T14:30:00Z")
+        val base = completeAggregate()
+        val aggregate = base.copy(
+            pillar = base.pillar?.copy(
+                mainBreakerAmps = 32,
+                conductorSectionMm2 = 2.5,
+                conductorMaterial = com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.COPPER,
+            ),
+            mainPanelCircuits = listOf(
+                MainPanelCircuit(
+                    id = "circuit-1",
+                    inspectionId = "inspection-1",
+                    sortOrder = 0,
+                    destination = com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED,
+                    destinationOther = null,
+                    breakerAmps = 10,
+                    breakerOtherAmps = null,
+                    breakerCurve = com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN,
+                    conductorSectionMm2 = 2.5,
+                    conductorOtherSectionMm2 = null,
+                    conductorMaterial = com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.COPPER,
+                    conductorMaterialOther = null,
+                    consumptionAmps = 10.0,
+                    consumptionOrigin = MeasurementOrigin.MEASURED,
+                    notes = null,
+                    createdAt = now,
+                    updatedAt = now,
+                    isDeleted = false,
+                ),
+            ),
+        )
+        val summary = InspectionSummaryGenerator.generate(
+            aggregate,
+            testVisit(),
+            ZoneId.of("UTC"),
+            autoCalculations = AutoInspectionCalculationBuilder.build(aggregate),
+        )
+
+        assertTrue(summary.contains("[AUTO] Pilar: compatibilidad térmica-conductor: crítico"))
+        assertTrue(summary.contains("Protección de 32 A asociada a conductor observado de cobre de 2,5 mm². La combinación requiere revisión."))
+        assertTrue(summary.contains("  * 2,5 mm² -> protección de referencia 16 A."))
+        assertTrue(summary.contains("  * Para 32 A -> sección de referencia 6 mm²."))
+        assertTrue(summary.contains("[AUTO] Circuito 1 sin identificar: consumo y térmica: 10 A sobre 10 A · requiere revisión"))
+        assertFalse(summary.contains("sobrecarga", ignoreCase = true))
+        assertFalse(summary.contains("bajar", ignoreCase = true))
+        assertFalse(summary.contains("cambiar térmica", ignoreCase = true))
     }
 
     @Test
