@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -76,6 +77,7 @@ fun ServiceReceiptDetailScreen(
     clientRepository: ClientRepository,
     receiptId: String,
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onRegisterPaymentClick: (String, String, String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReceiptDetailViewModel = viewModel(factory = ReceiptDetailViewModelFactory(financeRepository, clientRepository, receiptId)),
@@ -95,7 +97,10 @@ fun ServiceReceiptDetailScreen(
             TopAppBar(
                 title = { Text("Comprobante") },
                 navigationIcon = { BackButton(onBackClick) },
-                actions = { IconButton(onClick = viewModel::share) { Icon(Icons.Default.Share, contentDescription = "Compartir") } },
+                actions = {
+                    IconButton(onClick = onHomeClick) { Icon(Icons.Default.Home, contentDescription = "Ir al inicio") }
+                    IconButton(onClick = viewModel::share) { Icon(Icons.Default.Share, contentDescription = "Compartir") }
+                },
             )
         },
     ) { padding ->

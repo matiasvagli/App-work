@@ -363,6 +363,7 @@ fun ElecNavHost(
                 reminderCoordinator = reminderCoordinator,
                 visitId = backStackEntry.arguments?.getString(AppRoutes.VISIT_ID).orEmpty(),
                 onBackClick = { navController.navigateUp() },
+                onHomeClick = { navController.navigateHomeClearingStack() },
                 onEditClick = { navController.navigate(AppRoutes.visitEdit(it)) },
                 onInspectionClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(it)) },
                 onCreateInspectionClick = { navController.navigateSingleTop(AppRoutes.visitInspectionScope(it)) },
@@ -528,4 +529,11 @@ private fun inspectionSectionRoute(inspectionId: String, section: InspectionSect
 
 private fun androidx.navigation.NavHostController.navigateSingleTop(route: String) {
     navigate(route) { launchSingleTop = true }
+}
+
+private fun androidx.navigation.NavHostController.navigateHomeClearingStack() {
+    navigate(AppRoutes.HOME) {
+        popUpTo(AppRoutes.HOME) { inclusive = false }
+        launchSingleTop = true
+    }
 }

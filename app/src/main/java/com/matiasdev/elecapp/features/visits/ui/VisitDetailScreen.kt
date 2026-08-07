@@ -7,6 +7,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
@@ -58,6 +59,7 @@ fun VisitDetailScreen(
     reminderCoordinator: ReminderCoordinator,
     visitId: String,
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onEditClick: (String) -> Unit,
     onInspectionClick: (String) -> Unit,
     onCreateInspectionClick: (String) -> Unit,
@@ -108,6 +110,7 @@ fun VisitDetailScreen(
         topBar = {
             VisitDetailTopBar(
                 onBackClick = onBackClick,
+                onHomeClick = onHomeClick,
                 onEditClick = { uiState.visit?.id?.let(onEditClick) },
                 onCalendarClick = {
                     val visit = uiState.visit
@@ -159,6 +162,7 @@ fun VisitDetailScreen(
 @Composable
 private fun VisitDetailTopBar(
     onBackClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onEditClick: () -> Unit,
     onCalendarClick: () -> Unit,
     onManualSessionClick: () -> Unit,
@@ -174,6 +178,7 @@ private fun VisitDetailTopBar(
             }
         },
         actions = {
+            IconButton(onClick = onHomeClick) { Icon(Icons.Default.Home, contentDescription = "Ir al inicio") }
             IconButton(onClick = onEditClick) { Icon(Icons.Default.Edit, contentDescription = "Editar visita") }
             IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, contentDescription = "Más opciones") }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

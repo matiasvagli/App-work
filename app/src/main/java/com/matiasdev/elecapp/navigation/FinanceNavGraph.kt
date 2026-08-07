@@ -69,6 +69,7 @@ fun NavGraphBuilder.financeRoutes(
             clientRepository = clientRepository,
             receiptId = backStackEntry.arguments?.getString(AppRoutes.RECEIPT_ID).orEmpty(),
             onBackClick = { navController.navigateUp() },
+            onHomeClick = { navController.navigateHome() },
             onRegisterPaymentClick = { receiptId, clientId, visitId ->
                 navController.navigate(AppRoutes.registerPayment(receiptId, clientId, visitId))
             },
@@ -83,5 +84,12 @@ fun NavGraphBuilder.financeRoutes(
             onBackClick = { navController.navigateUp() },
             onSaved = { navController.navigateUp() },
         )
+    }
+}
+
+private fun NavHostController.navigateHome() {
+    navigate(AppRoutes.HOME) {
+        popUpTo(AppRoutes.HOME) { inclusive = false }
+        launchSingleTop = true
     }
 }
