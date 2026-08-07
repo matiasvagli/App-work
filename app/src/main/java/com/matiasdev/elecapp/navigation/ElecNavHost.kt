@@ -465,7 +465,7 @@ fun ElecNavHost(
                 onBackClick = { navController.navigateUp() },
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(inspectionId)) },
                 onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionMainPanel(inspectionId)) },
-                onHomeClick = { navController.navigateSingleTop(AppRoutes.HOME) },
+                onHomeClick = { navController.navigateHomeClearingStack() },
             )
         }
         composable(AppRoutes.INSPECTION_MAIN_PANEL, AppRoutes.inspectionIdArguments) { backStackEntry ->
@@ -476,7 +476,7 @@ fun ElecNavHost(
                 onBackClick = { navController.navigateUp() },
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionPillar(inspectionId)) },
                 onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionGrounding(inspectionId)) },
-                onHomeClick = { navController.navigateSingleTop(AppRoutes.HOME) },
+                onHomeClick = { navController.navigateHomeClearingStack() },
                 onCalculateVoltageDropClick = { navController.navigate(AppRoutes.electricalToolsVoltageDrop(inspectionId = inspectionId)) },
             )
         }
@@ -499,7 +499,7 @@ fun ElecNavHost(
                 onBackClick = { navController.navigateUp() },
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionGrounding(inspectionId)) },
                 onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionFinalReport(inspectionId)) },
-                onHomeClick = { navController.navigateSingleTop(AppRoutes.HOME) },
+                onHomeClick = { navController.navigateHomeClearingStack() },
                 onAddToQuoteClick = { navController.navigate(AppRoutes.quoteCreate(inspectionId = inspectionId)) },
             )
         }
@@ -510,7 +510,16 @@ fun ElecNavHost(
             InspectionTechnicalCommentScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
         }
         composable(AppRoutes.INSPECTION_FINAL_REPORT, AppRoutes.inspectionIdArguments) { backStackEntry ->
-            InspectionFinalReportScreen(inspectionRepository, technicalCalculationRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
+            val inspectionId = backStackEntry.inspectionId()
+            InspectionFinalReportScreen(
+                repository = inspectionRepository,
+                technicalCalculationRepository = technicalCalculationRepository,
+                inspectionId = inspectionId,
+                onBackClick = { navController.navigateUp() },
+                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionFindings(inspectionId)) },
+                onFinishedClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(inspectionId)) },
+                onHomeClick = { navController.navigateHomeClearingStack() },
+            )
         }
     }
 }

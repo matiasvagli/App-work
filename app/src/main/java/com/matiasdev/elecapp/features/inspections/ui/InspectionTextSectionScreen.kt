@@ -55,6 +55,14 @@ fun InspectionTextSectionScreen(
     onBackClick: () -> Unit,
     showCopyShare: Boolean = false,
     navigateBackOnSave: Boolean = false,
+    showPrimarySaveButton: Boolean = true,
+    onSaved: (() -> Unit)? = null,
+    onPreviousClick: (() -> Unit)? = null,
+    onNextClick: (() -> Unit)? = null,
+    onHomeClick: (() -> Unit)? = null,
+    previousLabel: String = "Atrás",
+    nextLabel: String = "Siguiente",
+    saveOnNextClick: Boolean = false,
     modifier: Modifier = Modifier,
     viewModel: InspectionTextSectionViewModel = viewModel(
         factory = InspectionTextSectionViewModelFactory(repository, inspectionId, section),
@@ -67,10 +75,10 @@ fun InspectionTextSectionScreen(
     val scope = rememberCoroutineScope()
     LaunchedEffect(uiState.saved) {
         if (uiState.saved) {
-            if (navigateBackOnSave) {
-                onBackClick()
-            } else {
-                snackbarHostState.showSnackbar(savedMessage)
+            when {
+                onSaved != null -> onSaved()
+                navigateBackOnSave -> onBackClick()
+                else -> snackbarHostState.showSnackbar(savedMessage)
             }
         }
     }
@@ -83,6 +91,25 @@ fun InspectionTextSectionScreen(
                 navigationIcon = { IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver") } },
             )
         },
+        bottomBar = {
+            if (onPreviousClick != null && onNextClick != null) {
+                InspectionSectionNavigation(
+                    onPreviousClick = onPreviousClick,
+                    onNextClick = {
+                        if (saveOnNextClick) {
+                            viewModel.save()
+                        } else {
+                            onNextClick()
+                        }
+                    },
+                    onHomeClick = onHomeClick,
+                    previousLabel = previousLabel,
+                    nextLabel = nextLabel,
+                    isNextEnabled = section == InspectionTextSection.FINAL_REPORT || uiState.status == InspectionStatus.DRAFT,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+        },
     ) { padding ->
         if (uiState.isLoading) CircularProgressIndicator(Modifier.padding(padding).padding(24.dp)) else {
             Column(
@@ -92,12 +119,14 @@ fun InspectionTextSectionScreen(
                 warning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 InspectionTextField(label, uiState.text, viewModel::onTextChange, minLines = 10)
                 Text("Caracteres aproximados: ${uiState.characterCount}")
-                Button(
-                    onClick = viewModel::save,
-                    enabled = section == InspectionTextSection.FINAL_REPORT || uiState.status == InspectionStatus.DRAFT,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(saveButtonText)
+                if (showPrimarySaveButton) {
+                    Button(
+                        onClick = viewModel::save,
+                        enabled = section == InspectionTextSection.FINAL_REPORT || uiState.status == InspectionStatus.DRAFT,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(saveButtonText)
+                    }
                 }
                 if (showCopyShare) {
                     OutlinedButton(
@@ -105,12 +134,17 @@ fun InspectionTextSectionScreen(
                             clipboard.setText(AnnotatedString(uiState.text))
                             scope.launch { snackbarHostState.showSnackbar("Informe copiado") }
                         },
+                        enabled = uiState.text.isNotBlank(),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(Icons.Default.ContentCopy, contentDescription = null)
                         Text("Copiar informe", modifier = Modifier.padding(start = 8.dp))
                     }
-                    OutlinedButton(onClick = { context.sharePlainText(uiState.text) }, modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = { context.sharePlainText(uiState.text) },
+                        enabled = uiState.text.isNotBlank(),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Icon(Icons.Default.Share, contentDescription = null)
                         Text("Compartir informe", modifier = Modifier.padding(start = 8.dp))
                     }

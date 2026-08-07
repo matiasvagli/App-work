@@ -14,6 +14,9 @@ fun InspectionFinalReportScreen(
     technicalCalculationRepository: TechnicalCalculationRepository,
     inspectionId: String,
     onBackClick: () -> Unit,
+    onPreviousClick: () -> Unit,
+    onFinishedClick: () -> Unit,
+    onHomeClick: () -> Unit,
 ) {
     val hasCalculationsFlow = remember(inspectionId) {
         technicalCalculationRepository.observeByInspection(inspectionId).map { it.isNotEmpty() }
@@ -36,5 +39,12 @@ fun InspectionFinalReportScreen(
         warning = warning,
         onBackClick = onBackClick,
         showCopyShare = true,
+        showPrimarySaveButton = false,
+        onSaved = onFinishedClick,
+        onPreviousClick = onPreviousClick,
+        onNextClick = {},
+        onHomeClick = onHomeClick,
+        nextLabel = "Finalizar",
+        saveOnNextClick = true,
     )
 }

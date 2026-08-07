@@ -60,6 +60,7 @@ class InspectionTextSectionViewModel(
     }
 
     fun save() {
+        _uiState.update { it.copy(saved = false) }
         viewModelScope.launch(ioDispatcher) {
             val aggregate = repository.findAggregate(inspectionId) ?: return@launch
             val trimmed = _uiState.value.text.trim().ifBlank { null }
