@@ -62,6 +62,7 @@ fun MainPanelInspectionScreen(
     onBackClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onCalculateVoltageDropClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MainPanelInspectionViewModel = viewModel(factory = MainPanelInspectionViewModelFactory(repository, inspectionId)),
@@ -81,7 +82,7 @@ fun MainPanelInspectionScreen(
         if (uiState.isLoading) {
             CircularProgressIndicator(Modifier.padding(padding).padding(24.dp))
         } else {
-            MainPanelForm(uiState, viewModel, onPreviousClick, onNextClick, onCalculateVoltageDropClick, Modifier.padding(padding))
+            MainPanelForm(uiState, viewModel, onPreviousClick, onNextClick, onHomeClick, onCalculateVoltageDropClick, Modifier.padding(padding))
         }
     }
 }
@@ -92,6 +93,7 @@ private fun MainPanelForm(
     viewModel: MainPanelInspectionViewModel,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onCalculateVoltageDropClick: () -> Unit,
     modifier: Modifier,
 ) {
@@ -121,7 +123,7 @@ private fun MainPanelForm(
         }
         if (uiState.reviewStatus != InspectionSectionReviewStatus.REVIEWED || uiState.accessible == AccessStatus.NO) {
             SavedIndicator(uiState)
-            InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick)
+            InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick, onHomeClick = onHomeClick)
             return@Column
         }
         InspectionFormBlock("Alimentación al tablero") {
@@ -217,7 +219,7 @@ private fun MainPanelForm(
             InspectionTextField("Observación", uiState.notes, { viewModel.update { copy(notes = it) } }, minLines = 3)
         }
         SavedIndicator(uiState)
-        InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick)
+        InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick, onHomeClick = onHomeClick)
     }
 }
 

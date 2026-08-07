@@ -58,6 +58,7 @@ fun PillarInspectionScreen(
     onBackClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PillarInspectionViewModel = viewModel(factory = PillarInspectionViewModelFactory(repository, inspectionId)),
 ) {
@@ -76,7 +77,7 @@ fun PillarInspectionScreen(
         if (uiState.isLoading) {
             CircularProgressIndicator(Modifier.padding(padding).padding(24.dp))
         } else {
-            PillarForm(uiState, viewModel, onPreviousClick, onNextClick, Modifier.padding(padding))
+            PillarForm(uiState, viewModel, onPreviousClick, onNextClick, onHomeClick, Modifier.padding(padding))
         }
     }
 }
@@ -87,6 +88,7 @@ private fun PillarForm(
     viewModel: PillarInspectionViewModel,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onHomeClick: () -> Unit,
     modifier: Modifier,
 ) {
     Column(
@@ -109,7 +111,7 @@ private fun PillarForm(
         }
         if (uiState.reviewStatus != InspectionSectionReviewStatus.REVIEWED) {
             SavedIndicator(uiState)
-            InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick)
+            InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick, onHomeClick = onHomeClick)
             return@Column
         }
         InspectionFormBlock("Características del suministro") {
@@ -193,7 +195,7 @@ private fun PillarForm(
             InspectionTextField("Observaciones", uiState.notes, { viewModel.update { copy(notes = it) } }, minLines = 4)
         }
         SavedIndicator(uiState)
-        InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick)
+        InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick, onHomeClick = onHomeClick)
     }
 }
 

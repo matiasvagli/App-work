@@ -459,6 +459,7 @@ fun ElecNavHost(
                 onBackClick = { navController.navigateUp() },
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionOverview(inspectionId)) },
                 onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionMainPanel(inspectionId)) },
+                onHomeClick = { navController.navigateSingleTop(AppRoutes.HOME) },
             )
         }
         composable(AppRoutes.INSPECTION_MAIN_PANEL, AppRoutes.inspectionIdArguments) { backStackEntry ->
@@ -469,6 +470,7 @@ fun ElecNavHost(
                 onBackClick = { navController.navigateUp() },
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionPillar(inspectionId)) },
                 onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionFindings(inspectionId)) },
+                onHomeClick = { navController.navigateSingleTop(AppRoutes.HOME) },
                 onCalculateVoltageDropClick = { navController.navigate(AppRoutes.electricalToolsVoltageDrop(inspectionId = inspectionId)) },
             )
         }

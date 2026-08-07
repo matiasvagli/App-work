@@ -106,6 +106,7 @@ fun InspectionTextField(
 fun InspectionSectionNavigation(
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onHomeClick: (() -> Unit)? = null,
     previousLabel: String = "Atrás",
     nextLabel: String = "Siguiente",
 ) {
@@ -115,6 +116,11 @@ fun InspectionSectionNavigation(
     ) {
         TextButton(onClick = onPreviousClick) {
             Text(previousLabel)
+        }
+        if (onHomeClick != null) {
+            TextButton(onClick = onHomeClick) {
+                Text("Inicio")
+            }
         }
         Button(onClick = onNextClick) {
             Text(nextLabel)
