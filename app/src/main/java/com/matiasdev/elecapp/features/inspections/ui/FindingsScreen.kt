@@ -69,6 +69,9 @@ fun FindingsScreen(
     repository: InspectionRepository,
     inspectionId: String,
     onBackClick: () -> Unit,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onAddToQuoteClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: FindingsViewModel = viewModel(factory = FindingsViewModelFactory(repository, inspectionId)),
@@ -98,7 +101,7 @@ fun FindingsScreen(
         if (uiState.isLoading) {
             CircularProgressIndicator(Modifier.padding(padding).padding(24.dp))
         } else {
-            FindingsContent(uiState, viewModel, Modifier.padding(padding))
+            FindingsContent(uiState, viewModel, onPreviousClick, onNextClick, onHomeClick, Modifier.padding(padding))
         }
     }
     if (uiState.isEditorOpen) {
@@ -116,6 +119,9 @@ fun FindingsScreen(
 private fun FindingsContent(
     uiState: FindingsUiState,
     viewModel: FindingsViewModel,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit,
+    onHomeClick: () -> Unit,
     modifier: Modifier,
 ) {
     val sorted = uiState.allFindings
@@ -156,6 +162,11 @@ private fun FindingsContent(
                 )
             }
         }
+        InspectionSectionNavigation(
+            onPreviousClick = onPreviousClick,
+            onNextClick = onNextClick,
+            onHomeClick = onHomeClick,
+        )
     }
 }
 

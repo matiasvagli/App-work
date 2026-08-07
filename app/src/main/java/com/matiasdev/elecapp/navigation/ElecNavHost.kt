@@ -480,6 +480,9 @@ fun ElecNavHost(
                 repository = inspectionRepository,
                 inspectionId = inspectionId,
                 onBackClick = { navController.navigateUp() },
+                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionMainPanel(inspectionId)) },
+                onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionFinalReport(inspectionId)) },
+                onHomeClick = { navController.navigateSingleTop(AppRoutes.HOME) },
                 onAddToQuoteClick = { navController.navigate(AppRoutes.quoteCreate(inspectionId = inspectionId)) },
             )
         }
