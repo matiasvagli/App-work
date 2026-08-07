@@ -21,8 +21,9 @@ class InspectionRulesTest {
         val aggregate = completeAggregate()
         val progress = InspectionProgressCalculator.calculate(aggregate)
 
-        assertEquals(7, progress.totalCount)
+        assertEquals(6, progress.totalCount)
         assertFalse(progress.sections.any { it.section == InspectionSection.GENERAL })
+        assertFalse(progress.sections.any { it.section == InspectionSection.UNVERIFIED })
         assertTrue(progress.sections.indexOfFirst { it.section == InspectionSection.GROUNDING_SOON } < progress.sections.indexOfFirst { it.section == InspectionSection.FINDINGS })
         assertTrue(progress.completedCount >= 5)
         assertEquals(InspectionSectionStatus.COMPLETE, progress.sections.first { it.section == InspectionSection.PILLAR }.status)

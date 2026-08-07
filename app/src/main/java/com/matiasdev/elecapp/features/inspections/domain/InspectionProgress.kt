@@ -54,7 +54,6 @@ object InspectionProgressCalculator {
                     if (inspection.isMainPanelRelevantForSector()) add(mainPanelProgress(aggregate.mainPanel))
                     add(groundingSoonProgress())
                     add(findingsProgress(aggregate.findings))
-                    add(unverifiedProgress(aggregate.unverifiedItems))
                     add(technicalCommentProgress(inspection))
                     add(finalReportProgress(inspection))
                 },
@@ -66,7 +65,6 @@ object InspectionProgressCalculator {
                 mainPanelProgress(aggregate.mainPanel),
                 groundingSoonProgress(),
                 findingsProgress(aggregate.findings),
-                unverifiedProgress(aggregate.unverifiedItems),
                 technicalCommentProgress(inspection),
                 finalReportProgress(inspection),
             ),
@@ -163,14 +161,6 @@ object InspectionProgressCalculator {
             InspectionSection.FINDINGS,
             if (findings.isEmpty()) InspectionSectionStatus.NOT_STARTED else InspectionSectionStatus.COMPLETE,
             if (findings.isEmpty()) "" else "${findings.size} hallazgo(s)",
-        )
-    }
-
-    private fun unverifiedProgress(items: List<InspectionUnverifiedItem>): InspectionSectionProgress {
-        return InspectionSectionProgress(
-            InspectionSection.UNVERIFIED,
-            if (items.isEmpty()) InspectionSectionStatus.NOT_STARTED else InspectionSectionStatus.COMPLETE,
-            if (items.isEmpty()) "" else "${items.size} elemento(s)",
         )
     }
 

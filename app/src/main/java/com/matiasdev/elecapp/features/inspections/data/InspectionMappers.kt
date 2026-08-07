@@ -426,11 +426,6 @@ fun InspectionListItemEntity.toDomain(): InspectionListItem {
                     if (findingCount > 0) "$findingCount hallazgo(s)" else "",
                 ),
                 InspectionSectionProgress(
-                    InspectionSection.UNVERIFIED,
-                    if (unverifiedCount > 0) InspectionSectionStatus.COMPLETE else InspectionSectionStatus.NOT_STARTED,
-                    if (unverifiedCount > 0) "$unverifiedCount elemento(s)" else "",
-                ),
-                InspectionSectionProgress(
                     InspectionSection.TECHNICAL_COMMENT,
                     if (inspection.originalTechnicalComment.isNullOrBlank()) {
                         InspectionSectionStatus.NOT_STARTED

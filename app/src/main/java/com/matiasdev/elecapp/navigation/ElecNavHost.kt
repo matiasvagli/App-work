@@ -35,7 +35,6 @@ import com.matiasdev.elecapp.features.inspections.ui.InspectionsListScreen
 import com.matiasdev.elecapp.features.inspections.ui.MainPanelInspectionScreen
 import com.matiasdev.elecapp.features.inspections.ui.PillarInspectionScreen
 import com.matiasdev.elecapp.features.inspections.ui.VisualInspectionComplementaryScreen
-import com.matiasdev.elecapp.features.inspections.ui.UnverifiedItemsScreen
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
 import com.matiasdev.elecapp.features.reminders.data.VisitReminderRepository
@@ -492,9 +491,6 @@ fun ElecNavHost(
                 onAddToQuoteClick = { navController.navigate(AppRoutes.quoteCreate(inspectionId = inspectionId)) },
             )
         }
-        composable(AppRoutes.INSPECTION_UNVERIFIED, AppRoutes.inspectionIdArguments) { backStackEntry ->
-            UnverifiedItemsScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
-        }
         composable(AppRoutes.INSPECTION_VISUAL_COMPLEMENTARY, AppRoutes.inspectionIdArguments) { backStackEntry ->
             VisualInspectionComplementaryScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
         }
@@ -520,7 +516,7 @@ private fun inspectionSectionRoute(inspectionId: String, section: InspectionSect
         InspectionSection.MAIN_PANEL -> AppRoutes.inspectionMainPanel(inspectionId)
         InspectionSection.GROUNDING_SOON -> AppRoutes.inspectionOverview(inspectionId)
         InspectionSection.FINDINGS -> AppRoutes.inspectionFindings(inspectionId)
-        InspectionSection.UNVERIFIED -> AppRoutes.inspectionUnverified(inspectionId)
+        InspectionSection.UNVERIFIED -> AppRoutes.inspectionOverview(inspectionId)
         InspectionSection.VISUAL_COMPLEMENTARY -> AppRoutes.inspectionVisualComplementary(inspectionId)
         InspectionSection.TECHNICAL_COMMENT -> AppRoutes.inspectionTechnicalComment(inspectionId)
         InspectionSection.FINAL_REPORT -> AppRoutes.inspectionFinalReport(inspectionId)
