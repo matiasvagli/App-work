@@ -50,4 +50,20 @@ class ContactImportTest {
         assertEquals("+5491122334455", normalizeImportedPhone("+54 9 11 2233-4455"))
         assertEquals("01155556666", normalizeImportedPhone("(011) 5555-6666"))
     }
+
+    @Test
+    fun `parses unicode contact name and decorated phone`() {
+        val result = parseImportedVCard(
+            """
+            BEGIN:VCARD
+            VERSION:3.0
+            FN:José ⚡ Núñez
+            TEL;TYPE=CELL:📱 +54 (9) 11 2233-4455
+            END:VCARD
+            """.trimIndent(),
+        ).getOrThrow()
+
+        assertEquals("José ⚡ Núñez", result.fullName)
+        assertEquals(listOf("+5491122334455"), result.phones)
+    }
 }

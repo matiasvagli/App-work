@@ -95,7 +95,8 @@ fun parseImportedVCard(text: String): Result<ImportedContact> {
 fun normalizeImportedPhone(value: String): String {
     val trimmed = value.trim()
     if (trimmed.isBlank()) return ""
-    val hasInternationalPrefix = trimmed.firstOrNull { !it.isWhitespace() } == '+'
+    val firstDigitIndex = trimmed.indexOfFirst(Char::isDigit)
+    val hasInternationalPrefix = firstDigitIndex >= 0 && '+' in trimmed.take(firstDigitIndex)
     val digits = trimmed.filter(Char::isDigit)
     return when {
         digits.isBlank() -> ""

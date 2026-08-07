@@ -111,6 +111,10 @@ class ClientFormViewModel(
         showMessage("Selección de contacto cancelada.")
     }
 
+    fun onContactPermissionDenied() {
+        showMessage("Necesitamos permiso para leer el nombre y teléfono del contacto.")
+    }
+
     fun onContactReadFailed() {
         showMessage("No se pudo leer el contacto seleccionado.")
     }

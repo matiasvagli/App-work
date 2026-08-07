@@ -1,5 +1,7 @@
 package com.matiasdev.elecapp.features.clients.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.core.external.readImportedVCard
@@ -87,6 +90,15 @@ fun ClientFormScreen(
                 .onFailure { viewModel.onContactReadFailed() }
         }
     }
+    val contactPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            contactLauncher.launch(null)
+        } else {
+            viewModel.onContactPermissionDenied()
+        }
+    }
     val vCardLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri ->
@@ -130,7 +142,18 @@ fun ClientFormScreen(
                 },
                 actions = {
                     if (clientId == null) {
-                        IconButton(onClick = { contactLauncher.launch(null) }) {
+                        IconButton(
+                            onClick = {
+                                if (
+                                    ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) ==
+                                    PackageManager.PERMISSION_GRANTED
+                                ) {
+                                    contactLauncher.launch(null)
+                                } else {
+                                    contactPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                                }
+                            },
+                        ) {
                             Icon(Icons.Default.ContactPhone, contentDescription = "Importar desde contactos")
                         }
                         IconButton(

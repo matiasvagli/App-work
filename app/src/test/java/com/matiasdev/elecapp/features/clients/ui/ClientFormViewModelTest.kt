@@ -120,6 +120,18 @@ class ClientFormViewModelTest {
         assertEquals("No se pudo leer el contacto seleccionado.", viewModel.uiState.value.errorMessage)
     }
 
+    @Test
+    fun `denied contacts permission shows actionable message`() = runTest {
+        val viewModel = ClientFormViewModel(FakeClientRepository(), clientId = null, ioDispatcher = testDispatcher)
+
+        viewModel.onContactPermissionDenied()
+
+        assertEquals(
+            "Necesitamos permiso para leer el nombre y teléfono del contacto.",
+            viewModel.uiState.value.errorMessage,
+        )
+    }
+
     private fun newViewModel(): ClientFormViewModel {
         return ClientFormViewModel(
             repository = FakeClientRepository(),
