@@ -3,6 +3,7 @@ package com.matiasdev.elecapp.features.inspections.summary
 import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
 import com.matiasdev.elecapp.features.electricaltools.summary.TechnicalCalculationTextGenerator
+import com.matiasdev.elecapp.features.inspections.domain.AutoInspectionCalculation
 import com.matiasdev.elecapp.features.inspections.domain.GeneralCondition
 import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
@@ -29,11 +30,12 @@ object InspectionSummaryGenerator {
         visit: Visit?,
         zoneId: ZoneId = ZoneId.systemDefault(),
         calculations: List<TechnicalCalculation> = aggregate.calculations,
+        autoCalculations: List<AutoInspectionCalculation> = emptyList(),
     ): String {
         val aggregateWithFindings = InspectionFindingProposalBuilder.mergeIntoAggregate(aggregate)
         val inspection = aggregateWithFindings.inspection
         if (inspection.scope == InspectionScope.VISUAL_INSPECTION) {
-            return generateVisualInspection(aggregateWithFindings, visit, zoneId, calculations)
+            return generateVisualInspection(aggregateWithFindings, visit, zoneId, calculations, autoCalculations)
         }
         return buildString {
             appendHeader(inspection, visit, zoneId)
@@ -42,7 +44,7 @@ object InspectionSummaryGenerator {
             appendLine(inspection.inspectionType.label())
             appendPillar(inspection, aggregateWithFindings.pillar, aggregateWithFindings.pillarMeasurements)
             appendMainPanel(aggregateWithFindings.mainPanel, aggregateWithFindings.mainPanelMeasurements, aggregateWithFindings.mainPanelCircuits)
-            appendMeasurementsAndCalculations(aggregateWithFindings, calculations)
+            appendMeasurementsAndCalculations(aggregateWithFindings, calculations, autoCalculations)
             appendFindings(aggregateWithFindings)
             appendUnverified(aggregateWithFindings)
             appendTechnicalComment(inspection)
@@ -60,6 +62,7 @@ object InspectionSummaryGenerator {
         visit: Visit?,
         zoneId: ZoneId,
         calculations: List<TechnicalCalculation>,
+        autoCalculations: List<AutoInspectionCalculation>,
     ): String {
         val inspection = aggregate.inspection
         return buildString {
@@ -73,7 +76,7 @@ object InspectionSummaryGenerator {
             appendLineIfNotBlank("Descripción", inspection.taskDescription)
             appendVisualPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
             appendVisualMainPanel(aggregate.mainPanel, aggregate.mainPanelMeasurements, aggregate.mainPanelCircuits)
-            appendVisualMeasurementsAndCalculations(aggregate, calculations)
+            appendVisualMeasurementsAndCalculations(aggregate, calculations, autoCalculations)
             appendVisualFindings(aggregate)
             appendVisualUnverified(aggregate)
             appendVisualObservation(inspection)
@@ -252,17 +255,22 @@ object InspectionSummaryGenerator {
         }
     }
 
-    private fun StringBuilder.appendMeasurementsAndCalculations(aggregate: InspectionAggregate, calculations: List<TechnicalCalculation>) {
+    private fun StringBuilder.appendMeasurementsAndCalculations(
+        aggregate: InspectionAggregate,
+        calculations: List<TechnicalCalculation>,
+        autoCalculations: List<AutoInspectionCalculation>,
+    ) {
         appendLine()
         appendLine("MEDICIONES Y CÁLCULOS")
         val activeCalculations = calculations.filterNot { it.isDeleted }.sortedBy { it.createdAt }
-        if (!aggregate.hasReportMeasurements() && activeCalculations.isEmpty()) {
+        if (!aggregate.hasReportMeasurements() && activeCalculations.isEmpty() && autoCalculations.isEmpty()) {
             appendLine("- Sin mediciones ni cálculos asociados")
             return
         }
         appendInspectionMeasurements(aggregate)
         appendLine("Cálculos técnicos")
-        if (activeCalculations.isEmpty()) {
+        appendAutoCalculations(autoCalculations)
+        if (activeCalculations.isEmpty() && autoCalculations.isEmpty()) {
             appendLine("- Sin cálculos registrados")
         } else {
             activeCalculations.forEach { calculation ->
@@ -272,21 +280,33 @@ object InspectionSummaryGenerator {
         }
     }
 
-    private fun StringBuilder.appendVisualMeasurementsAndCalculations(aggregate: InspectionAggregate, calculations: List<TechnicalCalculation>) {
+    private fun StringBuilder.appendVisualMeasurementsAndCalculations(
+        aggregate: InspectionAggregate,
+        calculations: List<TechnicalCalculation>,
+        autoCalculations: List<AutoInspectionCalculation>,
+    ) {
         val activeCalculations = calculations.filterNot { it.isDeleted }.sortedBy { it.createdAt }
         val hasMeasurements = aggregate.hasReportMeasurements()
-        if (activeCalculations.isEmpty() && !hasMeasurements) return
+        if (activeCalculations.isEmpty() && autoCalculations.isEmpty() && !hasMeasurements) return
         appendLine()
         appendLine("MEDICIONES Y CÁLCULOS")
         appendInspectionMeasurements(aggregate)
         appendLine("Cálculos técnicos")
-        if (activeCalculations.isEmpty()) {
+        appendAutoCalculations(autoCalculations)
+        if (activeCalculations.isEmpty() && autoCalculations.isEmpty()) {
             appendLine("- Sin cálculos registrados")
         } else {
             activeCalculations.forEach { calculation ->
                 appendLine(TechnicalCalculationTextGenerator.generate(calculation).prependIndent("- "))
                 appendLine()
             }
+        }
+    }
+
+    private fun StringBuilder.appendAutoCalculations(autoCalculations: List<AutoInspectionCalculation>) {
+        autoCalculations.forEach { calculation ->
+            appendLine("- [AUTO] ${calculation.title}: ${calculation.primaryResult}")
+            appendLine("  ${calculation.detail}")
         }
     }
 

@@ -17,6 +17,7 @@ import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculatio
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalClassification
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicianConclusion
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
+import com.matiasdev.elecapp.features.inspections.domain.AutoInspectionCalculationBuilder
 import com.matiasdev.elecapp.features.inspections.domain.InspectionCompletionRules
 import com.matiasdev.elecapp.features.inspections.domain.InspectionProgressCalculator
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
@@ -65,6 +66,7 @@ class InspectionOverviewViewModel(
                             aggregate = aggregate,
                             visit = visit,
                             calculations = calculations,
+                            autoCalculations = aggregate?.let(AutoInspectionCalculationBuilder::build).orEmpty(),
                             measurementReviewSummary = measurementReviewSummary,
                             measurementReviewExpanded = if (measurementReviewSummary.hasAnomalies) {
                                 it.measurementReviewExpanded

@@ -27,6 +27,7 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.ui.FindingsScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionFinalReportScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionGeneralScreen
+import com.matiasdev.elecapp.features.inspections.ui.InspectionManualCalculationType
 import com.matiasdev.elecapp.features.inspections.ui.InspectionOverviewScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionScopeSelectionScreen
 import com.matiasdev.elecapp.features.inspections.ui.InspectionTechnicalCommentScreen
@@ -442,8 +443,12 @@ fun ElecNavHost(
                 onCreateMaterialClick = { clientId, visitId ->
                     navController.navigate(AppRoutes.materialCreate(clientId = clientId, visitId = visitId, inspectionId = inspectionId))
                 },
-                onAddCalculationClick = { clientId, visitId, currentInspectionId ->
-                    navController.navigate(AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId, inspectionId = currentInspectionId))
+                onAddCalculationClick = { clientId, visitId, currentInspectionId, type ->
+                    val route = when (type) {
+                        InspectionManualCalculationType.POWER_CURRENT_VOLTAGE -> AppRoutes.electricalToolsPower(clientId = clientId, visitId = visitId, inspectionId = currentInspectionId)
+                        InspectionManualCalculationType.VOLTAGE_DROP -> AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId, inspectionId = currentInspectionId)
+                    }
+                    navController.navigate(route)
                 },
                 onCalculationClick = { navController.navigateSingleTop(AppRoutes.technicalCalculationDetail(it)) },
             )

@@ -34,7 +34,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -53,6 +55,7 @@ import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationR
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
 import com.matiasdev.elecapp.features.electricaltools.ui.primaryResultText
 import com.matiasdev.elecapp.features.electricaltools.summary.label
+import com.matiasdev.elecapp.features.inspections.domain.AutoInspectionCalculation
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
@@ -73,7 +76,7 @@ fun InspectionOverviewScreen(
     onSectionClick: (InspectionSection) -> Unit,
     onCreateQuoteClick: (String, String) -> Unit,
     onCreateMaterialClick: (String, String) -> Unit,
-    onAddCalculationClick: (String, String, String) -> Unit,
+    onAddCalculationClick: (String, String, String, InspectionManualCalculationType) -> Unit,
     onCalculationClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InspectionOverviewViewModel = viewModel(
@@ -90,6 +93,7 @@ fun InspectionOverviewScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
+    var showCalculationTypeDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let {
@@ -119,14 +123,14 @@ fun InspectionOverviewScreen(
             onReopenClick = viewModel::requestReopen,
             onCopySummary = {
                 val summary = uiState.aggregate?.let {
-                    InspectionSummaryGenerator.generate(it, uiState.visit, calculations = uiState.calculations)
+                    InspectionSummaryGenerator.generate(it, uiState.visit, calculations = uiState.calculations, autoCalculations = uiState.autoCalculations)
                 }.orEmpty()
                 clipboard.setText(AnnotatedString(summary))
                 viewModel.notifySummaryCopied()
             },
             onShareSummary = {
                 val summary = uiState.aggregate?.let {
-                    InspectionSummaryGenerator.generate(it, uiState.visit, calculations = uiState.calculations)
+                    InspectionSummaryGenerator.generate(it, uiState.visit, calculations = uiState.calculations, autoCalculations = uiState.autoCalculations)
                 }.orEmpty()
                 context.sharePlainText(summary)
             },
@@ -140,7 +144,7 @@ fun InspectionOverviewScreen(
             },
             onAddCalculationClick = {
                 val visit = uiState.visit
-                if (visit != null) onAddCalculationClick(visit.clientId, visit.id, inspectionId)
+                if (visit != null) showCalculationTypeDialog = true
             },
             onCalculationClick = onCalculationClick,
             onToggleMeasurementReview = viewModel::toggleMeasurementReview,
@@ -178,6 +182,18 @@ fun InspectionOverviewScreen(
             text = { Text("Este relevamiento ya fue finalizado. ¿Deseás reabrirlo?") },
             confirmButton = { TextButton(onClick = viewModel::confirmReopen) { Text("Reabrir") } },
             dismissButton = { TextButton(onClick = viewModel::dismissReopen) { Text("Cancelar") } },
+        )
+    }
+    if (showCalculationTypeDialog) {
+        CalculationTypeDialog(
+            onDismiss = { showCalculationTypeDialog = false },
+            onSelect = { type ->
+                val visit = uiState.visit
+                if (visit != null) {
+                    showCalculationTypeDialog = false
+                    onAddCalculationClick(visit.clientId, visit.id, inspectionId, type)
+                }
+            },
         )
     }
 }
@@ -218,6 +234,7 @@ private fun InspectionOverviewContent(
                     if (section.section == InspectionSection.MAIN_PANEL) {
                         InspectionCalculationsSection(
                             calculations = uiState.calculations,
+                            autoCalculations = uiState.autoCalculations,
                             onAddCalculationClick = onAddCalculationClick,
                             onCalculationClick = onCalculationClick,
                             isVisualInspection = true,
@@ -228,7 +245,7 @@ private fun InspectionOverviewContent(
                 uiState.progress?.sections.orEmpty().forEach { section ->
                     SectionProgressCard(section, onSectionClick)
                 }
-                InspectionCalculationsSection(uiState.calculations, onAddCalculationClick, onCalculationClick)
+                InspectionCalculationsSection(uiState.calculations, uiState.autoCalculations, onAddCalculationClick, onCalculationClick)
             }
             SummaryActions(onCopySummary, onShareSummary)
             if (uiState.visit != null) {
@@ -309,6 +326,7 @@ private fun SectionProgressCard(
 @Composable
 private fun InspectionCalculationsSection(
     calculations: List<TechnicalCalculation>,
+    autoCalculations: List<AutoInspectionCalculation> = emptyList(),
     onAddCalculationClick: () -> Unit,
     onCalculationClick: (String) -> Unit,
     isVisualInspection: Boolean = false,
@@ -319,7 +337,16 @@ private fun InspectionCalculationsSection(
             if (isVisualInspection) {
                 Text("Agregá únicamente las mediciones o cálculos realizados durante esta revisión.")
             } else {
-                Text("${calculations.size} registro(s)")
+                Text("${calculations.size} registro(s) manual(es) · ${autoCalculations.size} automático(s)")
+            }
+            autoCalculations.forEach { calculation ->
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("[AUTO] ${calculation.title}", fontWeight = FontWeight.SemiBold)
+                        Text(calculation.primaryResult)
+                        Text(calculation.detail, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
             calculations.take(3).forEach { calculation ->
                 Card(onClick = { onCalculationClick(calculation.id) }, modifier = Modifier.fillMaxWidth()) {
@@ -335,6 +362,49 @@ private fun InspectionCalculationsSection(
             }
         }
     }
+}
+
+@Composable
+private fun CalculationTypeDialog(
+    onDismiss: () -> Unit,
+    onSelect: (InspectionManualCalculationType) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Elegir cálculo") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Seleccioná qué cálculo querés cargar para este relevamiento.")
+                CalculationTypeOption("Potencia, corriente y tensión", "Calcula la variable faltante con datos eléctricos básicos.") {
+                    onSelect(InspectionManualCalculationType.POWER_CURRENT_VOLTAGE)
+                }
+                CalculationTypeOption("Caída de tensión", "Calcula caída estimada por longitud, corriente y sección.") {
+                    onSelect(InspectionManualCalculationType.VOLTAGE_DROP)
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
+}
+
+@Composable
+private fun CalculationTypeOption(
+    title: String,
+    description: String,
+    onClick: () -> Unit,
+) {
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, fontWeight = FontWeight.SemiBold)
+            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+enum class InspectionManualCalculationType {
+    POWER_CURRENT_VOLTAGE,
+    VOLTAGE_DROP,
 }
 
 @Composable
