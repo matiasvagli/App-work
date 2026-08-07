@@ -89,9 +89,12 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
     val now = Instant.now()
     val min = DefaultElectricalRuleConfigs.all.firstOrNull { it.code == ElectricalRuleCode.MIN_SUPPLY_VOLTAGE }?.numericValue
     val max = DefaultElectricalRuleConfigs.all.firstOrNull { it.code == ElectricalRuleCode.MAX_SUPPLY_VOLTAGE }?.numericValue
-    val voltageMeasurements = pillarMeasurements.map { it.id to Triple(it.value, it.unit, "Pilar y acometida") } +
+    val voltageMeasurements = pillarMeasurements
+        .filter { it.type.isVoltageMeasurement() }
+        .map { it.id to Triple(it.value, it.unit, "Pilar y acometida") } +
         mainPanelMeasurements
             .filter { it.section == MainPanelMeasurementSection.INPUT_VOLTAGE }
+            .filter { it.type.isVoltageMeasurement() }
             .map { it.id to Triple(it.value, it.unit, "Tablero principal") }
     voltageMeasurements.forEach { (id, data) ->
         val value = data.first ?: return@forEach
@@ -142,6 +145,26 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
             }
         }
 }
+
+private fun PillarMeasurementType.isVoltageMeasurement(): Boolean = this in setOf(
+    PillarMeasurementType.SINGLE_PHASE_VOLTAGE_LN,
+    PillarMeasurementType.VOLTAGE_L1_N,
+    PillarMeasurementType.VOLTAGE_L2_N,
+    PillarMeasurementType.VOLTAGE_L3_N,
+    PillarMeasurementType.VOLTAGE_L1_L2,
+    PillarMeasurementType.VOLTAGE_L2_L3,
+    PillarMeasurementType.VOLTAGE_L3_L1,
+)
+
+private fun MainPanelMeasurementType.isVoltageMeasurement(): Boolean = this in setOf(
+    MainPanelMeasurementType.INPUT_VOLTAGE_LN,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L1_N,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L2_N,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L3_N,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L1_L2,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L2_L3,
+    MainPanelMeasurementType.INPUT_VOLTAGE_L3_L1,
+)
 
 private fun InspectionAggregate.dataReviewFindings(): List<InspectionFinding> = buildList {
     val now = Instant.now()

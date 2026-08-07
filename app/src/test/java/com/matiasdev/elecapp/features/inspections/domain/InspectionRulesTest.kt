@@ -140,6 +140,31 @@ class InspectionRulesTest {
         assertEquals(InspectionStatus.DRAFT, reopened.status)
         assertNull(reopened.completedAt)
     }
+
+    @Test
+    fun `voltage range suggestion ignores pillar current measurements`() {
+        val now = Instant.parse("2026-08-04T14:30:00Z")
+        val aggregate = completeAggregate().copy(
+            pillarMeasurements = listOf(
+                PillarMeasurement(
+                    id = "current-1",
+                    inspectionId = "inspection-1",
+                    type = PillarMeasurementType.SINGLE_PHASE_CURRENT,
+                    value = 17.0,
+                    unit = "A",
+                    origin = MeasurementOrigin.MEASURED,
+                    sortOrder = 0,
+                    createdAt = now,
+                    updatedAt = now,
+                    isDeleted = false,
+                ),
+            ),
+        )
+
+        val groups = InspectionFindingProposalBuilder.buildGroups(aggregate)
+
+        assertFalse(groups.suggested.any { it.ruleCode == "SUPPLY_VOLTAGE_RANGE" && it.sourceUnit == "A" })
+    }
 }
 
 fun completeAggregate(): InspectionAggregate {
