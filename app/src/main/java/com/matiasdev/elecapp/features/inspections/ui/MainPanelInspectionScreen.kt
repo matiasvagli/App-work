@@ -62,6 +62,7 @@ fun MainPanelInspectionScreen(
     onBackClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onCalculateVoltageDropClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MainPanelInspectionViewModel = viewModel(factory = MainPanelInspectionViewModelFactory(repository, inspectionId)),
 ) {
@@ -80,7 +81,7 @@ fun MainPanelInspectionScreen(
         if (uiState.isLoading) {
             CircularProgressIndicator(Modifier.padding(padding).padding(24.dp))
         } else {
-            MainPanelForm(uiState, viewModel, onPreviousClick, onNextClick, Modifier.padding(padding))
+            MainPanelForm(uiState, viewModel, onPreviousClick, onNextClick, onCalculateVoltageDropClick, Modifier.padding(padding))
         }
     }
 }
@@ -91,6 +92,7 @@ private fun MainPanelForm(
     viewModel: MainPanelInspectionViewModel,
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
+    onCalculateVoltageDropClick: () -> Unit,
     modifier: Modifier,
 ) {
     Column(
@@ -121,6 +123,26 @@ private fun MainPanelForm(
             SavedIndicator(uiState)
             InspectionSectionNavigation(onPreviousClick = onPreviousClick, onNextClick = onNextClick)
             return@Column
+        }
+        InspectionFormBlock("Alimentación al tablero") {
+            DecimalField(
+                "Distancia aproximada desde pilar (m)",
+                uiState.feederDistanceMeters,
+                { viewModel.update { copy(feederDistanceMeters = it) } },
+                uiState.feederDistanceError,
+            )
+            InspectionDropdownField("Sección del conductor de alimentación", uiState.feederConductorSectionMm2, feederConductorSectionOptions, ::sectionOptionLabel) {
+                viewModel.update { copy(feederConductorSectionMm2 = it) }
+            }
+            InspectionDropdownField("Material", uiState.feederConductorMaterial, ConductorMaterial.entries.toList(), ConductorMaterial::label) {
+                viewModel.update { copy(feederConductorMaterial = it) }
+            }
+            InspectionDropdownField("Origen del dato", uiState.feederDataOrigin, measurementOrigins, MeasurementOrigin::label) {
+                viewModel.update { copy(feederDataOrigin = it) }
+            }
+            Button(onClick = onCalculateVoltageDropClick, enabled = uiState.status == InspectionStatus.DRAFT) {
+                Text("Calcular caída de tensión")
+            }
         }
         InspectionFormBlock("Tensión de entrada al tablero") {
             MeasurementForm(
@@ -371,7 +393,8 @@ private val consumptionOrigins = measurementOrigins
 private val differentialAmpOptions = listOf("", "25", "40", "63", MAIN_PANEL_OTHER_VALUE)
 private val differentialSensitivityOptions = listOf("", "30", "100", "300", MAIN_PANEL_OTHER_VALUE)
 private val breakerOptions = listOf("", "6", "10", "16", "20", "25", "32", "40", "50", "63", MAIN_PANEL_OTHER_VALUE)
-private val conductorSectionOptions = listOf("", "1.5", "2.5", "4", "6", "10", "16", MAIN_PANEL_OTHER_VALUE)
+private val conductorSectionOptions = listOf("", "1.5", "2.5", "4", "6", "10", "16", "25", MAIN_PANEL_OTHER_VALUE)
+private val feederConductorSectionOptions = conductorSectionOptions.filterNot { it == MAIN_PANEL_OTHER_VALUE }
 
 private fun ampOptionLabel(value: String): String = when (value) {
     "" -> "No verificada"

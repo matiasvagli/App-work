@@ -211,6 +211,10 @@ fun MainPanelInspectionEntity.toDomain(): MainPanelInspection = MainPanelInspect
     protectionCompatibility = enumValue(protectionCompatibility, ProtectionCompatibility.NOT_ASSESSED),
     wiringRisksNotes = wiringRisksNotes,
     protectionConductorCheckResult = enumValue(protectionConductorCheckResult, ProtectionConductorCheckResult.NOT_VERIFIED),
+    feederDistanceMeters = feederDistanceMeters,
+    feederConductorSectionMm2 = feederConductorSectionMm2,
+    feederConductorMaterial = enumValue(feederConductorMaterial, ConductorMaterial.UNKNOWN),
+    feederDataOrigin = enumValue(feederDataOrigin, MeasurementOrigin.NOT_VERIFIED),
     notes = notes,
     createdAt = Instant.ofEpochMilli(createdAt),
     updatedAt = Instant.ofEpochMilli(updatedAt),
@@ -241,6 +245,10 @@ fun MainPanelInspection.toEntity(): MainPanelInspectionEntity = MainPanelInspect
     protectionCompatibility = protectionCompatibility.name,
     wiringRisksNotes = wiringRisksNotes,
     protectionConductorCheckResult = protectionConductorCheckResult.name,
+    feederDistanceMeters = feederDistanceMeters,
+    feederConductorSectionMm2 = feederConductorSectionMm2,
+    feederConductorMaterial = feederConductorMaterial.name,
+    feederDataOrigin = feederDataOrigin.name,
     notes = notes,
     createdAt = createdAt.toEpochMilli(),
     updatedAt = updatedAt.toEpochMilli(),
@@ -453,6 +461,7 @@ private fun sectionStatus(valuePresent: Boolean, complete: Boolean): InspectionS
     }
 }
 
-private inline fun <reified T : Enum<T>> enumValue(value: String, fallback: T): T {
+private inline fun <reified T : Enum<T>> enumValue(value: String?, fallback: T): T {
+    if (value == null) return fallback
     return runCatching { enumValueOf<T>(value) }.getOrDefault(fallback)
 }

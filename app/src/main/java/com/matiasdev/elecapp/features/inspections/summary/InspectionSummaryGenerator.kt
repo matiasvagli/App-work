@@ -42,7 +42,7 @@ object InspectionSummaryGenerator {
             appendLine(inspection.inspectionType.label())
             appendPillar(inspection, aggregateWithFindings.pillar, aggregateWithFindings.pillarMeasurements)
             appendMainPanel(aggregateWithFindings.mainPanel, aggregateWithFindings.mainPanelMeasurements, aggregateWithFindings.mainPanelCircuits)
-            appendCalculations(calculations)
+            appendMeasurementsAndCalculations(aggregateWithFindings, calculations)
             appendFindings(aggregateWithFindings)
             appendUnverified(aggregateWithFindings)
             appendTechnicalComment(inspection)
@@ -73,7 +73,7 @@ object InspectionSummaryGenerator {
             appendLineIfNotBlank("Descripción", inspection.taskDescription)
             appendVisualPillar(inspection, aggregate.pillar, aggregate.pillarMeasurements)
             appendVisualMainPanel(aggregate.mainPanel, aggregate.mainPanelMeasurements, aggregate.mainPanelCircuits)
-            appendVisualCalculations(calculations)
+            appendVisualMeasurementsAndCalculations(aggregate, calculations)
             appendVisualFindings(aggregate)
             appendVisualUnverified(aggregate)
             appendVisualObservation(inspection)
@@ -165,6 +165,7 @@ object InspectionSummaryGenerator {
         }
         appendLine("- Accesibilidad: ${panel.accessible.label().lowercase()}")
         appendCondition("- Estado general", panel.generalCondition)
+        appendMainPanelFeeder(panel)
         appendMainPanelMeasurements("Tensión de entrada", measurements.filter { it.section == MainPanelMeasurementSection.INPUT_VOLTAGE })
         appendMainPanelDifferential(panel)
         panel.circuitCount?.let { appendLine("- Cantidad de circuitos: $it") }
@@ -193,6 +194,7 @@ object InspectionSummaryGenerator {
         }
         appendVisualAccess("- Accesibilidad", panel.accessible)
         appendVisualCondition("- Estado general", panel.generalCondition)
+        appendMainPanelFeeder(panel)
         appendMainPanelMeasurements("Tensión de entrada", measurements.filter { it.section == MainPanelMeasurementSection.INPUT_VOLTAGE })
         appendMainPanelDifferential(panel)
         panel.circuitCount?.let { appendLine("- Cantidad visible de circuitos: $it") }
@@ -250,29 +252,80 @@ object InspectionSummaryGenerator {
         }
     }
 
-    private fun StringBuilder.appendCalculations(calculations: List<TechnicalCalculation>) {
+    private fun StringBuilder.appendMeasurementsAndCalculations(aggregate: InspectionAggregate, calculations: List<TechnicalCalculation>) {
         appendLine()
         appendLine("MEDICIONES Y CÁLCULOS")
         val activeCalculations = calculations.filterNot { it.isDeleted }.sortedBy { it.createdAt }
-        if (activeCalculations.isEmpty()) {
+        if (!aggregate.hasReportMeasurements() && activeCalculations.isEmpty()) {
             appendLine("- Sin mediciones ni cálculos asociados")
             return
         }
-        activeCalculations.forEach { calculation ->
-            appendLine(TechnicalCalculationTextGenerator.generate(calculation).prependIndent(""))
-            appendLine()
+        appendInspectionMeasurements(aggregate)
+        appendLine("Cálculos técnicos")
+        if (activeCalculations.isEmpty()) {
+            appendLine("- Sin cálculos registrados")
+        } else {
+            activeCalculations.forEach { calculation ->
+                appendLine(TechnicalCalculationTextGenerator.generate(calculation).prependIndent("- "))
+                appendLine()
+            }
         }
     }
 
-    private fun StringBuilder.appendVisualCalculations(calculations: List<TechnicalCalculation>) {
+    private fun StringBuilder.appendVisualMeasurementsAndCalculations(aggregate: InspectionAggregate, calculations: List<TechnicalCalculation>) {
         val activeCalculations = calculations.filterNot { it.isDeleted }.sortedBy { it.createdAt }
-        if (activeCalculations.isEmpty()) return
+        val hasMeasurements = aggregate.hasReportMeasurements()
+        if (activeCalculations.isEmpty() && !hasMeasurements) return
         appendLine()
         appendLine("MEDICIONES Y CÁLCULOS")
-        activeCalculations.forEach { calculation ->
-            appendLine(TechnicalCalculationTextGenerator.generate(calculation).prependIndent(""))
-            appendLine()
+        appendInspectionMeasurements(aggregate)
+        appendLine("Cálculos técnicos")
+        if (activeCalculations.isEmpty()) {
+            appendLine("- Sin cálculos registrados")
+        } else {
+            activeCalculations.forEach { calculation ->
+                appendLine(TechnicalCalculationTextGenerator.generate(calculation).prependIndent("- "))
+                appendLine()
+            }
         }
+    }
+
+    private fun StringBuilder.appendInspectionMeasurements(aggregate: InspectionAggregate): Boolean {
+        var hasMeasurements = false
+        val pillarMeasurements = aggregate.pillarMeasurements.reportablePillarMeasurements()
+        if (pillarMeasurements.isNotEmpty()) {
+            hasMeasurements = true
+            appendLine("Pilar y acometida")
+            pillarMeasurements.forEach { measurement ->
+                appendLine("- ${measurement.type.label()}: ${measurement.reportValue()} (${measurement.origin.label().lowercase()})")
+            }
+        }
+        val panelMeasurements = aggregate.mainPanelMeasurements.reportableMainPanelMeasurements()
+        if (panelMeasurements.isNotEmpty()) {
+            hasMeasurements = true
+            appendLine("Tablero principal")
+            panelMeasurements.forEach { measurement ->
+                appendLine("- ${measurement.type.label()}: ${measurement.reportValue()} (${measurement.origin.label().lowercase()})")
+            }
+        }
+        val circuitMeasurements = aggregate.mainPanelCircuits
+            .filterNot { it.isDeleted }
+            .filter { it.consumptionAmps != null && it.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED }
+            .sortedWith(compareBy({ it.sortOrder }, { it.createdAt }))
+        if (circuitMeasurements.isNotEmpty()) {
+            hasMeasurements = true
+            appendLine("Circuitos")
+            circuitMeasurements.forEachIndexed { index, circuit ->
+                appendLine("- ${circuit.reportCircuitLabel(index)}: consumo ${formatNumber(circuit.consumptionAmps ?: 0.0)} A (${circuit.consumptionOrigin.label().lowercase()})")
+            }
+        }
+        return hasMeasurements
+    }
+
+    private fun InspectionAggregate.hasReportMeasurements(): Boolean {
+        return pillarMeasurements.reportablePillarMeasurements().isNotEmpty() ||
+            mainPanelMeasurements.reportableMainPanelMeasurements().isNotEmpty() ||
+            mainPanelCircuits.any { !it.isDeleted && it.consumptionAmps != null && it.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED }
     }
 
     private fun StringBuilder.appendUnverified(aggregate: InspectionAggregate) {
@@ -471,6 +524,18 @@ object InspectionSummaryGenerator {
         appendLine("- Interruptor diferencial: ${details.joinToString(" / ")}")
     }
 
+    private fun StringBuilder.appendMainPanelFeeder(panel: MainPanelInspection) {
+        val details = buildList {
+            panel.feederDistanceMeters?.let { add("distancia aproximada ${formatNumber(it)} m") }
+            panel.feederConductorSectionMm2?.let { add("conductor ${formatNumber(it)} mm²") }
+            if (panel.feederConductorMaterial != com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.UNKNOWN) {
+                add(panel.feederConductorMaterial.label().lowercase())
+            }
+            if (panel.feederDataOrigin != MeasurementOrigin.NOT_VERIFIED) add("origen ${panel.feederDataOrigin.label().lowercase()}")
+        }
+        if (details.isNotEmpty()) appendLine("- Alimentación al tablero: ${details.joinToString(", ")}")
+    }
+
     private fun StringBuilder.appendMainPanelMeasurements(title: String, measurements: List<MainPanelMeasurement>) {
         val active = measurements.filterNot { it.isDeleted }.filter { it.value != null || it.origin == MeasurementOrigin.NOT_VERIFIED }
         if (active.isEmpty()) return
@@ -540,6 +605,30 @@ object InspectionSummaryGenerator {
             "Otro: $propertyTypeOther"
         } else {
             type.label()
+        }
+    }
+
+    private fun List<PillarMeasurement>.reportablePillarMeasurements(): List<PillarMeasurement> {
+        return filterNot { it.isDeleted }
+            .filter { it.value != null && it.origin != MeasurementOrigin.NOT_VERIFIED }
+            .sortedWith(compareBy({ it.sortOrder }, { it.createdAt }))
+    }
+
+    private fun List<MainPanelMeasurement>.reportableMainPanelMeasurements(): List<MainPanelMeasurement> {
+        return filterNot { it.isDeleted }
+            .filter { it.value != null && it.origin != MeasurementOrigin.NOT_VERIFIED }
+            .sortedWith(compareBy({ it.section.ordinal }, { it.sortOrder }, { it.createdAt }))
+    }
+
+    private fun PillarMeasurement.reportValue(): String = "${formatNumber(value ?: 0.0)} $unit"
+
+    private fun MainPanelMeasurement.reportValue(): String = "${formatNumber(value ?: 0.0)} $unit"
+
+    private fun MainPanelCircuit.reportCircuitLabel(index: Int): String {
+        return when {
+            destination == com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.OTHER && !destinationOther.isNullOrBlank() -> "Circuito ${index + 1} ($destinationOther)"
+            destination == com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.UNIDENTIFIED -> "Circuito ${index + 1}"
+            else -> "Circuito ${index + 1} (${destination.label().lowercase()})"
         }
     }
 

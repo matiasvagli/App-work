@@ -272,6 +272,95 @@ class InspectionSummaryGeneratorTest {
     }
 
     @Test
+    fun `measurements and calculations section collects inspection measurements by source`() {
+        val now = Instant.parse("2026-08-04T14:30:00Z")
+        val summary = InspectionSummaryGenerator.generate(
+            completeAggregate().copy(
+                pillarMeasurements = listOf(
+                    PillarMeasurement(
+                        id = "pillar-voltage",
+                        inspectionId = "inspection-1",
+                        type = PillarMeasurementType.SINGLE_PHASE_VOLTAGE_LN,
+                        value = 205.0,
+                        unit = "V",
+                        origin = MeasurementOrigin.MEASURED,
+                        sortOrder = 0,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                ),
+                mainPanelMeasurements = listOf(
+                    MainPanelMeasurement(
+                        id = "panel-voltage",
+                        inspectionId = "inspection-1",
+                        section = MainPanelMeasurementSection.INPUT_VOLTAGE,
+                        type = MainPanelMeasurementType.INPUT_VOLTAGE_LN,
+                        value = 192.0,
+                        unit = "V",
+                        origin = MeasurementOrigin.MEASURED,
+                        sortOrder = 0,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                    MainPanelMeasurement(
+                        id = "panel-phase-ground",
+                        inspectionId = "inspection-1",
+                        section = MainPanelMeasurementSection.PROTECTION_CONDUCTOR_CHECK,
+                        type = MainPanelMeasurementType.PROTECTION_VOLTAGE_PHASE_GROUND,
+                        value = 185.0,
+                        unit = "V",
+                        origin = MeasurementOrigin.MEASURED,
+                        sortOrder = 1,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                ),
+                mainPanelCircuits = listOf(
+                    MainPanelCircuit(
+                        id = "circuit-1",
+                        inspectionId = "inspection-1",
+                        sortOrder = 0,
+                        destination = com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.LIGHTING,
+                        destinationOther = null,
+                        breakerAmps = 10,
+                        breakerOtherAmps = null,
+                        breakerCurve = com.matiasdev.elecapp.features.inspections.domain.BreakerCurve.UNKNOWN,
+                        conductorSectionMm2 = 1.5,
+                        conductorOtherSectionMm2 = null,
+                        conductorMaterial = com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial.COPPER,
+                        conductorMaterialOther = null,
+                        consumptionAmps = 12.0,
+                        consumptionOrigin = MeasurementOrigin.MEASURED,
+                        notes = null,
+                        createdAt = now,
+                        updatedAt = now,
+                        isDeleted = false,
+                    ),
+                ),
+                calculations = emptyList(),
+            ),
+            testVisit(),
+            ZoneId.of("UTC"),
+            calculations = emptyList(),
+        )
+
+        assertTrue(summary.contains("MEDICIONES Y CÁLCULOS"))
+        assertTrue(summary.contains("Pilar y acometida"))
+        assertTrue(summary.contains("- Tensión fase-neutro: 205 V (medido)"))
+        assertTrue(summary.contains("Tablero principal"))
+        assertTrue(summary.contains("- Tensión fase-neutro: 192 V (medido)"))
+        assertTrue(summary.contains("- Fase-tierra: 185 V (medido)"))
+        assertTrue(summary.contains("Circuitos"))
+        assertTrue(summary.contains("- Circuito 1 (iluminación): consumo 12 A (medido)"))
+        assertTrue(summary.contains("Cálculos técnicos"))
+        assertTrue(summary.contains("- Sin cálculos registrados"))
+        assertFalse(summary.contains("- Sin mediciones ni cálculos asociados"))
+    }
+
+    @Test
     fun `main panel quick protection check does not assert grounding correctness`() {
         val now = Instant.parse("2026-08-04T14:30:00Z")
         val summary = InspectionSummaryGenerator.generate(

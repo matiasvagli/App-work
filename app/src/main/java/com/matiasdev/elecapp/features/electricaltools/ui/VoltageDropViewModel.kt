@@ -15,6 +15,12 @@ import com.matiasdev.elecapp.features.electricaltools.domain.VoltageDropCurrentM
 import com.matiasdev.elecapp.features.electricaltools.domain.VoltageDropInput
 import com.matiasdev.elecapp.features.electricaltools.domain.VoltageDropResult
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
+import com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial
+import com.matiasdev.elecapp.features.inspections.domain.InspectionAggregate
+import com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementSection
+import com.matiasdev.elecapp.features.inspections.domain.MeasurementOrigin
+import com.matiasdev.elecapp.features.inspections.domain.PillarMeasurementType
+import com.matiasdev.elecapp.features.inspections.domain.SupplyType
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.ui.formatVisitDateTime
 import kotlinx.coroutines.CoroutineDispatcher
@@ -70,7 +76,7 @@ class VoltageDropViewModel(
     val uiState: StateFlow<VoltageDropUiState> = _uiState.asStateFlow()
 
     init {
-        resolveAssociation(initialClientId, initialVisitId, initialInspectionId)
+        resolveAssociation(initialClientId, initialVisitId, initialInspectionId, shouldPrefillFromInspection = duplicateId == null)
         if (duplicateId != null) loadDuplicate(duplicateId)
     }
 
@@ -106,12 +112,12 @@ class VoltageDropViewModel(
         _uiState.update { it.copy(snackbarMessage = null) }
     }
 
-    private fun resolveAssociation(clientId: String?, visitId: String?, inspectionId: String?) {
+    private fun resolveAssociation(clientId: String?, visitId: String?, inspectionId: String?, shouldPrefillFromInspection: Boolean) {
         viewModelScope.launch(ioDispatcher) {
             var resolvedClientId = clientId
             var resolvedVisitId = visitId
-            val inspection = inspectionId?.let { inspectionRepository.findAggregate(it)?.inspection }
-            if (inspection != null) resolvedVisitId = inspection.visitId
+            val aggregate = inspectionId?.let { inspectionRepository.findAggregate(it) }
+            if (aggregate?.inspection != null) resolvedVisitId = aggregate.inspection.visitId
             val visit = resolvedVisitId?.let { visitRepository.findActiveById(it) }
             if (resolvedClientId == null) resolvedClientId = visit?.clientId
             val client = resolvedClientId?.let { clientRepository.findById(it) }
@@ -120,7 +126,10 @@ class VoltageDropViewModel(
                 visit?.scheduledAt?.formatVisitDateTime()?.let { "Visita del $it" },
                 inspectionId?.let { "Relevamiento en curso" },
             ).joinToString(" · ").ifBlank { "Sin asociación" }
-            _uiState.update { it.copy(association = CalculationAssociationDraft(resolvedClientId, resolvedVisitId, inspectionId, label)) }
+            _uiState.update {
+                val associated = it.copy(association = CalculationAssociationDraft(resolvedClientId, resolvedVisitId, inspectionId, label))
+                if (shouldPrefillFromInspection && aggregate != null) associated.prefilledFromInspection(aggregate) else associated
+            }
         }
     }
 
@@ -156,6 +165,58 @@ class VoltageDropViewModel(
     }
 }
 
+private fun VoltageDropUiState.prefilledFromInspection(aggregate: InspectionAggregate): VoltageDropUiState {
+    val panel = aggregate.mainPanel
+    return copy(
+        systemType = when (aggregate.pillar?.supplyType ?: aggregate.inspection.supplyType) {
+            SupplyType.THREE_PHASE -> ElectricalSystemType.AC_THREE_PHASE
+            SupplyType.SINGLE_PHASE,
+            SupplyType.UNKNOWN,
+            -> ElectricalSystemType.AC_SINGLE_PHASE
+        },
+        nominalVoltage = aggregate.preferredVoltage()?.toInputText() ?: nominalVoltage,
+        current = aggregate.preferredCurrent()?.toInputText().orEmpty(),
+        length = panel?.feederDistanceMeters?.toInputText().orEmpty(),
+        section = panel?.feederConductorSectionMm2?.toInputText().orEmpty(),
+        material = when (panel?.feederConductorMaterial) {
+            ConductorMaterial.ALUMINUM -> TechnicalConductorMaterial.ALUMINUM
+            else -> TechnicalConductorMaterial.COPPER
+        },
+        source = panel?.feederDataOrigin?.toCalculationSourceOrNull() ?: source,
+        measurementContext = "Alimentación principal desde pilar/acometida a tablero principal.",
+        dataProvidedByClient = panel?.feederDataOrigin == MeasurementOrigin.DECLARED_BY_CLIENT,
+        result = null,
+        savedCalculationId = null,
+    )
+}
+
+private fun InspectionAggregate.preferredVoltage(): Double? {
+    return mainPanelMeasurements
+        .filterNot { it.isDeleted }
+        .filter { it.section == MainPanelMeasurementSection.INPUT_VOLTAGE }
+        .firstNotNullOfOrNull { it.value }
+        ?: pillarMeasurements.filterNot { it.isDeleted }.firstNotNullOfOrNull { it.value?.takeIf { _ -> it.type.name.contains("VOLTAGE") } }
+}
+
+private fun InspectionAggregate.preferredCurrent(): Double? {
+    return mainPanelCircuits
+        .filterNot { it.isDeleted }
+        .firstNotNullOfOrNull { it.consumptionAmps }
+        ?: pillarMeasurements
+            .filterNot { it.isDeleted }
+            .filter { it.type == PillarMeasurementType.SINGLE_PHASE_CURRENT || it.type.name.startsWith("CURRENT") }
+            .firstNotNullOfOrNull { it.value }
+}
+
+private fun MeasurementOrigin.toCalculationSourceOrNull(): CalculationSource? = when (this) {
+    MeasurementOrigin.MEASURED -> CalculationSource.MEASURED
+    MeasurementOrigin.CALCULATED -> CalculationSource.CALCULATED
+    MeasurementOrigin.ESTIMATED,
+    MeasurementOrigin.DECLARED_BY_CLIENT,
+    -> CalculationSource.ESTIMATED
+    MeasurementOrigin.NOT_VERIFIED -> null
+}
+
 private fun VoltageDropUiState.toInput(): VoltageDropInput {
     val powerWatts = power.parseDouble()?.let { if (powerInKilowatts) it * 1000.0 else it }
     return VoltageDropInput(
@@ -174,6 +235,11 @@ private fun VoltageDropUiState.toInput(): VoltageDropInput {
         source = source,
         context = contextFromFields(source, instrumentName, measurementContext, assumptions, dataProvidedByClient),
     )
+}
+
+private fun Double.toInputText(): String {
+    val whole = toLong()
+    return if (this == whole.toDouble()) whole.toString() else toString()
 }
 
 class VoltageDropViewModelFactory(

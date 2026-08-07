@@ -66,6 +66,10 @@ data class MainPanelInspectionUiState(
     val protectionCompatibility: ProtectionCompatibility = ProtectionCompatibility.NOT_ASSESSED,
     val wiringRisksNotes: String = "",
     val protectionConductorCheckResult: ProtectionConductorCheckResult = ProtectionConductorCheckResult.NOT_VERIFIED,
+    val feederDistanceMeters: String = "",
+    val feederConductorSectionMm2: String = "",
+    val feederConductorMaterial: ConductorMaterial = ConductorMaterial.UNKNOWN,
+    val feederDataOrigin: MeasurementOrigin = MeasurementOrigin.NOT_VERIFIED,
     val notes: String = "",
     val measurements: List<MainPanelMeasurement> = emptyList(),
     val circuits: List<MainPanelCircuit> = emptyList(),
@@ -80,6 +84,8 @@ data class MainPanelInspectionUiState(
     val ratedAmpsError: String? = null,
     val sensitivityError: String? = null,
     val circuitCountError: String? = null,
+    val feederDistanceError: String? = null,
+    val feederSectionError: String? = null,
     val measurementError: String? = null,
     val saved: Boolean = false,
 )
@@ -127,6 +133,10 @@ class MainPanelInspectionViewModel(
                     protectionCompatibility = panel?.protectionCompatibility ?: it.protectionCompatibility,
                     wiringRisksNotes = panel?.wiringRisksNotes.orEmpty(),
                     protectionConductorCheckResult = panel?.protectionConductorCheckResult ?: it.protectionConductorCheckResult,
+                    feederDistanceMeters = panel?.feederDistanceMeters?.toInputText().orEmpty(),
+                    feederConductorSectionMm2 = panel?.feederConductorSectionMm2?.toInputText().orEmpty(),
+                    feederConductorMaterial = panel?.feederConductorMaterial ?: it.feederConductorMaterial,
+                    feederDataOrigin = panel?.feederDataOrigin ?: it.feederDataOrigin,
                     notes = panel?.notes.orEmpty(),
                     measurements = aggregate?.mainPanelMeasurements.orEmpty(),
                     circuits = aggregate?.mainPanelCircuits.orEmpty(),
@@ -143,6 +153,8 @@ class MainPanelInspectionViewModel(
                 ratedAmpsError = null,
                 sensitivityError = null,
                 circuitCountError = null,
+                feederDistanceError = null,
+                feederSectionError = null,
                 measurementError = null,
             )
         }
@@ -156,11 +168,23 @@ class MainPanelInspectionViewModel(
         val sensitivity = state.differentialSensitivityMa.toIntOrNull()
         val otherSensitivity = state.differentialOtherSensitivityMa.toIntOrNull()
         val circuits = state.circuitCount.toIntOrNull()
+        val feederDistance = state.feederDistanceMeters.parseDecimalInput()
+        val feederSection = state.feederConductorSectionMm2.parseDecimalInput()
         val ratedError = InspectionValidation.validatePositiveInt(ratedAmps ?: otherRatedAmps, "La corriente nominal")
         val sensitivityError = InspectionValidation.validatePositiveInt(sensitivity ?: otherSensitivity, "La sensibilidad")
         val circuitsError = InspectionValidation.validatePositiveInt(circuits, "La cantidad de circuitos")
-        if (ratedError != null || sensitivityError != null || circuitsError != null) {
-            _uiState.update { it.copy(ratedAmpsError = ratedError, sensitivityError = sensitivityError, circuitCountError = circuitsError) }
+        val feederDistanceError = InspectionValidation.validatePositiveDouble(feederDistance, "La distancia")
+        val feederSectionError = InspectionValidation.validatePositiveDouble(feederSection, "La sección del conductor")
+        if (ratedError != null || sensitivityError != null || circuitsError != null || feederDistanceError != null || feederSectionError != null) {
+            _uiState.update {
+                it.copy(
+                    ratedAmpsError = ratedError,
+                    sensitivityError = sensitivityError,
+                    circuitCountError = circuitsError,
+                    feederDistanceError = feederDistanceError,
+                    feederSectionError = feederSectionError,
+                )
+            }
             return
         }
         viewModelScope.launch(ioDispatcher) {
@@ -191,6 +215,10 @@ class MainPanelInspectionViewModel(
                     protectionCompatibility = state.protectionCompatibility,
                     wiringRisksNotes = state.wiringRisksNotes.trim().ifBlank { null },
                     protectionConductorCheckResult = state.protectionConductorCheckResult,
+                    feederDistanceMeters = feederDistance,
+                    feederConductorSectionMm2 = feederSection,
+                    feederConductorMaterial = state.feederConductorMaterial,
+                    feederDataOrigin = state.feederDataOrigin,
                     notes = state.notes.trim().ifBlank { null },
                     createdAt = createdAt,
                     updatedAt = now,
@@ -407,6 +435,10 @@ private fun MainPanelInspectionUiState.normalized(): MainPanelInspectionUiState 
             protectionCompatibility = ProtectionCompatibility.NOT_ASSESSED,
             wiringRisksNotes = "",
             protectionConductorCheckResult = ProtectionConductorCheckResult.NOT_VERIFIED,
+            feederDistanceMeters = "",
+            feederConductorSectionMm2 = "",
+            feederConductorMaterial = ConductorMaterial.UNKNOWN,
+            feederDataOrigin = MeasurementOrigin.NOT_VERIFIED,
         )
     }
     return copy(
@@ -417,6 +449,8 @@ private fun MainPanelInspectionUiState.normalized(): MainPanelInspectionUiState 
         differentialTestResult = if (differentialPresent == YesNoUnknown.YES) differentialTestResult else DifferentialTestResult.NOT_APPLICABLE,
     )
 }
+
+private fun String.parseDecimalInput(): Double? = trim().replace(",", ".").takeIf(String::isNotBlank)?.toDoubleOrNull()
 
 const val MAIN_PANEL_OTHER_VALUE = "OTHER"
 
