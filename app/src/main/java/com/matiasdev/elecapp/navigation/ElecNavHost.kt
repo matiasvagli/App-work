@@ -477,7 +477,6 @@ fun ElecNavHost(
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionPillar(inspectionId)) },
                 onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionGrounding(inspectionId)) },
                 onHomeClick = { navController.navigateHomeClearingStack() },
-                onCalculateVoltageDropClick = { navController.navigate(AppRoutes.electricalToolsVoltageDrop(inspectionId = inspectionId)) },
             )
         }
         composable(AppRoutes.INSPECTION_GROUNDING, AppRoutes.inspectionIdArguments) { backStackEntry ->

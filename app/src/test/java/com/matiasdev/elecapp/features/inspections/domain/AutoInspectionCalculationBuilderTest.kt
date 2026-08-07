@@ -92,17 +92,101 @@ class AutoInspectionCalculationBuilderTest {
     }
 
     @Test
-    fun buildsMeasuredVoltageDropWhenPillarAndPanelVoltagesExist() {
+    fun measuredVoltageDropUsesPillarVoltageAsReference() {
         val calculations = AutoInspectionCalculationBuilder.build(
             aggregate(
-                pillarMeasurements = listOf(pillarVoltage(220.0)),
-                panelMeasurements = listOf(panelVoltage(209.0)),
+                pillar = pillar(mainBreakerAmps = 63, conductorSectionMm2 = 10.0),
+                panel = panel(feederDistanceMeters = 80.0, feederConductorSectionMm2 = 1.5),
+                pillarMeasurements = listOf(pillarVoltage(205.0), pillarCurrent(99.0)),
+                panelMeasurements = listOf(panelVoltage(192.0)),
             ),
         )
 
         val drop = calculations.first { it.id == "auto:voltage-drop:measured" }
-        assertEquals(TechnicalClassification.REQUIRES_REVIEW, drop.classification)
-        assertTrue(drop.primaryResult.contains("5"))
+        assertEquals(TechnicalClassification.CRITICAL_REVIEW, drop.classification)
+        assertTrue(drop.primaryResult.contains("6,34 %"))
+        assertTrue(drop.detail.contains("diferencia 13 V"))
+    }
+
+    @Test
+    fun measuredVoltageDropDoesNotUseCurrentSectionOrLength() {
+        val base = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                pillar = pillar(mainBreakerAmps = 16, conductorSectionMm2 = 2.5),
+                panel = panel(feederDistanceMeters = 5.0, feederConductorSectionMm2 = 2.5),
+                pillarMeasurements = listOf(pillarVoltage(220.0), pillarCurrent(8.0)),
+                panelMeasurements = listOf(panelVoltage(200.0)),
+            ),
+        ).first { it.id == "auto:voltage-drop:measured" }
+
+        val changedFeederData = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                pillar = pillar(mainBreakerAmps = 63, conductorSectionMm2 = 10.0),
+                panel = panel(feederDistanceMeters = 100.0, feederConductorSectionMm2 = 1.5),
+                pillarMeasurements = listOf(pillarVoltage(220.0), pillarCurrent(70.0)),
+                panelMeasurements = listOf(panelVoltage(200.0)),
+            ),
+        ).first { it.id == "auto:voltage-drop:measured" }
+
+        assertTrue(base.primaryResult.contains("9,09 %"))
+        assertEquals(base.primaryResult, changedFeederData.primaryResult)
+        assertEquals(base.detail, changedFeederData.detail)
+    }
+
+    @Test
+    fun estimatedVoltageDropUsesMeasuredCurrentAndNotBreakerRating() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                pillar = pillar(mainBreakerAmps = 63, conductorSectionMm2 = 10.0),
+                panel = panel(feederDistanceMeters = 5.0, feederConductorSectionMm2 = 2.5),
+                pillarMeasurements = listOf(pillarVoltage(220.0), pillarCurrent(21.0)),
+            ),
+        )
+
+        val drop = calculations.first { it.id == "auto:voltage-drop:estimated" }
+        assertEquals(TechnicalClassification.ACCEPTABLE, drop.classification)
+        assertTrue(drop.detail.contains("5 m / cobre / 2,5 mm² / 21 A medidos"))
+    }
+
+    @Test
+    fun doesNotBuildEstimatedVoltageDropWhenCurrentIsMissing() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                pillar = pillar(mainBreakerAmps = 63, conductorSectionMm2 = 10.0),
+                panel = panel(feederDistanceMeters = 5.0, feederConductorSectionMm2 = 2.5),
+                pillarMeasurements = listOf(pillarVoltage(220.0)),
+            ),
+        )
+
+        assertTrue(calculations.none { it.id == "auto:voltage-drop:estimated" })
+    }
+
+    @Test
+    fun doesNotBuildMeasuredVoltageDropWhenEitherEndpointVoltageIsMissing() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                panel = panel(feederDistanceMeters = 5.0, feederConductorSectionMm2 = 2.5),
+                pillarMeasurements = listOf(pillarVoltage(220.0), pillarCurrent(21.0)),
+            ),
+        )
+
+        assertTrue(calculations.none { it.id == "auto:voltage-drop:measured" })
+    }
+
+    @Test
+    fun comparesMeasuredDropAgainstEstimatedDropWithoutRecommendingConductorReplacement() {
+        val calculations = AutoInspectionCalculationBuilder.build(
+            aggregate(
+                panel = panel(feederDistanceMeters = 5.0, feederConductorSectionMm2 = 2.5),
+                pillarMeasurements = listOf(pillarVoltage(205.0), pillarCurrent(21.0)),
+                panelMeasurements = listOf(panelVoltage(192.0)),
+            ),
+        )
+
+        val review = calculations.first { it.id == "auto:voltage-drop:feeder-review" }
+        assertEquals(TechnicalClassification.REQUIRES_REVIEW, review.classification)
+        assertTrue(review.detail.contains("Verificar conexiones, empalmes, bornes"))
+        assertTrue(!review.detail.contains("cambiar"))
     }
 
     @Test
@@ -201,6 +285,9 @@ class AutoInspectionCalculationBuilderTest {
         groundBarPresent: YesNoUnknown = YesNoUnknown.UNKNOWN,
         neutralAndGroundSeparated: YesNoUnknown = YesNoUnknown.UNKNOWN,
         protectionConductorsPresent: YesNoPartialUnknown = YesNoPartialUnknown.UNKNOWN,
+        feederDistanceMeters: Double? = null,
+        feederConductorSectionMm2: Double? = null,
+        feederConductorMaterial: ConductorMaterial = ConductorMaterial.COPPER,
     ) = MainPanelInspection(
         inspectionId = "inspection-1",
         reviewStatus = InspectionSectionReviewStatus.REVIEWED,
@@ -226,9 +313,9 @@ class AutoInspectionCalculationBuilderTest {
         protectionCompatibility = ProtectionCompatibility.NOT_ASSESSED,
         wiringRisksNotes = null,
         protectionConductorCheckResult = ProtectionConductorCheckResult.NOT_VERIFIED,
-        feederDistanceMeters = null,
-        feederConductorSectionMm2 = null,
-        feederConductorMaterial = ConductorMaterial.UNKNOWN,
+        feederDistanceMeters = feederDistanceMeters,
+        feederConductorSectionMm2 = feederConductorSectionMm2,
+        feederConductorMaterial = feederConductorMaterial,
         feederDataOrigin = MeasurementOrigin.NOT_VERIFIED,
         notes = null,
         createdAt = now,
@@ -298,6 +385,19 @@ class AutoInspectionCalculationBuilderTest {
         unit = "V",
         origin = MeasurementOrigin.MEASURED,
         sortOrder = 0,
+        createdAt = now,
+        updatedAt = now,
+        isDeleted = false,
+    )
+
+    private fun pillarCurrent(value: Double) = PillarMeasurement(
+        id = "pillar-current",
+        inspectionId = "inspection-1",
+        type = PillarMeasurementType.SINGLE_PHASE_CURRENT,
+        value = value,
+        unit = "A",
+        origin = MeasurementOrigin.MEASURED,
+        sortOrder = 1,
         createdAt = now,
         updatedAt = now,
         isDeleted = false,

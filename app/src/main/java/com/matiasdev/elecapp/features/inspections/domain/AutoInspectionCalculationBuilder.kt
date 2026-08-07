@@ -1,18 +1,11 @@
 package com.matiasdev.elecapp.features.inspections.domain
 
-import com.matiasdev.elecapp.features.electricaltools.calculators.VoltageDropCalculator
 import com.matiasdev.elecapp.features.electricalrules.domain.ConductorAmpacityReference
 import com.matiasdev.elecapp.features.electricalrules.domain.DefaultElectricalRuleConfigs
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleCode
 import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfig
-import com.matiasdev.elecapp.features.electricaltools.domain.CalculationSource
-import com.matiasdev.elecapp.features.electricaltools.domain.ElectricalSystemType
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalClassification
-import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalConductorMaterial
-import com.matiasdev.elecapp.features.electricaltools.domain.TemperatureMode
-import com.matiasdev.elecapp.features.electricaltools.domain.VoltageDropCurrentMode
-import com.matiasdev.elecapp.features.electricaltools.domain.VoltageDropInput
 import com.matiasdev.elecapp.features.electricaltools.summary.TechnicalValueFormatter
-import kotlin.math.abs
 
 data class AutoInspectionCalculation(
     val id: String,
@@ -29,8 +22,11 @@ object AutoInspectionCalculationBuilder {
     ): List<AutoInspectionCalculation> = buildList {
         addAll(buildProtectionCompatibility(aggregate, rules))
         addAll(buildConsumptionCompatibility(aggregate))
-        buildMeasuredVoltageDrop(aggregate)?.let(::add)
-        buildCalculatedVoltageDrop(aggregate)?.let(::add)
+        val measuredVoltageDrop = measuredVoltageDrop(aggregate, rules)
+        val estimatedVoltageDrop = estimatedVoltageDrop(aggregate, rules)
+        measuredVoltageDrop?.toAutoCalculation()?.let(::add)
+        estimatedVoltageDrop?.toAutoCalculation()?.let(::add)
+        FeederVoltageDropEvaluator.compare(measuredVoltageDrop, estimatedVoltageDrop)?.toAutoCalculation()?.let(::add)
         buildGroundingAssessment(aggregate, rules)?.let(::add)
     }.distinctBy { it.id }
 
@@ -107,60 +103,65 @@ object AutoInspectionCalculationBuilder {
         )
     }
 
-    private fun buildMeasuredVoltageDrop(aggregate: InspectionAggregate): AutoInspectionCalculation? {
+    private fun measuredVoltageDrop(
+        aggregate: InspectionAggregate,
+        rules: List<ElectricalRuleConfig>,
+    ): MeasuredVoltageDropResult? {
         val pillarVoltage = aggregate.pillarMeasurements.firstVoltageValue() ?: return null
         val panelVoltage = aggregate.mainPanelMeasurements.firstInputVoltageValue() ?: return null
-        if (pillarVoltage <= 0.0 || panelVoltage <= 0.0) return null
-        val drop = pillarVoltage - panelVoltage
-        val percent = abs(drop) / pillarVoltage * 100.0
-        val classification = when {
-            percent <= 3.0 -> TechnicalClassification.ACCEPTABLE
-            percent <= 5.0 -> TechnicalClassification.REQUIRES_REVIEW
-            else -> TechnicalClassification.CRITICAL_REVIEW
-        }
+        return VoltageDropMeasuredEvaluator.evaluate(
+            sourceVoltageVolts = pillarVoltage,
+            destinationVoltageVolts = panelVoltage,
+            maxAllowedPercent = rules.maxVoltageDropPercent(),
+        )
+    }
+
+    private fun MeasuredVoltageDropResult.toAutoCalculation(): AutoInspectionCalculation {
         return AutoInspectionCalculation(
             id = "auto:voltage-drop:measured",
             title = "Caída de tensión medida pilar-tablero",
             primaryResult = "${TechnicalValueFormatter.withUnit(percent, "%")} · ${classification.shortLabel()}",
-            detail = "Pilar ${TechnicalValueFormatter.withUnit(pillarVoltage, "V")} / tablero ${TechnicalValueFormatter.withUnit(panelVoltage, "V")} / diferencia ${TechnicalValueFormatter.withUnit(drop, "V")}.",
+            detail = "Pilar ${TechnicalValueFormatter.withUnit(sourceVoltageVolts, "V")} / tablero ${TechnicalValueFormatter.withUnit(destinationVoltageVolts, "V")} / diferencia ${TechnicalValueFormatter.withUnit(differenceVolts, "V")}.",
             classification = classification,
         )
     }
 
-    private fun buildCalculatedVoltageDrop(aggregate: InspectionAggregate): AutoInspectionCalculation? {
+    private fun estimatedVoltageDrop(
+        aggregate: InspectionAggregate,
+        rules: List<ElectricalRuleConfig>,
+    ): FeederVoltageDropEstimate? {
         val panel = aggregate.mainPanel ?: return null
-        val section = panel.feederConductorSectionMm2 ?: return null
-        val length = panel.feederDistanceMeters ?: return null
-        val current = aggregate.pillar?.let { it.mainBreakerAmps ?: it.mainBreakerOtherAmps }?.toDouble()
-            ?: aggregate.mainPanelCircuits.filterNot(MainPanelCircuit::isDeleted).mapNotNull { it.consumptionAmps }.maxOrNull()
-            ?: return null
-        val voltage = aggregate.pillarMeasurements.firstVoltageValue()
-            ?: aggregate.mainPanelMeasurements.firstInputVoltageValue()
-            ?: defaultNominalVoltage(aggregate.inspection.supplyType)
-        val material = panel.feederConductorMaterial.toTechnicalMaterial() ?: return null
-        val result = VoltageDropCalculator.calculate(
-            VoltageDropInput(
-                systemType = aggregate.inspection.supplyType.toElectricalSystemType(),
-                nominalVoltageVolts = voltage,
-                currentMode = VoltageDropCurrentMode.DIRECT_CURRENT,
-                currentAmps = current,
-                activePowerWatts = null,
-                powerFactor = null,
-                efficiency = null,
-                conductorLengthMeters = length,
-                conductorSectionMm2 = section,
-                conductorMaterial = material,
-                temperatureMode = TemperatureMode.NOT_CONSIDERED,
-                conductorTemperatureCelsius = null,
-                source = CalculationSource.CALCULATED,
-            ),
-        ).value ?: return null
+        val current = aggregate.pillarMeasurements.feederMeasuredCurrent() ?: return null
+        return FeederVoltageDropCalculator.calculate(
+            supplyType = aggregate.inspection.supplyType,
+            sourceVoltageVolts = aggregate.pillarMeasurements.firstVoltageValue(),
+            destinationVoltageVolts = aggregate.mainPanelMeasurements.firstInputVoltageValue(),
+            lengthMeters = panel.feederDistanceMeters,
+            sectionMm2 = panel.feederConductorSectionMm2,
+            material = panel.feederConductorMaterial,
+            currentAmps = current,
+            currentOrigin = MeasurementOrigin.MEASURED,
+            maxAllowedPercent = rules.maxVoltageDropPercent(),
+        )
+    }
+
+    private fun FeederVoltageDropEstimate.toAutoCalculation(): AutoInspectionCalculation {
         return AutoInspectionCalculation(
-            id = "auto:voltage-drop:calculated",
-            title = "Caída de tensión calculada del alimentador",
-            primaryResult = "${TechnicalValueFormatter.withUnit(result.voltageDropPercent, "%")} · ${result.classification.shortLabel()}",
-            detail = "${TechnicalValueFormatter.withUnit(length, "m")}, ${TechnicalValueFormatter.withUnit(section, "mm²")}, ${TechnicalValueFormatter.withUnit(result.currentUsedAmps, "A")} usados para estimar ${TechnicalValueFormatter.withUnit(result.voltageDropVolts, "V")}.",
-            classification = result.classification,
+            id = "auto:voltage-drop:estimated",
+            title = "Caída de tensión estimada del alimentador",
+            primaryResult = "${TechnicalValueFormatter.withUnit(result.voltageDropPercent, "%")} · ${classification.shortLabel()}",
+            detail = "${TechnicalValueFormatter.withUnit(lengthMeters, "m")} / ${material.basicLabel()} / ${TechnicalValueFormatter.withUnit(sectionMm2, "mm²")} / ${TechnicalValueFormatter.withUnit(currentAmps, "A")} ${currentOrigin.basicLabel()}s. Estimación: ${TechnicalValueFormatter.withUnit(result.voltageDropVolts, "V")}.",
+            classification = classification,
+        )
+    }
+
+    private fun FeederVoltageDropReview.toAutoCalculation(): AutoInspectionCalculation {
+        return AutoInspectionCalculation(
+            id = "auto:voltage-drop:feeder-review",
+            title = "Alimentador pilar-tablero",
+            primaryResult = "requiere revisión",
+            detail = "La caída medida es significativamente superior a la estimada para los datos relevados. Verificar conexiones, empalmes, bornes, continuidad, sección efectiva, longitud real y estado de los conductores.",
+            classification = classification,
         )
     }
 
@@ -179,7 +180,7 @@ object AutoInspectionCalculationBuilder {
         val neutralGround = aggregate.mainPanelMeasurements
             .firstOrNull { it.type == MainPanelMeasurementType.PROTECTION_VOLTAGE_NEUTRAL_GROUND && it.value != null && !it.isDeleted }
             ?.value
-        val resistanceLimit = rules.firstOrNull { it.code == com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS && it.enabled }?.numericValue
+        val resistanceLimit = rules.firstOrNull { it.code == ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS && it.enabled }?.numericValue
         val measuredResistance = grounding?.resistanceOhms?.takeIf { grounding.resistanceOrigin != MeasurementOrigin.NOT_VERIFIED }
         val classification = when {
             grounding?.electrodePresent == YesNoUnknown.NO ||
@@ -230,6 +231,18 @@ object AutoInspectionCalculationBuilder {
         )
     }?.value
 
+    private fun List<PillarMeasurement>.feederMeasuredCurrent(): Double? {
+        return filter {
+            !it.isDeleted && it.value != null && it.origin == MeasurementOrigin.MEASURED && it.type in setOf(
+                PillarMeasurementType.SINGLE_PHASE_CURRENT,
+                PillarMeasurementType.CURRENT_L1,
+                PillarMeasurementType.CURRENT_L2,
+                PillarMeasurementType.CURRENT_L3,
+                PillarMeasurementType.CURRENT_NEUTRAL,
+            )
+        }.mapNotNull { it.value }.maxOrNull()
+    }
+
     private fun List<MainPanelMeasurement>.firstInputVoltageValue(): Double? = firstOrNull {
         !it.isDeleted && it.value != null && it.type in setOf(
             MainPanelMeasurementType.INPUT_VOLTAGE_LN,
@@ -238,22 +251,6 @@ object AutoInspectionCalculationBuilder {
             MainPanelMeasurementType.INPUT_VOLTAGE_L3_N,
         )
     }?.value
-
-    private fun ConductorMaterial.toTechnicalMaterial(): TechnicalConductorMaterial? = when (this) {
-        ConductorMaterial.COPPER -> TechnicalConductorMaterial.COPPER
-        ConductorMaterial.ALUMINUM -> TechnicalConductorMaterial.ALUMINUM
-        ConductorMaterial.OTHER, ConductorMaterial.UNKNOWN -> null
-    }
-
-    private fun SupplyType.toElectricalSystemType(): ElectricalSystemType = when (this) {
-        SupplyType.THREE_PHASE -> ElectricalSystemType.AC_THREE_PHASE
-        SupplyType.SINGLE_PHASE, SupplyType.UNKNOWN -> ElectricalSystemType.AC_SINGLE_PHASE
-    }
-
-    private fun defaultNominalVoltage(supplyType: SupplyType): Double = when (supplyType) {
-        SupplyType.THREE_PHASE -> 380.0
-        SupplyType.SINGLE_PHASE, SupplyType.UNKNOWN -> 220.0
-    }
 
     private fun TechnicalClassification.shortLabel(): String = when (this) {
         TechnicalClassification.ACCEPTABLE -> "aceptable"
@@ -282,5 +279,16 @@ object AutoInspectionCalculationBuilder {
         MeasurementOrigin.CALCULATED -> "calculado"
         MeasurementOrigin.DECLARED_BY_CLIENT -> "declarado"
         MeasurementOrigin.NOT_VERIFIED -> "no verificado"
+    }
+
+    private fun ConductorMaterial.basicLabel(): String = when (this) {
+        ConductorMaterial.COPPER -> "cobre"
+        ConductorMaterial.ALUMINUM -> "aluminio"
+        ConductorMaterial.OTHER -> "otro material"
+        ConductorMaterial.UNKNOWN -> "material no verificado"
+    }
+
+    private fun List<ElectricalRuleConfig>.maxVoltageDropPercent(): Double? {
+        return firstOrNull { it.code == ElectricalRuleCode.MAX_FEEDER_VOLTAGE_DROP_PERCENT && it.enabled }?.numericValue
     }
 }

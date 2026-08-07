@@ -66,7 +66,6 @@ fun MainPanelInspectionScreen(
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
     onHomeClick: () -> Unit,
-    onCalculateVoltageDropClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MainPanelInspectionViewModel = viewModel(factory = MainPanelInspectionViewModelFactory(repository, inspectionId)),
 ) {
@@ -85,7 +84,7 @@ fun MainPanelInspectionScreen(
         if (uiState.isLoading) {
             CircularProgressIndicator(Modifier.padding(padding).padding(24.dp))
         } else {
-            MainPanelForm(uiState, viewModel, onPreviousClick, onNextClick, onHomeClick, onCalculateVoltageDropClick, Modifier.padding(padding))
+            MainPanelForm(uiState, viewModel, onPreviousClick, onNextClick, onHomeClick, Modifier.padding(padding))
         }
     }
 }
@@ -97,7 +96,6 @@ private fun MainPanelForm(
     onPreviousClick: () -> Unit,
     onNextClick: () -> Unit,
     onHomeClick: () -> Unit,
-    onCalculateVoltageDropClick: () -> Unit,
     modifier: Modifier,
 ) {
     Column(
@@ -144,9 +142,6 @@ private fun MainPanelForm(
             }
             InspectionDropdownField("Origen del dato", uiState.feederDataOrigin, measurementOrigins, MeasurementOrigin::label) {
                 viewModel.update { copy(feederDataOrigin = it) }
-            }
-            Button(onClick = onCalculateVoltageDropClick, enabled = uiState.status == InspectionStatus.DRAFT) {
-                Text("Calcular caída de tensión")
             }
         }
         InspectionFormBlock("Tensión de entrada al tablero") {
