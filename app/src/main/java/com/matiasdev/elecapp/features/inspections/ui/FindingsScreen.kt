@@ -209,9 +209,9 @@ private fun FindingCard(
                 Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(finding.originText(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(finding.originText(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                 TextButton(onClick = if (finding.isExcluded) onRestore else onExclude, enabled = enabled) {
-                    Text(if (finding.isExcluded) "Restaurar" else "Excluir")
+                    Text(if (finding.isExcluded) "Restaurar" else "Excluir", maxLines = 1)
                 }
             }
         }

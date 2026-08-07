@@ -3,9 +3,11 @@ package com.matiasdev.elecapp.features.inspections.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -18,6 +20,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -232,10 +235,22 @@ private fun CircuitList(uiState: MainPanelInspectionUiState, viewModel: MainPane
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         uiState.circuits.forEachIndexed { index, circuit ->
             HorizontalDivider()
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(circuit.summary(index))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = circuit.summary(index),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 TextButton(onClick = { viewModel.toggleCircuitExpanded(circuit.id) }) {
-                    Text(if (circuit.id in uiState.expandedCircuitIds) "Contraer" else "Editar")
+                    Text(
+                        text = if (circuit.id in uiState.expandedCircuitIds) "Contraer" else "Editar",
+                        maxLines = 1,
+                    )
                 }
             }
             if (circuit.id in uiState.expandedCircuitIds) {

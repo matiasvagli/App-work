@@ -82,11 +82,20 @@ fun AboutAppContent(
         )
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                "ElecApp Pro",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Black,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "ElecApp Pro",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Black,
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    "(Versión Beta)",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             Text(
                 "Sistema Integrado de Gestión & Cálculo Técnico",
                 style = MaterialTheme.typography.bodyMedium,
@@ -100,7 +109,7 @@ fun AboutAppContent(
                 color = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Text(
-                    "v0.1.0 Enterprise Core • Offline-First",
+                    "v0.1.0 Enterprise Core (Beta) • Offline-First",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
