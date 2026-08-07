@@ -331,37 +331,74 @@ private fun InspectionCalculationsSection(
     onCalculationClick: (String) -> Unit,
     isVisualInspection: Boolean = false,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    var showDetails by remember { mutableStateOf(false) }
+    val activeCalculations = calculations.filterNot { it.isDeleted }
+    Card(onClick = { showDetails = true }, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Mediciones y cálculos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             if (isVisualInspection) {
                 Text("Agregá únicamente las mediciones o cálculos realizados durante esta revisión.")
-            } else {
-                Text("${calculations.size} registro(s) manual(es) · ${autoCalculations.size} automático(s)")
             }
-            autoCalculations.forEach { calculation ->
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("[AUTO] ${calculation.title}", fontWeight = FontWeight.SemiBold)
-                        Text(calculation.primaryResult)
-                        Text(calculation.detail, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
-            calculations.take(3).forEach { calculation ->
-                Card(onClick = { onCalculationClick(calculation.id) }, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("[${calculation.source.label().uppercase()}] ${calculation.type.label()}", fontWeight = FontWeight.SemiBold)
-                        Text(calculation.primaryResultText())
-                        Text(calculation.classification.label(), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
+            Text("${activeCalculations.size} registro(s) manual(es) · ${autoCalculations.size} automático(s)")
+            Text("Tocá para ver el detalle", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(onClick = onAddCalculationClick, modifier = Modifier.fillMaxWidth()) {
                 Text(if (isVisualInspection) "Agregar medición o cálculo" else "Agregar cálculo")
             }
         }
     }
+    if (showDetails) {
+        CalculationsDetailDialog(
+            calculations = activeCalculations,
+            autoCalculations = autoCalculations,
+            onDismiss = { showDetails = false },
+            onCalculationClick = { id ->
+                showDetails = false
+                onCalculationClick(id)
+            },
+        )
+    }
+}
+
+@Composable
+private fun CalculationsDetailDialog(
+    calculations: List<TechnicalCalculation>,
+    autoCalculations: List<AutoInspectionCalculation>,
+    onDismiss: () -> Unit,
+    onCalculationClick: (String) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Mediciones y cálculos") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (calculations.isEmpty() && autoCalculations.isEmpty()) {
+                    Text("No hay mediciones ni cálculos asociados.")
+                }
+                autoCalculations.forEach { calculation ->
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("[AUTO] ${calculation.title}", fontWeight = FontWeight.SemiBold)
+                            Text(calculation.primaryResult)
+                            Text(calculation.detail, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                calculations.forEach { calculation ->
+                    Card(onClick = { onCalculationClick(calculation.id) }, modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("[${calculation.source.label().uppercase()}] ${calculation.type.label()}", fontWeight = FontWeight.SemiBold)
+                            Text(calculation.primaryResultText())
+                            Text(calculation.classification.label(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Cerrar") } },
+    )
 }
 
 @Composable
