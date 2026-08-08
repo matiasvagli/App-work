@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.matiasdev.elecapp.core.time.SystemTimeProvider
 import com.matiasdev.elecapp.core.time.TimeProvider
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
-import com.matiasdev.elecapp.features.clients.domain.Client
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.finance.domain.MoneyParser
 import com.matiasdev.elecapp.features.finance.domain.PaymentDraft
@@ -14,15 +13,14 @@ import com.matiasdev.elecapp.features.finance.domain.PaymentMethod
 import com.matiasdev.elecapp.features.finance.domain.ReceiptItemDraft
 import com.matiasdev.elecapp.features.finance.domain.ServiceReceiptItemType
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseDraft
-import com.matiasdev.elecapp.features.finance.domain.VisitCloseResult
 import com.matiasdev.elecapp.features.finance.domain.VisitTechnicalResult
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkDraft
 import com.matiasdev.elecapp.features.finance.domain.VisitWorkType
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
 import com.matiasdev.elecapp.features.visits.domain.VisitWorkSessionDurations
-import com.matiasdev.elecapp.features.visits.domain.VisitWorkSummary
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -35,67 +33,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-enum class ClosePaymentMethod { CASH, BANK_TRANSFER, MERCADO_PAGO, MIXED }
-
-data class FollowUpDraft(
-    val date: String = "",
-    val time: String = "",
-    val durationMinutes: String = "",
-    val reason: String = "",
-    val notes: String = "",
-)
-
-data class VisitCloseUiState(
-    val visit: Visit? = null,
-    val client: Client? = null,
-    val workSummary: VisitWorkSummary? = null,
-    val now: Instant = Instant.EPOCH,
-    val diagnosis: String = "",
-    val workType: VisitWorkType = VisitWorkType.OTHER,
-    val workPerformed: String = "",
-    val workSectors: String = "",
-    val workItems: String = "",
-    val workTests: String = "",
-    val workObservations: String = "",
-    val technicalResult: VisitTechnicalResult? = null,
-    val pendingWork: String = "",
-    val customerNotes: String = "",
-    val internalNotes: String = "",
-    val laborInput: String = "",
-    val laborCents: Long = 0L,
-    val materialsInput: String = "",
-    val materialsCents: Long = 0L,
-    val selectedPaymentMethod: ClosePaymentMethod = ClosePaymentMethod.CASH,
-    val mixedCashInput: String = "",
-    val mixedCashCents: Long = 0L,
-    val mixedTransferInput: String = "",
-    val mixedTransferCents: Long = 0L,
-    val mixedMercadoPagoInput: String = "",
-    val mixedMercadoPagoCents: Long = 0L,
-    val transferReference: String = "",
-    val mercadoPagoReference: String = "",
-    val generateReceipt: Boolean = true,
-    val followUpDraft: FollowUpDraft = FollowUpDraft(),
-    val scheduledFollowUpVisit: Visit? = null,
-    val showFollowUpForm: Boolean = false,
-    val showRemoveFollowUpDialog: Boolean = false,
-    val showNoChargeDialog: Boolean = false,
-    val closeWithoutCharge: Boolean = false,
-    val isSaving: Boolean = false,
-    val validationErrors: List<String> = emptyList(),
-) {
-    val totalCents: Long get() = laborCents + materialsCents
-    val mixedDistributedCents: Long get() = mixedCashCents + mixedTransferCents + mixedMercadoPagoCents
-}
-
-sealed interface VisitCloseEvent {
-    data class Saved(val result: VisitCloseResult) : VisitCloseEvent
-    data class Message(val text: String) : VisitCloseEvent
-}
 
 class VisitCloseViewModel(
     private val clientRepository: ClientRepository,
@@ -117,13 +58,23 @@ class VisitCloseViewModel(
             val visit = visitRepository.findActiveById(visitId)
             val client = visit?.let { clientRepository.findById(it.clientId) }
             val sessions = workSessionRepository.getSessionsForVisit(visitId)
+            val completion = financeRepository.observeVisitCompletion(visitId).first()
             _uiState.update {
                 it.copy(
                     visit = visit,
                     client = client,
                     now = timeProvider.now(),
-                    workPerformed = visit?.completionNotes.orEmpty(),
-                    pendingWork = visit?.pendingWorkNotes.orEmpty(),
+                    diagnosis = completion?.diagnosis.orEmpty(),
+                    workType = completion?.workType ?: VisitWorkType.OTHER,
+                    workPerformed = completion?.workPerformed ?: visit?.completionNotes.orEmpty(),
+                    workSectors = completion?.workSectors.orEmpty(),
+                    workItems = completion?.workItems.orEmpty(),
+                    workTests = completion?.workTests.orEmpty(),
+                    workObservations = completion?.workObservations.orEmpty(),
+                    technicalResult = completion?.technicalResult,
+                    pendingWork = completion?.pendingWork ?: visit?.pendingWorkNotes.orEmpty(),
+                    customerNotes = completion?.customerNotes.orEmpty(),
+                    internalNotes = completion?.internalNotes.orEmpty(),
                     workSummary = visit?.let { current -> VisitWorkSessionDurations.summarize(current, sessions, timeProvider.now()) },
                     followUpDraft = FollowUpDraft(reason = visit?.pendingWorkNotes.orEmpty(), notes = client?.addressLine().orEmpty()),
                 )
@@ -290,6 +241,27 @@ class VisitCloseViewModel(
         }
     }
 
+    fun saveWorkDraft() {
+        val state = _uiState.value
+        if (state.workPerformed.isBlank()) {
+            _uiState.update { it.copy(validationErrors = listOf("Ingresá el trabajo a realizar o realizado")) }
+            return
+        }
+        if (state.isSaving) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, validationErrors = emptyList()) }
+            runCatching {
+                withContext(ioDispatcher) { financeRepository.saveVisitWorkDraft(visitId, state.toWorkDraft()) }
+            }.onSuccess {
+                _events.emit(VisitCloseEvent.Message("Trabajo guardado"))
+                _events.emit(VisitCloseEvent.WorkSaved)
+            }.onFailure { error ->
+                _uiState.update { it.copy(validationErrors = listOf(error.message ?: "No se pudo guardar el trabajo")) }
+            }
+            _uiState.update { it.copy(isSaving = false) }
+        }
+    }
+
     private fun validate(state: VisitCloseUiState): List<String> = buildList {
         if (state.workPerformed.isBlank()) add("Ingresá el trabajo realizado")
         if (state.technicalResult == null) add("Seleccioná el resultado de la visita")
@@ -331,6 +303,22 @@ class VisitCloseViewModel(
         )
     }
 
+    private fun VisitCloseUiState.toWorkDraft(): VisitWorkDraft {
+        return VisitWorkDraft(
+            diagnosis = diagnosis,
+            workType = workType,
+            workPerformed = workPerformed,
+            workSectors = workSectors,
+            workItems = workItems,
+            workTests = workTests,
+            workObservations = workObservations,
+            technicalResult = technicalResult,
+            pendingWork = pendingWork,
+            internalNotes = internalNotes,
+            customerNotes = customerNotes,
+        )
+    }
+
     private fun VisitCloseUiState.paymentDrafts(now: Instant): List<PaymentDraft> {
         return when (selectedPaymentMethod) {
             ClosePaymentMethod.CASH -> listOf(PaymentDraft(totalCents, PaymentMethod.CASH, now))
@@ -351,29 +339,6 @@ class VisitCloseViewModel(
                 .toInstant()
         }.getOrNull()
     }
-}
-
-enum class VisitCloseTextField {
-    DIAGNOSIS,
-    WORK,
-    WORK_SECTORS,
-    WORK_ITEMS,
-    WORK_TESTS,
-    WORK_OBSERVATIONS,
-    PENDING,
-    CUSTOMER_NOTES,
-    INTERNAL_NOTES,
-    TRANSFER_REFERENCE,
-    MERCADO_PAGO_REFERENCE,
-}
-
-enum class VisitCloseMoneyField { LABOR, MATERIALS, MIXED_CASH, MIXED_TRANSFER, MIXED_MERCADO_PAGO }
-
-fun Client.addressLine(): String = listOfNotNull(address?.takeIf(String::isNotBlank), locality?.takeIf(String::isNotBlank)).joinToString(", ")
-
-fun followUpText(visit: Visit): String {
-    val date = DateTimeFormatter.ofPattern("dd/MM/yyyy 'a las' HH:mm").format(visit.scheduledAt.atZone(ZoneId.systemDefault()))
-    return "Próxima visita agendada:\n$date\n\nMotivo:\n${visit.reason}"
 }
 
 class VisitCloseViewModelFactory(

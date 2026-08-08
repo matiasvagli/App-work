@@ -74,6 +74,7 @@ fun VisitCloseScreen(
             when (event) {
                 is VisitCloseEvent.Message -> snackbarHostState.showSnackbar(event.text)
                 is VisitCloseEvent.Saved -> onSaved(event.result.visitId, event.result.receiptId)
+                VisitCloseEvent.WorkSaved -> Unit
             }
         }
     }
@@ -124,7 +125,7 @@ private fun VisitCloseContent(uiState: VisitCloseUiState, viewModel: VisitCloseV
 }
 
 @Composable
-private fun VisitSummaryCard(uiState: VisitCloseUiState) {
+internal fun VisitSummaryCard(uiState: VisitCloseUiState) {
     val visit = uiState.visit
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -143,7 +144,7 @@ private fun VisitSummaryCard(uiState: VisitCloseUiState) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun WorkCard(uiState: VisitCloseUiState, viewModel: VisitCloseViewModel) {
+internal fun WorkCard(uiState: VisitCloseUiState, viewModel: VisitCloseViewModel) {
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             SectionTitle("Trabajo realizado")

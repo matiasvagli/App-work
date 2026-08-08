@@ -11,6 +11,7 @@ import com.matiasdev.elecapp.features.finance.ui.RegisterPaymentScreen
 import com.matiasdev.elecapp.features.finance.ui.ServiceReceiptDetailScreen
 import com.matiasdev.elecapp.features.finance.ui.ServiceReceiptListScreen
 import com.matiasdev.elecapp.features.finance.ui.VisitCloseScreen
+import com.matiasdev.elecapp.features.finance.ui.VisitWorkScreen
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
@@ -52,6 +53,17 @@ fun NavGraphBuilder.financeRoutes(
                 navController.popBackStack(AppRoutes.visitDetail(savedVisitId), inclusive = false)
                 if (receiptId != null) navController.navigate(AppRoutes.serviceReceiptDetail(receiptId)) { launchSingleTop = true }
             },
+        )
+    }
+    composable(AppRoutes.VISIT_WORK, AppRoutes.visitIdArguments) { backStackEntry ->
+        VisitWorkScreen(
+            clientRepository = clientRepository,
+            visitRepository = visitRepository,
+            workSessionRepository = workSessionRepository,
+            financeRepository = financeRepository,
+            visitId = backStackEntry.arguments?.getString(AppRoutes.VISIT_ID).orEmpty(),
+            onBackClick = { navController.navigateUp() },
+            onSaved = { navController.navigateUp() },
         )
     }
     composable(AppRoutes.FINANCE_DASHBOARD) {

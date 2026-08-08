@@ -10,6 +10,7 @@ import com.matiasdev.elecapp.features.finance.domain.ServiceReceiptItem
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseDraft
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseResult
 import com.matiasdev.elecapp.features.finance.domain.VisitCompletion
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkDraft
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 
@@ -35,6 +36,8 @@ interface FinanceRepository {
     suspend fun startQuickVisit(draft: QuickVisitDraft, pauseRunningVisit: Boolean): String
 
     suspend fun closeVisit(visitId: String, draft: VisitCloseDraft): VisitCloseResult
+
+    suspend fun saveVisitWorkDraft(visitId: String, draft: VisitWorkDraft)
 
     suspend fun registerPayment(
         receiptId: String?,

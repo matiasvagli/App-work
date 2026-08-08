@@ -11,6 +11,7 @@ import com.matiasdev.elecapp.features.finance.domain.QuickVisitDraft
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseDraft
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseResult
 import com.matiasdev.elecapp.features.finance.domain.VisitCompletion
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkDraft
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -23,6 +24,8 @@ class FakeFinanceRepository : FinanceRepository {
     var lastCloseResult: VisitCloseResult? = null
         private set
     var lastQuickVisitDraft: QuickVisitDraft? = null
+        private set
+    var lastVisitWorkDraft: VisitWorkDraft? = null
         private set
     override fun observeReceipts(): Flow<List<ServiceReceipt>> = flowOf(emptyList())
     override fun observeReceiptsByClient(clientId: String): Flow<List<ServiceReceipt>> = flowOf(emptyList())
@@ -41,6 +44,9 @@ class FakeFinanceRepository : FinanceRepository {
         closeCallCount += 1
         lastCloseDraft = draft
         return VisitCloseResult(visitId, if (draft.generateReceipt) "receipt" else null).also { lastCloseResult = it }
+    }
+    override suspend fun saveVisitWorkDraft(visitId: String, draft: VisitWorkDraft) {
+        lastVisitWorkDraft = draft
     }
     override suspend fun registerPayment(receiptId: String?, clientId: String, visitId: String?, draft: PaymentDraft): RegisterPaymentResult {
         return RegisterPaymentResult("payment", ServiceReceiptStatus.ISSUED)

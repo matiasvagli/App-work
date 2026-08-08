@@ -23,6 +23,7 @@ import com.matiasdev.elecapp.features.finance.domain.ServiceReceiptStatus
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseDraft
 import com.matiasdev.elecapp.features.finance.domain.VisitCloseResult
 import com.matiasdev.elecapp.features.finance.domain.VisitCompletion
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkDraft
 import com.matiasdev.elecapp.features.visits.data.VisitDao
 import com.matiasdev.elecapp.features.visits.data.VisitEntity
 import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionDao
@@ -132,9 +133,15 @@ class RoomFinanceRepository(
             sessionDao.closeActiveSession(visitId, now.toEpochMilli(), VisitWorkSessionStatus.COMPLETED.name, now.toEpochMilli())
         }
         visitDao.completeVisit(visitId, now.toEpochMilli(), draft.workPerformed.trim(), draft.pendingWork?.trim()?.ifBlank { null }, now.toEpochMilli())
-        completionDao.upsert(newCompletion(visitId, draft, now))
+        completionDao.upsert(newCompletion(visitId, draft, now, completionDao.findByVisitId(visitId)))
         val receiptId = if (draft.generateReceipt) createIssuedReceipt(visit.clientId, visitId, draft, now) else null
         VisitCloseResult(visitId = visitId, receiptId = receiptId)
+    }
+
+    override suspend fun saveVisitWorkDraft(visitId: String, draft: VisitWorkDraft): Unit = database.withTransaction {
+        visitDao.findActiveById(visitId) ?: error("Visita no encontrada")
+        val now = timeProvider.now()
+        completionDao.upsert(newWorkDraftCompletion(visitId, draft, now, completionDao.findByVisitId(visitId)))
     }
 
     override suspend fun registerPayment(
@@ -206,9 +213,14 @@ class RoomFinanceRepository(
         return status
     }
 
-    private fun newCompletion(visitId: String, draft: VisitCloseDraft, now: Instant): VisitCompletionEntity {
+    private fun newCompletion(
+        visitId: String,
+        draft: VisitCloseDraft,
+        now: Instant,
+        existing: VisitCompletionEntity?,
+    ): VisitCompletionEntity {
         return VisitCompletion(
-            id = UUID.randomUUID().toString(),
+            id = existing?.id ?: UUID.randomUUID().toString(),
             visitId = visitId,
             diagnosis = draft.diagnosis?.trim()?.ifBlank { null },
             workType = draft.workType,
@@ -224,7 +236,36 @@ class RoomFinanceRepository(
             internalNotes = draft.internalNotes?.trim()?.ifBlank { null },
             customerNotes = draft.customerNotes?.trim()?.ifBlank { null },
             completedAt = now,
-            createdAt = now,
+            createdAt = existing?.createdAt?.let(Instant::ofEpochMilli) ?: now,
+            updatedAt = now,
+            isDeleted = false,
+        ).toEntity()
+    }
+
+    private fun newWorkDraftCompletion(
+        visitId: String,
+        draft: VisitWorkDraft,
+        now: Instant,
+        existing: VisitCompletionEntity?,
+    ): VisitCompletionEntity {
+        return VisitCompletion(
+            id = existing?.id ?: UUID.randomUUID().toString(),
+            visitId = visitId,
+            diagnosis = draft.diagnosis?.trim()?.ifBlank { null },
+            workType = draft.workType,
+            workPerformed = draft.workPerformed.trim(),
+            workSectors = draft.workSectors?.trim()?.ifBlank { null },
+            workItems = draft.workItems?.trim()?.ifBlank { null },
+            workTests = draft.workTests?.trim()?.ifBlank { null },
+            workObservations = draft.workObservations?.trim()?.ifBlank { null },
+            technicalResult = draft.technicalResult,
+            pendingWork = draft.pendingWork?.trim()?.ifBlank { null },
+            requiresFollowUp = existing?.requiresFollowUp ?: false,
+            followUpSuggestedAt = existing?.followUpSuggestedAt?.let(Instant::ofEpochMilli),
+            internalNotes = draft.internalNotes?.trim()?.ifBlank { null },
+            customerNotes = draft.customerNotes?.trim()?.ifBlank { null },
+            completedAt = existing?.completedAt?.let(Instant::ofEpochMilli) ?: now,
+            createdAt = existing?.createdAt?.let(Instant::ofEpochMilli) ?: now,
             updatedAt = now,
             isDeleted = false,
         ).toEntity()

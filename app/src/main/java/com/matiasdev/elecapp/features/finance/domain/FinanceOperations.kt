@@ -45,6 +45,20 @@ data class VisitCloseDraft(
     val initialPayments: List<PaymentDraft>,
 )
 
+data class VisitWorkDraft(
+    val diagnosis: String?,
+    val workType: VisitWorkType?,
+    val workPerformed: String,
+    val workSectors: String?,
+    val workItems: String?,
+    val workTests: String?,
+    val workObservations: String?,
+    val technicalResult: VisitTechnicalResult?,
+    val pendingWork: String?,
+    val internalNotes: String?,
+    val customerNotes: String?,
+)
+
 data class VisitCloseResult(
     val visitId: String,
     val receiptId: String?,

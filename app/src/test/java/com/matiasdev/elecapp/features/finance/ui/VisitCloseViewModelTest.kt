@@ -162,6 +162,24 @@ class VisitCloseViewModelTest {
     }
 
     @Test
+    fun `saving work draft stores work details without closing visit`() = runTest(dispatcher) {
+        val finance = FakeFinanceRepository()
+        val viewModel = viewModel(finance)
+        completeRequiredFields(viewModel)
+        viewModel.selectWorkType(VisitWorkType.DIAGNOSIS)
+        viewModel.updateText(VisitCloseTextField.DIAGNOSIS, "Falla intermitente")
+        viewModel.updateText(VisitCloseTextField.WORK_SECTORS, "Tablero principal")
+        viewModel.saveWorkDraft()
+
+        val draft = requireNotNull(finance.lastVisitWorkDraft)
+        assertEquals(0, finance.closeCallCount)
+        assertEquals(VisitWorkType.DIAGNOSIS, draft.workType)
+        assertEquals("Falla intermitente", draft.diagnosis)
+        assertEquals("Cambio de térmica y revisión de tablero", draft.workPerformed)
+        assertEquals("Tablero principal", draft.workSectors)
+    }
+
+    @Test
     fun `close sends structured work fields and technical result`() = runTest(dispatcher) {
         val finance = FakeFinanceRepository()
         val viewModel = viewModel(finance)
