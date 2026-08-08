@@ -86,7 +86,7 @@ fun NavGraphBuilder.financeRoutes(
             onBackClick = { navController.navigateUp() },
             onHomeClick = { navController.navigateHome() },
             onVisitClick = { navController.navigate(AppRoutes.visitDetail(it)) { launchSingleTop = true } },
-            onFinalReportClick = { navController.navigate(AppRoutes.inspectionFinalReport(it)) { launchSingleTop = true } },
+            onFullReportClick = { navController.navigate(AppRoutes.inspectionOverview(it)) { launchSingleTop = true } },
             onRegisterPaymentClick = { receiptId, clientId, visitId ->
                 navController.navigate(AppRoutes.registerPayment(receiptId, clientId, visitId))
             },

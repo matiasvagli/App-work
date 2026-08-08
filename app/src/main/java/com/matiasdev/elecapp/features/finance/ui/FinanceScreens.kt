@@ -82,7 +82,7 @@ fun ServiceReceiptDetailScreen(
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
     onVisitClick: (String) -> Unit,
-    onFinalReportClick: (String) -> Unit,
+    onFullReportClick: (String) -> Unit,
     onRegisterPaymentClick: (String, String, String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ReceiptDetailViewModel = viewModel(factory = ReceiptDetailViewModelFactory(financeRepository, clientRepository, inspectionRepository, receiptId)),
@@ -113,7 +113,7 @@ fun ServiceReceiptDetailScreen(
         LazyColumn(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (receipt == null) item { Text("Comprobante no encontrado") } else {
                 item { ReceiptHeader(receipt, uiState.client?.fullName, uiState.payments) }
-                item { ReceiptContextActions(uiState, onVisitClick, onFinalReportClick) }
+                item { ReceiptContextActions(uiState, onVisitClick, onFullReportClick) }
                 item { ItemsCard(uiState.items) }
                 item { PaymentsCard(uiState) { onRegisterPaymentClick(receipt.id, receipt.clientId, receipt.visitId) } }
             }
@@ -267,7 +267,7 @@ private fun ReceiptRow(receipt: ServiceReceipt, onReceiptClick: (String) -> Unit
 }
 
 @Composable
-private fun ReceiptContextActions(uiState: ReceiptDetailUiState, onVisitClick: (String) -> Unit, onFinalReportClick: (String) -> Unit) {
+private fun ReceiptContextActions(uiState: ReceiptDetailUiState, onVisitClick: (String) -> Unit, onFullReportClick: (String) -> Unit) {
     val visitId = uiState.receipt?.visitId
     if (visitId == null && uiState.inspectionId == null) return
     Card(Modifier.fillMaxWidth()) {
@@ -277,7 +277,7 @@ private fun ReceiptContextActions(uiState: ReceiptDetailUiState, onVisitClick: (
                 OutlinedButton(onClick = { onVisitClick(it) }, modifier = Modifier.fillMaxWidth()) { Text("Ver visita") }
             }
             uiState.inspectionId?.let {
-                Button(onClick = { onFinalReportClick(it) }, modifier = Modifier.fillMaxWidth()) { Text("Ver informe") }
+                Button(onClick = { onFullReportClick(it) }, modifier = Modifier.fillMaxWidth()) { Text("Ver informe completo") }
             }
         }
     }
