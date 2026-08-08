@@ -82,12 +82,12 @@ fun VisitDetailContent(
             if (visit.status == VisitStatus.IN_PROGRESS || visit.status == VisitStatus.COMPLETED) {
                 item { WorkTimerCard(uiState) }
             }
-            item { VisitQuickActions(uiState, onInspectionClick, onQuoteClick, onMaterialClick, onElectricalToolsClick) }
             item { VisitDocumentsCard(uiState, onInspectionClick, onQuoteClick, onMaterialClick) }
             if (visit.status == VisitStatus.COMPLETED) {
                 item { WorkClosureCard(uiState, onReceiptClick, onRegisterPaymentClick) }
             }
             item { WorkSessionsCard(uiState, onEditSessionNotesClick) }
+            item { VisitQuickActions(uiState, onInspectionClick, onQuoteClick, onMaterialClick, onElectricalToolsClick) }
             item { VisitTimelineCard(uiState) }
             item { VisitNotesCard(visit) }
         }
@@ -188,7 +188,7 @@ private fun WorkTimerCard(uiState: VisitDetailUiState) {
     val summary = uiState.workSummary ?: return
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(if (visit.status == VisitStatus.IN_PROGRESS) "VISITA EN CURSO" else "Resumen de tiempos", fontWeight = FontWeight.Bold)
+            Text(if (visit.status == VisitStatus.IN_PROGRESS) "Trabajo en curso" else "Resumen del trabajo", fontWeight = FontWeight.Bold)
             Text("Tiempo trabajado", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(summary.totalWorkedDuration.formatTimerText(), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             visit.startedAt?.let { Text("Inicio: ${it.formatVisitDateTime()}") }
@@ -213,7 +213,7 @@ private fun VisitQuickActions(
     val client = uiState.client
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Acciones de trabajo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Acciones rápidas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onInspectionClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Relevamiento") }
                 OutlinedButton(onClick = onQuoteClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Presupuesto") }
