@@ -146,6 +146,22 @@ class VisitCloseViewModelTest {
     }
 
     @Test
+    fun `close without receipt skips amount and payment and returns no receipt`() = runTest(dispatcher) {
+        val finance = FakeFinanceRepository()
+        val viewModel = viewModel(finance)
+        completeRequiredFields(viewModel)
+        viewModel.selectGenerateReceipt(false)
+        viewModel.save()
+
+        val draft = requireNotNull(finance.lastCloseDraft)
+        assertEquals(1, finance.closeCallCount)
+        assertEquals(false, draft.generateReceipt)
+        assertTrue(draft.items.isEmpty())
+        assertTrue(draft.initialPayments.isEmpty())
+        assertEquals(null, finance.lastCloseResult?.receiptId)
+    }
+
+    @Test
     fun `close sends structured work fields and technical result`() = runTest(dispatcher) {
         val finance = FakeFinanceRepository()
         val viewModel = viewModel(finance)

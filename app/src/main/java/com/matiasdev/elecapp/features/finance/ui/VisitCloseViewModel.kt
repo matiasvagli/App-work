@@ -78,6 +78,7 @@ data class VisitCloseUiState(
     val mixedMercadoPagoCents: Long = 0L,
     val transferReference: String = "",
     val mercadoPagoReference: String = "",
+    val generateReceipt: Boolean = true,
     val followUpDraft: FollowUpDraft = FollowUpDraft(),
     val scheduledFollowUpVisit: Visit? = null,
     val showFollowUpForm: Boolean = false,
@@ -171,6 +172,10 @@ class VisitCloseViewModel(
 
     fun selectPaymentMethod(method: ClosePaymentMethod) {
         _uiState.update { it.copy(selectedPaymentMethod = method, validationErrors = emptyList()) }
+    }
+
+    fun selectGenerateReceipt(generateReceipt: Boolean) {
+        _uiState.update { it.copy(generateReceipt = generateReceipt, validationErrors = emptyList()) }
     }
 
     fun showFollowUpForm() {
@@ -288,9 +293,9 @@ class VisitCloseViewModel(
     private fun validate(state: VisitCloseUiState): List<String> = buildList {
         if (state.workPerformed.isBlank()) add("Ingresá el trabajo realizado")
         if (state.technicalResult == null) add("Seleccioná el resultado de la visita")
-        if (!state.closeWithoutCharge && state.laborCents <= 0L) add("La mano de obra debe ser mayor a cero")
-        if (state.materialsCents < 0L) add("Materiales no puede ser negativo")
-        if (state.selectedPaymentMethod == ClosePaymentMethod.MIXED && !state.closeWithoutCharge) {
+        if (state.generateReceipt && !state.closeWithoutCharge && state.laborCents <= 0L) add("La mano de obra debe ser mayor a cero")
+        if (state.generateReceipt && state.materialsCents < 0L) add("Materiales no puede ser negativo")
+        if (state.generateReceipt && state.selectedPaymentMethod == ClosePaymentMethod.MIXED && !state.closeWithoutCharge) {
             if (state.mixedDistributedCents != state.totalCents) add("La suma del pago mixto debe coincidir con el total")
             if (state.mixedDistributedCents <= 0L) add("Distribuí el total entre los métodos de pago")
         }
@@ -298,8 +303,8 @@ class VisitCloseViewModel(
 
     private fun VisitCloseUiState.toDraft(now: Instant): VisitCloseDraft {
         val items = buildList {
-            if (laborCents > 0L) add(ReceiptItemDraft(ServiceReceiptItemType.LABOR, "Mano de obra", 1_000, laborCents))
-            if (materialsCents > 0L) add(ReceiptItemDraft(ServiceReceiptItemType.MATERIAL, "Materiales", 1_000, materialsCents))
+            if (generateReceipt && laborCents > 0L) add(ReceiptItemDraft(ServiceReceiptItemType.LABOR, "Mano de obra", 1_000, laborCents))
+            if (generateReceipt && materialsCents > 0L) add(ReceiptItemDraft(ServiceReceiptItemType.MATERIAL, "Materiales", 1_000, materialsCents))
         }
         val paymentNotes = scheduledFollowUpVisit?.let { followUp -> followUpText(followUp) }
         return VisitCloseDraft(
@@ -316,13 +321,13 @@ class VisitCloseViewModel(
             followUpSuggestedAt = scheduledFollowUpVisit?.scheduledAt,
             internalNotes = internalNotes,
             customerNotes = listOf(customerNotes.trim().ifBlank { null }, paymentNotes).filterNotNull().joinToString("\n\n").ifBlank { null },
-            generateReceipt = true,
+            generateReceipt = generateReceipt,
             quoteId = null,
             receiptTitle = "Comprobante de servicio",
             receiptDescription = workPerformed,
             items = items,
             discountCents = 0L,
-            initialPayments = if (closeWithoutCharge) emptyList() else paymentDrafts(now),
+            initialPayments = if (!generateReceipt || closeWithoutCharge) emptyList() else paymentDrafts(now),
         )
     }
 

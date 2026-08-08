@@ -94,7 +94,7 @@ fun VisitCloseScreen(
             ) {
                 Icon(Icons.Default.Check, contentDescription = null)
                 Text(
-                    if (uiState.scheduledFollowUpVisit == null) "Cobrar y finalizar" else "Cobrar, finalizar y confirmar agenda",
+                    closeButtonLabel(uiState),
                     Modifier.padding(start = 8.dp),
                 )
             }
@@ -113,8 +113,11 @@ private fun VisitCloseContent(uiState: VisitCloseUiState, viewModel: VisitCloseV
     ) {
         VisitSummaryCard(uiState)
         WorkCard(uiState, viewModel)
-        AmountCard(uiState, viewModel)
-        PaymentMethodCard(uiState, viewModel)
+        BillingModeCard(uiState, viewModel)
+        if (uiState.generateReceipt) {
+            AmountCard(uiState, viewModel)
+            PaymentMethodCard(uiState, viewModel)
+        }
         FollowUpCard(uiState, viewModel)
         FinalCard(uiState, viewModel)
     }
@@ -173,6 +176,35 @@ private fun WorkCard(uiState: VisitCloseUiState, viewModel: VisitCloseViewModel)
             TextField("Pendientes / próximos pasos", uiState.pendingWork) { viewModel.updateText(VisitCloseTextField.PENDING, it) }
             TextField("Notas para el cliente", uiState.customerNotes) { viewModel.updateText(VisitCloseTextField.CUSTOMER_NOTES, it) }
             TextField("Notas internas", uiState.internalNotes) { viewModel.updateText(VisitCloseTextField.INTERNAL_NOTES, it) }
+        }
+    }
+}
+
+@Composable
+private fun BillingModeCard(uiState: VisitCloseUiState, viewModel: VisitCloseViewModel) {
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            SectionTitle("Salida del cierre")
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                FilterChip(
+                    selected = uiState.generateReceipt,
+                    onClick = { viewModel.selectGenerateReceipt(true) },
+                    label = { Text("Trabajo cobrable") },
+                )
+                FilterChip(
+                    selected = !uiState.generateReceipt,
+                    onClick = { viewModel.selectGenerateReceipt(false) },
+                    label = { Text("Solo informe") },
+                )
+            }
+            Text(
+                if (uiState.generateReceipt) {
+                    "Se generará comprobante interno y pago inicial."
+                } else {
+                    "La visita se finaliza sin comprobante ni pago."
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -260,8 +292,12 @@ private fun FinalCard(uiState: VisitCloseUiState, viewModel: VisitCloseViewModel
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             SectionTitle("Confirmación final")
-            SummaryLine("Total", MoneyFormatter.format(uiState.totalCents))
-            Text("Se emitirá un comprobante interno de servicio. No válido como factura.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (uiState.generateReceipt) {
+                SummaryLine("Total", MoneyFormatter.format(uiState.totalCents))
+                Text("Se emitirá un comprobante interno de servicio. No válido como factura.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Text("Se guardará el cierre técnico de la visita sin generar comprobante.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
             uiState.validationErrors.forEach { Text(it, color = MaterialTheme.colorScheme.error) }
         }
     }
@@ -338,6 +374,15 @@ private fun ClosePaymentMethod.label(): String = when (this) {
     ClosePaymentMethod.BANK_TRANSFER -> "Transferencia"
     ClosePaymentMethod.MERCADO_PAGO -> "Mercado Pago"
     ClosePaymentMethod.MIXED -> "Mixto"
+}
+
+private fun closeButtonLabel(uiState: VisitCloseUiState): String {
+    return when {
+        !uiState.generateReceipt && uiState.scheduledFollowUpVisit == null -> "Finalizar sin cobro"
+        !uiState.generateReceipt -> "Finalizar y confirmar agenda"
+        uiState.scheduledFollowUpVisit == null -> "Cobrar y finalizar"
+        else -> "Cobrar, finalizar y confirmar agenda"
+    }
 }
 
 private fun java.time.Instant.timeText(): String = DateTimeFormatter.ofPattern("HH:mm").format(atZone(ZoneId.systemDefault()))

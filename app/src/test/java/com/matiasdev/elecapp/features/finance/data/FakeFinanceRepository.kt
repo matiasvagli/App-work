@@ -20,6 +20,8 @@ class FakeFinanceRepository : FinanceRepository {
         private set
     var lastCloseDraft: VisitCloseDraft? = null
         private set
+    var lastCloseResult: VisitCloseResult? = null
+        private set
     var lastQuickVisitDraft: QuickVisitDraft? = null
         private set
     override fun observeReceipts(): Flow<List<ServiceReceipt>> = flowOf(emptyList())
@@ -38,7 +40,7 @@ class FakeFinanceRepository : FinanceRepository {
     override suspend fun closeVisit(visitId: String, draft: VisitCloseDraft): VisitCloseResult {
         closeCallCount += 1
         lastCloseDraft = draft
-        return VisitCloseResult(visitId, "receipt")
+        return VisitCloseResult(visitId, if (draft.generateReceipt) "receipt" else null).also { lastCloseResult = it }
     }
     override suspend fun registerPayment(receiptId: String?, clientId: String, visitId: String?, draft: PaymentDraft): RegisterPaymentResult {
         return RegisterPaymentResult("payment", ServiceReceiptStatus.ISSUED)
