@@ -19,6 +19,7 @@ import com.matiasdev.elecapp.features.finance.domain.PaymentMethod
 import com.matiasdev.elecapp.features.finance.domain.ServiceReceipt
 import com.matiasdev.elecapp.features.finance.domain.ServiceReceiptItem
 import com.matiasdev.elecapp.features.finance.domain.displayNumber
+import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import java.time.Clock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +38,7 @@ data class ReceiptDetailUiState(
     val client: Client? = null,
     val items: List<ServiceReceiptItem> = emptyList(),
     val payments: List<Payment> = emptyList(),
+    val inspectionId: String? = null,
 )
 
 data class ReceiptListUiState(val receipts: List<ServiceReceipt> = emptyList())
@@ -68,6 +70,7 @@ sealed interface RegisterPaymentEvent {
 class ReceiptDetailViewModel(
     private val financeRepository: FinanceRepository,
     private val clientRepository: ClientRepository,
+    private val inspectionRepository: InspectionRepository,
     private val receiptId: String,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ReceiptDetailUiState())
@@ -83,7 +86,8 @@ class ReceiptDetailViewModel(
                 financeRepository.observePayments(receiptId),
             ) { receipt, items, payments -> Triple(receipt, items, payments) }.collect { (receipt, items, payments) ->
                 val client = receipt?.let { clientRepository.findById(it.clientId) }
-                _uiState.update { it.copy(receipt = receipt, client = client, items = items, payments = payments) }
+                val inspectionId = receipt?.visitId?.let { inspectionRepository.findActiveInspectionForVisit(it)?.id }
+                _uiState.update { it.copy(receipt = receipt, client = client, items = items, payments = payments, inspectionId = inspectionId) }
             }
         }
     }
@@ -175,9 +179,14 @@ class FinanceDashboardViewModel(private val financeRepository: FinanceRepository
     }
 }
 
-class ReceiptDetailViewModelFactory(private val financeRepository: FinanceRepository, private val clientRepository: ClientRepository, private val receiptId: String) : ViewModelProvider.Factory {
+class ReceiptDetailViewModelFactory(
+    private val financeRepository: FinanceRepository,
+    private val clientRepository: ClientRepository,
+    private val inspectionRepository: InspectionRepository,
+    private val receiptId: String,
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = ReceiptDetailViewModel(financeRepository, clientRepository, receiptId) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = ReceiptDetailViewModel(financeRepository, clientRepository, inspectionRepository, receiptId) as T
 }
 
 class ReceiptListViewModelFactory(private val financeRepository: FinanceRepository, private val clientId: String?) : ViewModelProvider.Factory {

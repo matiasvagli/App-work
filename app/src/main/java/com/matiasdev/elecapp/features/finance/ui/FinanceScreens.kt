@@ -19,6 +19,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -45,6 +46,7 @@ import com.matiasdev.elecapp.features.finance.domain.PaymentBalanceCalculator
 import com.matiasdev.elecapp.features.finance.domain.PaymentMethod
 import com.matiasdev.elecapp.features.finance.domain.ServiceReceipt
 import com.matiasdev.elecapp.features.finance.domain.displayNumber
+import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 
 
 
@@ -75,12 +77,15 @@ fun ServiceReceiptListScreen(
 fun ServiceReceiptDetailScreen(
     financeRepository: FinanceRepository,
     clientRepository: ClientRepository,
+    inspectionRepository: InspectionRepository,
     receiptId: String,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
+    onVisitClick: (String) -> Unit,
+    onFinalReportClick: (String) -> Unit,
     onRegisterPaymentClick: (String, String, String?) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReceiptDetailViewModel = viewModel(factory = ReceiptDetailViewModelFactory(financeRepository, clientRepository, receiptId)),
+    viewModel: ReceiptDetailViewModel = viewModel(factory = ReceiptDetailViewModelFactory(financeRepository, clientRepository, inspectionRepository, receiptId)),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -108,6 +113,7 @@ fun ServiceReceiptDetailScreen(
         LazyColumn(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (receipt == null) item { Text("Comprobante no encontrado") } else {
                 item { ReceiptHeader(receipt, uiState.client?.fullName, uiState.payments) }
+                item { ReceiptContextActions(uiState, onVisitClick, onFinalReportClick) }
                 item { ItemsCard(uiState.items) }
                 item { PaymentsCard(uiState) { onRegisterPaymentClick(receipt.id, receipt.clientId, receipt.visitId) } }
             }
@@ -256,6 +262,23 @@ private fun ReceiptRow(receipt: ServiceReceipt, onReceiptClick: (String) -> Unit
             Text(receipt.displayNumber(), fontWeight = FontWeight.SemiBold)
             Text(receipt.status.name)
             Text(MoneyFormatter.format(receipt.totalCents), style = MaterialTheme.typography.titleMedium)
+        }
+    }
+}
+
+@Composable
+private fun ReceiptContextActions(uiState: ReceiptDetailUiState, onVisitClick: (String) -> Unit, onFinalReportClick: (String) -> Unit) {
+    val visitId = uiState.receipt?.visitId
+    if (visitId == null && uiState.inspectionId == null) return
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Trabajo e informe", fontWeight = FontWeight.SemiBold)
+            visitId?.let {
+                OutlinedButton(onClick = { onVisitClick(it) }, modifier = Modifier.fillMaxWidth()) { Text("Ver visita") }
+            }
+            uiState.inspectionId?.let {
+                Button(onClick = { onFinalReportClick(it) }, modifier = Modifier.fillMaxWidth()) { Text("Ver informe") }
+            }
         }
     }
 }

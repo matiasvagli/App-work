@@ -11,6 +11,7 @@ import com.matiasdev.elecapp.features.finance.ui.RegisterPaymentScreen
 import com.matiasdev.elecapp.features.finance.ui.ServiceReceiptDetailScreen
 import com.matiasdev.elecapp.features.finance.ui.ServiceReceiptListScreen
 import com.matiasdev.elecapp.features.finance.ui.VisitCloseScreen
+import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 
@@ -20,6 +21,7 @@ fun NavGraphBuilder.financeRoutes(
     visitRepository: VisitRepository,
     workSessionRepository: VisitWorkSessionRepository,
     financeRepository: FinanceRepository,
+    inspectionRepository: InspectionRepository,
 ) {
     composable(AppRoutes.QUICK_VISIT) {
         QuickVisitScreen(
@@ -67,9 +69,12 @@ fun NavGraphBuilder.financeRoutes(
         ServiceReceiptDetailScreen(
             financeRepository = financeRepository,
             clientRepository = clientRepository,
+            inspectionRepository = inspectionRepository,
             receiptId = backStackEntry.arguments?.getString(AppRoutes.RECEIPT_ID).orEmpty(),
             onBackClick = { navController.navigateUp() },
             onHomeClick = { navController.navigateHome() },
+            onVisitClick = { navController.navigate(AppRoutes.visitDetail(it)) { launchSingleTop = true } },
+            onFinalReportClick = { navController.navigate(AppRoutes.inspectionFinalReport(it)) { launchSingleTop = true } },
             onRegisterPaymentClick = { receiptId, clientId, visitId ->
                 navController.navigate(AppRoutes.registerPayment(receiptId, clientId, visitId))
             },

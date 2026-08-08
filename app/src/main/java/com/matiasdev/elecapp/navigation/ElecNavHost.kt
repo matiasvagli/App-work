@@ -207,7 +207,7 @@ fun ElecNavHost(
             electricalRuleConfigRepository,
         )
         documentRoutes(navController, clientRepository, visitRepository, inspectionRepository, quoteRepository, materialRepository)
-        financeRoutes(navController, clientRepository, visitRepository, workSessionRepository, financeRepository)
+        financeRoutes(navController, clientRepository, visitRepository, workSessionRepository, financeRepository, inspectionRepository)
         composable(AppRoutes.SETTINGS) {
             SettingsScreen(
                 repository = settingsRepository,
