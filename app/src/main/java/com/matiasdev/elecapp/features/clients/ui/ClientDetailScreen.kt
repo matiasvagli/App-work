@@ -64,6 +64,7 @@ fun ClientDetailScreen(
     onRegisterPaymentClick: (String) -> Unit,
     onCreateQuoteClick: (String) -> Unit,
     onCreateMaterialClick: (String) -> Unit,
+    onWorkHistoryClick: (String) -> Unit,
     onVisitClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ClientDetailViewModel = viewModel(
@@ -105,6 +106,7 @@ fun ClientDetailScreen(
             onRegisterPaymentClick = onRegisterPaymentClick,
             onCreateQuoteClick = onCreateQuoteClick,
             onCreateMaterialClick = onCreateMaterialClick,
+            onWorkHistoryClick = onWorkHistoryClick,
             onVisitClick = onVisitClick,
             modifier = Modifier.padding(padding),
         )
@@ -140,6 +142,7 @@ private fun ClientDetailContent(
     onRegisterPaymentClick: (String) -> Unit,
     onCreateQuoteClick: (String) -> Unit,
     onCreateMaterialClick: (String) -> Unit,
+    onWorkHistoryClick: (String) -> Unit,
     onVisitClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -160,6 +163,7 @@ private fun ClientDetailContent(
             ClientInfo(client)
             ClientQuickActions(client, onScheduleVisitClick, onCreateQuoteClick, onCreateMaterialClick)
             ClientFinanceActions(client, onViewReceiptsClick, onRegisterPaymentClick)
+            ClientWorkHistoryAction(client, onWorkHistoryClick)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { onEditClick(client.id) }) {
                     Text("Editar")
@@ -247,6 +251,20 @@ private fun ClientQuickActions(
             OutlinedButton(onClick = { onCreateMaterialClick(client.id) }) {
                 Text("Nueva lista")
             }
+        }
+    }
+}
+
+@Composable
+private fun ClientWorkHistoryAction(
+    client: Client,
+    onWorkHistoryClick: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Historial de trabajos", style = MaterialTheme.typography.titleMedium)
+        Text("Trabajos finalizados para este cliente.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        OutlinedButton(onClick = { onWorkHistoryClick(client.id) }, modifier = Modifier.fillMaxWidth()) {
+            Text("Ver historial")
         }
     }
 }

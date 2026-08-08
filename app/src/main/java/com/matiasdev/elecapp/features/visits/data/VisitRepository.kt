@@ -2,6 +2,7 @@ package com.matiasdev.elecapp.features.visits.data
 
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
+import com.matiasdev.elecapp.features.visits.domain.WorkHistoryItem
 import kotlinx.coroutines.flow.Flow
 
 interface VisitRepository {
@@ -16,6 +17,10 @@ interface VisitRepository {
     fun observeNextFutureVisit(fromMillis: Long): Flow<Visit?>
 
     fun observeCurrentInProgressVisit(): Flow<Visit?>
+
+    fun observeCompletedWorkHistory(): Flow<List<WorkHistoryItem>>
+
+    fun observeCompletedWorkHistoryForClient(clientId: String): Flow<List<WorkHistoryItem>>
 
     suspend fun findActiveById(id: String): Visit?
 

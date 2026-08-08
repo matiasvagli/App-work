@@ -2,6 +2,7 @@ package com.matiasdev.elecapp.features.visits.data
 
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
+import com.matiasdev.elecapp.features.visits.domain.WorkHistoryItem
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -34,6 +35,16 @@ class RoomVisitRepository(
 
     override fun observeCurrentInProgressVisit(): Flow<Visit?> {
         return visitDao.observeCurrentInProgressVisit().map { it?.toDomain() }
+    }
+
+    override fun observeCompletedWorkHistory(): Flow<List<WorkHistoryItem>> {
+        return visitDao.observeCompletedWorkHistory()
+            .map { items -> items.map(WorkHistoryItemEntity::toDomain) }
+    }
+
+    override fun observeCompletedWorkHistoryForClient(clientId: String): Flow<List<WorkHistoryItem>> {
+        return visitDao.observeCompletedWorkHistoryForClient(clientId)
+            .map { items -> items.map(WorkHistoryItemEntity::toDomain) }
     }
 
     override suspend fun findActiveById(id: String): Visit? {

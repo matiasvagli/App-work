@@ -2,6 +2,8 @@ package com.matiasdev.elecapp.features.finance.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -12,9 +14,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -25,11 +31,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
+import com.matiasdev.elecapp.features.finance.domain.VisitWorkType
+import com.matiasdev.elecapp.features.finance.domain.label
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 
@@ -84,7 +95,54 @@ fun VisitWorkScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             VisitSummaryCard(uiState)
-            WorkCard(uiState, viewModel)
+            VisitWorkDraftCard(uiState, viewModel)
         }
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun VisitWorkDraftCard(uiState: VisitCloseUiState, viewModel: VisitCloseViewModel) {
+    val descriptionFocusRequester = remember { FocusRequester() }
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Trabajo realizado", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Tipo de trabajo", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                VisitWorkType.entries.forEach { type ->
+                    FilterChip(
+                        selected = uiState.workType == type,
+                        onClick = {
+                            viewModel.selectWorkType(type)
+                            if (uiState.workPerformed.isBlank()) {
+                                val prefix = type.workDescriptionPrefix()
+                                if (prefix.isNotEmpty()) viewModel.updateText(VisitCloseTextField.WORK, prefix)
+                            }
+                            descriptionFocusRequester.requestFocus()
+                        },
+                        label = { Text(type.label()) },
+                    )
+                }
+            }
+            OutlinedTextField(
+                value = uiState.workPerformed,
+                onValueChange = { viewModel.updateText(VisitCloseTextField.WORK, it) },
+                label = { Text("Descripción del trabajo realizado") },
+                modifier = Modifier.fillMaxWidth().focusRequester(descriptionFocusRequester),
+                minLines = 5,
+            )
+        }
+    }
+}
+
+private fun VisitWorkType.workDescriptionPrefix(): String = when (this) {
+    VisitWorkType.REPAIR -> "Se reparó "
+    VisitWorkType.INSTALLATION -> "Se instaló "
+    VisitWorkType.REPLACEMENT -> "Se reemplazó "
+    VisitWorkType.DIAGNOSIS -> "Se diagnosticó "
+    VisitWorkType.FAULT_FINDING -> "Se realizó búsqueda de falla "
+    VisitWorkType.MAINTENANCE -> "Se realizó mantenimiento de "
+    VisitWorkType.TECHNICAL_INSPECTION -> "Se realizó relevamiento técnico de "
+    VisitWorkType.MODIFICATION -> "Se modificó "
+    VisitWorkType.OTHER -> ""
 }

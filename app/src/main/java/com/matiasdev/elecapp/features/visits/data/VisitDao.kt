@@ -56,6 +56,59 @@ interface VisitDao {
     )
     fun observeCurrentInProgressVisit(): Flow<VisitEntity?>
 
+    @Query(
+        """
+        SELECT
+            v.id AS visit_id,
+            v.client_id AS client_id,
+            c.full_name AS client_name,
+            v.completed_at AS completed_at,
+            v.reason AS reason,
+            vc.work_type AS work_type,
+            vc.work_performed AS work_description,
+            CASE
+                WHEN v.started_at IS NULL THEN NULL
+                WHEN ((v.completed_at - v.started_at) / 60000) < 0 THEN 0
+                ELSE ((v.completed_at - v.started_at) / 60000)
+            END AS duration_minutes
+        FROM visits v
+        INNER JOIN clients c ON c.id = v.client_id AND c.is_deleted = 0
+        LEFT JOIN visit_completions vc ON vc.visit_id = v.id AND vc.is_deleted = 0
+        WHERE v.is_deleted = 0
+            AND v.status = 'COMPLETED'
+            AND v.completed_at IS NOT NULL
+        ORDER BY v.completed_at DESC
+        """,
+    )
+    fun observeCompletedWorkHistory(): Flow<List<WorkHistoryItemEntity>>
+
+    @Query(
+        """
+        SELECT
+            v.id AS visit_id,
+            v.client_id AS client_id,
+            c.full_name AS client_name,
+            v.completed_at AS completed_at,
+            v.reason AS reason,
+            vc.work_type AS work_type,
+            vc.work_performed AS work_description,
+            CASE
+                WHEN v.started_at IS NULL THEN NULL
+                WHEN ((v.completed_at - v.started_at) / 60000) < 0 THEN 0
+                ELSE ((v.completed_at - v.started_at) / 60000)
+            END AS duration_minutes
+        FROM visits v
+        INNER JOIN clients c ON c.id = v.client_id AND c.is_deleted = 0
+        LEFT JOIN visit_completions vc ON vc.visit_id = v.id AND vc.is_deleted = 0
+        WHERE v.is_deleted = 0
+            AND v.client_id = :clientId
+            AND v.status = 'COMPLETED'
+            AND v.completed_at IS NOT NULL
+        ORDER BY v.completed_at DESC
+        """,
+    )
+    fun observeCompletedWorkHistoryForClient(clientId: String): Flow<List<WorkHistoryItemEntity>>
+
     @Query("SELECT * FROM visits WHERE id = :id AND is_deleted = 0 LIMIT 1")
     fun observeActiveVisitById(id: String): Flow<VisitEntity?>
 

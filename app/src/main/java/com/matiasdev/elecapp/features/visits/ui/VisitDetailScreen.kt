@@ -67,7 +67,6 @@ fun VisitDetailScreen(
     onQuoteClick: (String) -> Unit,
     onCreateMaterialClick: (String, String) -> Unit,
     onMaterialClick: (String) -> Unit,
-    onElectricalToolsClick: (String, String) -> Unit,
     onCloseVisitClick: (String) -> Unit,
     onReceiptClick: (String) -> Unit,
     onRegisterPaymentClick: (String, String, String?) -> Unit,
@@ -142,11 +141,6 @@ fun VisitDetailScreen(
                 if (list != null) onMaterialClick(list.id) else if (visit != null && client != null) onCreateMaterialClick(visit.id, client.id)
             },
             onWorkClick = { uiState.visit?.id?.let(onWorkClick) },
-            onElectricalToolsClick = {
-                val visit = uiState.visit
-                val client = uiState.client
-                if (visit != null && client != null) onElectricalToolsClick(visit.id, client.id)
-            },
             onStartVisitClick = viewModel::requestStartVisit,
             onPauseWorkClick = viewModel::pauseWork,
             onResumeWorkClick = viewModel::resumeWork,

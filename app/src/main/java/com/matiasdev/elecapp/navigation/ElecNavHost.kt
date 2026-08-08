@@ -47,6 +47,7 @@ import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.ui.ClientVisitsScreen
 import com.matiasdev.elecapp.features.visits.ui.VisitDetailScreen
 import com.matiasdev.elecapp.features.visits.ui.VisitFormScreen
+import com.matiasdev.elecapp.features.visits.ui.history.WorkHistoryScreen
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -170,6 +171,7 @@ fun ElecNavHost(
                 onElectricalToolsClick = { navController.navigateSingleTop(AppRoutes.ELECTRICAL_TOOLS) },
                 onQuickVisitClick = { navController.navigate(AppRoutes.QUICK_VISIT) },
                 onFinanceClick = { navController.navigateSingleTop(AppRoutes.FINANCE_DASHBOARD) },
+                onWorkHistoryClick = { navController.navigateSingleTop(AppRoutes.workHistory()) },
                 onClientsClick = { navController.navigateSingleTop(AppRoutes.CLIENTS) },
                 onAgendaClick = { navController.navigateSingleTop(AppRoutes.AGENDA) },
                 onInspectionsClick = { navController.navigateSingleTop(AppRoutes.INSPECTIONS) },
@@ -303,6 +305,18 @@ fun ElecNavHost(
                 onRegisterPaymentClick = { navController.navigate(AppRoutes.registerPayment(clientId = it)) },
                 onCreateQuoteClick = { navController.navigate(AppRoutes.quoteCreate(clientId = it)) },
                 onCreateMaterialClick = { navController.navigate(AppRoutes.materialCreate(clientId = it)) },
+                onWorkHistoryClick = { navController.navigate(AppRoutes.workHistory(clientId = it)) },
+                onVisitClick = { navController.navigateSingleTop(AppRoutes.visitDetail(it)) },
+            )
+        }
+        composable(
+            route = AppRoutes.WORK_HISTORY,
+            arguments = AppRoutes.workHistoryArguments,
+        ) { backStackEntry ->
+            WorkHistoryScreen(
+                visitRepository = visitRepository,
+                clientId = backStackEntry.arguments?.getString(AppRoutes.CLIENT_ID)?.takeIf { it.isNotBlank() },
+                onBackClick = { navController.navigateUp() },
                 onVisitClick = { navController.navigateSingleTop(AppRoutes.visitDetail(it)) },
             )
         }
@@ -375,9 +389,6 @@ fun ElecNavHost(
                     navController.navigate(AppRoutes.materialCreate(clientId = clientId, visitId = visitId))
                 },
                 onMaterialClick = { navController.navigateSingleTop(AppRoutes.materialDetail(it)) },
-                onElectricalToolsClick = { visitId, clientId ->
-                    navController.navigateSingleTop(AppRoutes.electricalToolsVoltageDrop(clientId = clientId, visitId = visitId))
-                },
                 onCloseVisitClick = { navController.navigate(AppRoutes.visitClose(it)) },
                 onReceiptClick = { navController.navigateSingleTop(AppRoutes.serviceReceiptDetail(it)) },
                 onRegisterPaymentClick = { receiptId, clientId, linkedVisitId ->

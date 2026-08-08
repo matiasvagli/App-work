@@ -33,6 +33,7 @@ object AppRoutes {
     const val VISIT_DETAIL = "visits/{visitId}"
     const val VISIT_EDIT = "visits/{visitId}/edit"
     const val VISIT_WORK = "visits/{visitId}/work"
+    const val WORK_HISTORY = "visits/work-history?clientId={clientId}"
     const val VISIT_INSPECTION_SCOPE = "visits/{visitId}/inspection-scope"
     const val INSPECTION_OVERVIEW = "inspections/{inspectionId}"
     const val INSPECTION_GENERAL = "inspections/{inspectionId}/general"
@@ -138,6 +139,8 @@ object AppRoutes {
         },
     )
 
+    val workHistoryArguments = listOf(optionalStringArgument(CLIENT_ID))
+
     val quoteCreateArguments = listOf(
         optionalStringArgument(CLIENT_ID),
         optionalStringArgument(VISIT_ID),
@@ -182,6 +185,8 @@ object AppRoutes {
     fun visitEdit(visitId: String): String = "visits/$visitId/edit"
 
     fun visitWork(visitId: String): String = "visits/$visitId/work"
+
+    fun workHistory(clientId: String? = null): String = "visits/work-history?clientId=${clientId.orEmpty()}"
 
     fun visitInspectionScope(visitId: String): String = "visits/$visitId/inspection-scope"
 

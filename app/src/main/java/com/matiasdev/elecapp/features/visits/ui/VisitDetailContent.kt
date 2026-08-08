@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.matiasdev.elecapp.core.external.browserMapsIntent
 import com.matiasdev.elecapp.core.external.browserWhatsappIntent
-import com.matiasdev.elecapp.core.external.dialIntent
 import com.matiasdev.elecapp.core.external.mapsIntent
 import com.matiasdev.elecapp.core.external.tryStartActivity
 import com.matiasdev.elecapp.core.external.whatsappIntent
@@ -51,7 +50,6 @@ fun VisitDetailContent(
     onQuoteClick: () -> Unit,
     onMaterialClick: () -> Unit,
     onWorkClick: () -> Unit,
-    onElectricalToolsClick: () -> Unit,
     onStartVisitClick: () -> Unit,
     onPauseWorkClick: () -> Unit,
     onResumeWorkClick: () -> Unit,
@@ -88,7 +86,7 @@ fun VisitDetailContent(
                 item { WorkClosureCard(uiState, onReceiptClick, onRegisterPaymentClick) }
             }
             item { WorkSessionsCard(uiState, onEditSessionNotesClick) }
-            item { VisitQuickActions(uiState, onWorkClick, onInspectionClick, onQuoteClick, onMaterialClick, onElectricalToolsClick) }
+            item { VisitQuickActions(uiState) }
             item { VisitTimelineCard(uiState) }
             item { VisitNotesCard(visit) }
         }
@@ -205,28 +203,15 @@ private fun WorkTimerCard(uiState: VisitDetailUiState) {
 @Composable
 private fun VisitQuickActions(
     uiState: VisitDetailUiState,
-    onWorkClick: () -> Unit,
-    onInspectionClick: () -> Unit,
-    onQuoteClick: () -> Unit,
-    onMaterialClick: () -> Unit,
-    onElectricalToolsClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val client = uiState.client
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Acciones rápidas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onWorkClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Trabajo") }
-                Button(onClick = onInspectionClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Relevamiento") }
-                OutlinedButton(onClick = onQuoteClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Presupuesto") }
-                OutlinedButton(onClick = onMaterialClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Materiales") }
-                OutlinedButton(onClick = onElectricalToolsClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Herramientas") }
-            }
             Text("Comunicación", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { openWhatsapp(context, client?.phone) }, modifier = Modifier.widthIn(min = 136.dp)) { Text("WhatsApp") }
-                OutlinedButton(onClick = { openDial(context, client?.phone) }, modifier = Modifier.widthIn(min = 136.dp)) { Text("Llamar") }
                 OutlinedButton(onClick = { openMaps(context, client?.address, client?.locality) }, modifier = Modifier.widthIn(min = 136.dp)) { Text("Maps") }
             }
         }
@@ -349,10 +334,6 @@ private fun openWhatsapp(context: android.content.Context, phone: String?) {
     val opened = whatsappIntent(phone.orEmpty())?.let(context::tryStartActivity) == true ||
         browserWhatsappIntent(phone.orEmpty())?.let(context::tryStartActivity) == true
     if (!opened) Toast.makeText(context, "No se pudo abrir WhatsApp", Toast.LENGTH_SHORT).show()
-}
-
-private fun openDial(context: android.content.Context, phone: String?) {
-    if (!context.tryStartActivity(dialIntent(phone.orEmpty()))) Toast.makeText(context, "No hay app de llamadas", Toast.LENGTH_SHORT).show()
 }
 
 private fun openMaps(context: android.content.Context, address: String?, locality: String?) {

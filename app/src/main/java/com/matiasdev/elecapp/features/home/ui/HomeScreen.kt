@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
@@ -96,6 +97,7 @@ fun HomeScreen(
     onElectricalToolsClick: () -> Unit,
     onQuickVisitClick: () -> Unit,
     onFinanceClick: () -> Unit,
+    onWorkHistoryClick: () -> Unit,
     onNewVisitClick: () -> Unit,
     onVisitClick: (String) -> Unit,
     onSettingsClick: () -> Unit,
@@ -143,6 +145,7 @@ fun HomeScreen(
             action = onMaterialsClick,
         ),
         HomeCard("Herramientas", "Cálculos eléctricos", Icons.Default.Bolt, enabled = true, action = onElectricalToolsClick),
+        HomeCard("Trabajos", "Historial", Icons.Default.History, enabled = true, action = onWorkHistoryClick),
         HomeCard("Economía", "Cobros y saldos", Icons.Default.PointOfSale, enabled = true, action = onFinanceClick),
     )
 
@@ -488,4 +491,3 @@ private fun InspectionStatus?.homeLabel(): String = when (this) {
     InspectionStatus.DRAFT -> "Borrador"
     InspectionStatus.COMPLETED -> "Finalizado"
 }
-
