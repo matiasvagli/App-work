@@ -140,6 +140,7 @@ fun VisitDetailScreen(
                 val client = uiState.client
                 if (list != null) onMaterialClick(list.id) else if (visit != null && client != null) onCreateMaterialClick(visit.id, client.id)
             },
+            onWorkClick = { uiState.visit?.id?.let(onEditClick) },
             onElectricalToolsClick = {
                 val visit = uiState.visit
                 val client = uiState.client

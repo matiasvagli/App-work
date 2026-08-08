@@ -82,6 +82,7 @@ private fun PreviewContent(status: VisitStatus, running: Boolean = false, withDo
             onInspectionClick = {},
             onQuoteClick = {},
             onMaterialClick = {},
+            onWorkClick = {},
             onElectricalToolsClick = {},
             onStartVisitClick = {},
             onPauseWorkClick = {},

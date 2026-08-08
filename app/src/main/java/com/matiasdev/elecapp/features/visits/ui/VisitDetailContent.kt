@@ -50,6 +50,7 @@ fun VisitDetailContent(
     onInspectionClick: () -> Unit,
     onQuoteClick: () -> Unit,
     onMaterialClick: () -> Unit,
+    onWorkClick: () -> Unit,
     onElectricalToolsClick: () -> Unit,
     onStartVisitClick: () -> Unit,
     onPauseWorkClick: () -> Unit,
@@ -70,6 +71,7 @@ fun VisitDetailContent(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item { VisitHeaderCard(uiState) }
+            item { VisitDocumentsCard(uiState, onWorkClick, onInspectionClick, onQuoteClick, onMaterialClick) }
             item {
                 VisitPrimaryActions(
                     uiState = uiState,
@@ -82,12 +84,11 @@ fun VisitDetailContent(
             if (visit.status == VisitStatus.IN_PROGRESS || visit.status == VisitStatus.COMPLETED) {
                 item { WorkTimerCard(uiState) }
             }
-            item { VisitDocumentsCard(uiState, onInspectionClick, onQuoteClick, onMaterialClick) }
             if (visit.status == VisitStatus.COMPLETED) {
                 item { WorkClosureCard(uiState, onReceiptClick, onRegisterPaymentClick) }
             }
             item { WorkSessionsCard(uiState, onEditSessionNotesClick) }
-            item { VisitQuickActions(uiState, onInspectionClick, onQuoteClick, onMaterialClick, onElectricalToolsClick) }
+            item { VisitQuickActions(uiState, onWorkClick, onInspectionClick, onQuoteClick, onMaterialClick, onElectricalToolsClick) }
             item { VisitTimelineCard(uiState) }
             item { VisitNotesCard(visit) }
         }
@@ -204,6 +205,7 @@ private fun WorkTimerCard(uiState: VisitDetailUiState) {
 @Composable
 private fun VisitQuickActions(
     uiState: VisitDetailUiState,
+    onWorkClick: () -> Unit,
     onInspectionClick: () -> Unit,
     onQuoteClick: () -> Unit,
     onMaterialClick: () -> Unit,
@@ -215,6 +217,7 @@ private fun VisitQuickActions(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Acciones rápidas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onWorkClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Trabajo") }
                 Button(onClick = onInspectionClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Relevamiento") }
                 OutlinedButton(onClick = onQuoteClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Presupuesto") }
                 OutlinedButton(onClick = onMaterialClick, modifier = Modifier.widthIn(min = 136.dp)) { Text("Materiales") }
@@ -231,10 +234,18 @@ private fun VisitQuickActions(
 }
 
 @Composable
-private fun VisitDocumentsCard(uiState: VisitDetailUiState, onInspectionClick: () -> Unit, onQuoteClick: () -> Unit, onMaterialClick: () -> Unit) {
+private fun VisitDocumentsCard(
+    uiState: VisitDetailUiState,
+    onWorkClick: () -> Unit,
+    onInspectionClick: () -> Unit,
+    onQuoteClick: () -> Unit,
+    onMaterialClick: () -> Unit,
+) {
+    val visit = uiState.visit ?: return
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Documentos de la visita", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Trabajo y documentos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            DocumentRow("Trabajo", workVisitLabel(visit), "Editar", onWorkClick)
             DocumentRow("Relevamiento", inspectionVisitLabel(uiState.inspection?.status), if (uiState.inspection == null) "Iniciar" else "Abrir", onInspectionClick)
             DocumentRow("Presupuesto", quoteVisitLabel(uiState.quote?.status), if (uiState.quote == null) "Crear" else "Abrir", onQuoteClick)
             DocumentRow("Materiales", materialVisitLabel(uiState.materialList?.status), if (uiState.materialList == null) "Crear" else "Abrir", onMaterialClick)
@@ -354,6 +365,14 @@ private fun inspectionVisitLabel(status: InspectionStatus?): String = when (stat
     null -> "No iniciado"
     InspectionStatus.DRAFT -> "Borrador"
     InspectionStatus.COMPLETED -> "Finalizado"
+}
+
+private fun workVisitLabel(visit: Visit): String {
+    return when {
+        !visit.notes.isNullOrBlank() -> visit.notes
+        visit.reason.isNotBlank() -> visit.reason
+        else -> "Sin detalle"
+    }
 }
 
 private fun quoteVisitLabel(status: QuoteStatus?): String = status?.label() ?: "No creado"
