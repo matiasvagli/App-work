@@ -251,6 +251,16 @@ class PillarInspectionViewModel(
         }
     }
 
+    fun reopenInspection() {
+        viewModelScope.launch(ioDispatcher) {
+            val aggregate = repository.findAggregate(inspectionId) ?: return@launch
+            repository.saveInspection(
+                aggregate.inspection.copy(status = InspectionStatus.DRAFT, completedAt = null, updatedAt = Instant.now()),
+            )
+            _uiState.update { it.copy(status = InspectionStatus.DRAFT, saved = true) }
+        }
+    }
+
     fun deleteMeasurement(id: String) {
         viewModelScope.launch(ioDispatcher) {
             repository.softDeletePillarMeasurement(id)

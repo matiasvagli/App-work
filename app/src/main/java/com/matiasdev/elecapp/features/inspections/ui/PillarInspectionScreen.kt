@@ -221,6 +221,12 @@ private fun MeasurementForm(uiState: PillarInspectionUiState, viewModel: PillarI
     if (uiState.measurementOrigin != MeasurementOrigin.NOT_VERIFIED) {
         DecimalField("Valor", uiState.measurementValue, { viewModel.updateMeasurementDraft(value = it) }, uiState.measurementError)
     }
+    if (uiState.status != InspectionStatus.DRAFT) {
+        Text("Relevamiento finalizado. Reabrilo para agregar o editar mediciones.")
+        Button(onClick = viewModel::reopenInspection) {
+            Text("Reabrir relevamiento")
+        }
+    }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Button(onClick = viewModel::saveMeasurement, enabled = uiState.status == InspectionStatus.DRAFT) {
             Text(if (uiState.editingMeasurementId == null) "Agregar medición" else "Actualizar medición")
