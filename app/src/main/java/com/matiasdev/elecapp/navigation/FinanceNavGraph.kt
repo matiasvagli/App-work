@@ -82,7 +82,11 @@ fun NavGraphBuilder.financeRoutes(
         )
     }
     composable(AppRoutes.FINANCE_DASHBOARD) {
-        FinanceDashboardScreen(financeRepository = financeRepository, onBackClick = { navController.navigateUp() })
+        FinanceDashboardScreen(
+            financeRepository = financeRepository,
+            onBackClick = { navController.navigateUp() },
+            onNavigateToReceipts = { navController.navigate(AppRoutes.SERVICE_RECEIPTS) },
+        )
     }
     composable(AppRoutes.SERVICE_RECEIPTS, AppRoutes.serviceReceiptArguments) { backStackEntry ->
         ServiceReceiptListScreen(
