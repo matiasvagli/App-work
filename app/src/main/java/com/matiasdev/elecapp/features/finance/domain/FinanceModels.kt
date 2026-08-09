@@ -19,6 +19,12 @@ data class VisitCompletion(
     val internalNotes: String?,
     val customerNotes: String?,
     val completedAt: Instant,
+    /** Informe técnico congelado al cerrar la atención. Null = todavía no se generó. */
+    val technicalReportSnapshot: String? = null,
+    /** Informe narrativo para el cliente. Se redacta o pega aparte; puede no existir. */
+    val clientReport: String? = null,
+    /** Cuándo se generaron los informes. Se compara contra los `updatedAt` de origen. */
+    val reportsGeneratedAt: Instant? = null,
     val createdAt: Instant,
     val updatedAt: Instant,
     val isDeleted: Boolean,
