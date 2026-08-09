@@ -21,6 +21,7 @@ import com.matiasdev.elecapp.features.clients.ui.ClientFormDraft
 import com.matiasdev.elecapp.features.clients.ui.ClientFormScreen
 import com.matiasdev.elecapp.features.clients.ui.ClientListScreen
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
+import com.matiasdev.elecapp.features.finance.domain.AttentionReportCoordinator
 import com.matiasdev.elecapp.features.home.ui.HomeScreen
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
@@ -77,6 +78,7 @@ fun ElecNavHost(
     settingsRepository: ReminderSettingsRepository,
     electricalRuleConfigRepository: ElectricalRuleConfigRepository,
     reminderCoordinator: ReminderCoordinator,
+    attentionReportCoordinator: AttentionReportCoordinator,
     initialSharedClientDraft: SharedClientDraft? = null,
     initialVisitId: String? = null,
     modifier: Modifier = Modifier,
@@ -209,7 +211,7 @@ fun ElecNavHost(
             electricalRuleConfigRepository,
         )
         documentRoutes(navController, clientRepository, visitRepository, inspectionRepository, quoteRepository, materialRepository)
-        financeRoutes(navController, clientRepository, visitRepository, workSessionRepository, financeRepository, inspectionRepository)
+        financeRoutes(navController, clientRepository, visitRepository, workSessionRepository, financeRepository, inspectionRepository, attentionReportCoordinator)
         composable(AppRoutes.SETTINGS) {
             SettingsScreen(
                 repository = settingsRepository,

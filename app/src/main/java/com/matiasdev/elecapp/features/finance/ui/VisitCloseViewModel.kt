@@ -7,6 +7,7 @@ import com.matiasdev.elecapp.core.time.SystemTimeProvider
 import com.matiasdev.elecapp.core.time.TimeProvider
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
+import com.matiasdev.elecapp.features.finance.domain.AttentionReportCoordinator
 import com.matiasdev.elecapp.features.finance.domain.MoneyParser
 import com.matiasdev.elecapp.features.finance.domain.PaymentDraft
 import com.matiasdev.elecapp.features.finance.domain.PaymentMethod
@@ -44,6 +45,12 @@ class VisitCloseViewModel(
     private val workSessionRepository: VisitWorkSessionRepository,
     private val financeRepository: FinanceRepository,
     private val visitId: String,
+    /**
+     * Congela el informe técnico al cerrar. Es un efecto derivado y opcional: sin él la
+     * atención igual se cierra bien y el informe queda como "no generado", regenerable
+     * después. Los tests que solo verifican el cierre no necesitan pasarlo.
+     */
+    private val attentionReportCoordinator: AttentionReportCoordinator? = null,
     private val timeProvider: TimeProvider = SystemTimeProvider,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
@@ -229,7 +236,13 @@ class VisitCloseViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, validationErrors = emptyList()) }
             runCatching {
-                withContext(ioDispatcher) { financeRepository.closeVisit(visitId, state.toDraft(timeProvider.now())) }
+                withContext(ioDispatcher) {
+                    val result = financeRepository.closeVisit(visitId, state.toDraft(timeProvider.now()))
+                    // Después del cierre, nunca antes: el snapshot congela la atención ya cerrada.
+                    // `generateForClosedVisit` absorbe sus propios errores para no voltear el cierre.
+                    attentionReportCoordinator?.generateForClosedVisit(visitId)
+                    result
+                }
             }.onSuccess { result ->
                 saved = true
                 _events.emit(VisitCloseEvent.Message("Visita finalizada"))
@@ -347,9 +360,17 @@ class VisitCloseViewModelFactory(
     private val workSessionRepository: VisitWorkSessionRepository,
     private val financeRepository: FinanceRepository,
     private val visitId: String,
+    private val attentionReportCoordinator: AttentionReportCoordinator? = null,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return VisitCloseViewModel(clientRepository, visitRepository, workSessionRepository, financeRepository, visitId) as T
+        return VisitCloseViewModel(
+            clientRepository = clientRepository,
+            visitRepository = visitRepository,
+            workSessionRepository = workSessionRepository,
+            financeRepository = financeRepository,
+            visitId = visitId,
+            attentionReportCoordinator = attentionReportCoordinator,
+        ) as T
     }
 }

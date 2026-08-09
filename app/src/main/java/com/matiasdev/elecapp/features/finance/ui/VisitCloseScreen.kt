@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
+import com.matiasdev.elecapp.features.finance.domain.AttentionReportCoordinator
 import com.matiasdev.elecapp.features.finance.domain.MoneyFormatter
 import com.matiasdev.elecapp.features.finance.domain.VisitTechnicalResult
 import com.matiasdev.elecapp.features.finance.domain.VisitWorkType
@@ -59,12 +60,20 @@ fun VisitCloseScreen(
     visitRepository: VisitRepository,
     workSessionRepository: VisitWorkSessionRepository,
     financeRepository: FinanceRepository,
+    attentionReportCoordinator: AttentionReportCoordinator,
     visitId: String,
     onBackClick: () -> Unit,
     onSaved: (String, String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: VisitCloseViewModel = viewModel(
-        factory = VisitCloseViewModelFactory(clientRepository, visitRepository, workSessionRepository, financeRepository, visitId),
+        factory = VisitCloseViewModelFactory(
+            clientRepository = clientRepository,
+            visitRepository = visitRepository,
+            workSessionRepository = workSessionRepository,
+            financeRepository = financeRepository,
+            visitId = visitId,
+            attentionReportCoordinator = attentionReportCoordinator,
+        ),
     ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()

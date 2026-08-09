@@ -144,6 +144,15 @@ class RoomFinanceRepository(
         completionDao.upsert(newWorkDraftCompletion(visitId, draft, now, completionDao.findByVisitId(visitId)))
     }
 
+    override suspend fun saveTechnicalReportSnapshot(visitId: String, snapshot: String, generatedAt: Instant) {
+        completionDao.updateTechnicalReport(
+            visitId = visitId,
+            snapshot = snapshot,
+            generatedAt = generatedAt.toEpochMilli(),
+            updatedAt = timeProvider.now().toEpochMilli(),
+        )
+    }
+
     override suspend fun registerPayment(
         receiptId: String?,
         clientId: String,

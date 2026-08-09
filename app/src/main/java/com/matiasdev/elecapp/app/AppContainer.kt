@@ -31,6 +31,7 @@ import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfi
 import com.matiasdev.elecapp.features.electricaltools.data.RoomTechnicalCalculationRepository
 import com.matiasdev.elecapp.features.electricaltools.data.TechnicalCalculationRepository
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
+import com.matiasdev.elecapp.features.finance.domain.AttentionReportCoordinator
 import com.matiasdev.elecapp.features.finance.data.RoomFinanceRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.data.RoomInspectionRepository
@@ -141,6 +142,13 @@ class AppContainer(context: Context) {
 
     val reminderScheduler = VisitReminderScheduler(
         context = context.applicationContext,
+    )
+
+    val attentionReportCoordinator = AttentionReportCoordinator(
+        inspectionRepository = inspectionRepository,
+        visitRepository = visitRepository,
+        financeRepository = financeRepository,
+        ruleConfigRepository = electricalRuleConfigRepository,
     )
 
     val reminderCoordinator = ReminderCoordinator(

@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
+import com.matiasdev.elecapp.features.finance.domain.AttentionReportCoordinator
 import com.matiasdev.elecapp.features.finance.ui.FinanceDashboardScreen
 import com.matiasdev.elecapp.features.finance.ui.QuickVisitScreen
 import com.matiasdev.elecapp.features.finance.ui.RegisterPaymentScreen
@@ -23,6 +24,7 @@ fun NavGraphBuilder.financeRoutes(
     workSessionRepository: VisitWorkSessionRepository,
     financeRepository: FinanceRepository,
     inspectionRepository: InspectionRepository,
+    attentionReportCoordinator: AttentionReportCoordinator,
 ) {
     composable(AppRoutes.QUICK_VISIT) {
         QuickVisitScreen(
@@ -47,6 +49,7 @@ fun NavGraphBuilder.financeRoutes(
             visitRepository = visitRepository,
             workSessionRepository = workSessionRepository,
             financeRepository = financeRepository,
+            attentionReportCoordinator = attentionReportCoordinator,
             visitId = visitId,
             onBackClick = { navController.navigateUp() },
             onSaved = { savedVisitId, receiptId ->

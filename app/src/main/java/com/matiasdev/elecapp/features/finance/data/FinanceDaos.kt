@@ -18,6 +18,27 @@ interface VisitCompletionDao {
 
     @Upsert
     suspend fun upsert(completion: VisitCompletionEntity)
+
+    /**
+     * Actualiza solo el informe técnico. Es un UPDATE acotado a propósito: `client_report`
+     * es el único artefacto que no se puede reconstruir, así que ninguna operación
+     * automática debe poder pisarlo.
+     */
+    @Query(
+        """
+        UPDATE visit_completions
+        SET technical_report_snapshot = :snapshot,
+            reports_generated_at = :generatedAt,
+            updated_at = :updatedAt
+        WHERE visit_id = :visitId AND is_deleted = 0
+        """,
+    )
+    suspend fun updateTechnicalReport(
+        visitId: String,
+        snapshot: String,
+        generatedAt: Long,
+        updatedAt: Long,
+    )
 }
 
 @Dao

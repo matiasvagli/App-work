@@ -39,6 +39,12 @@ interface FinanceRepository {
 
     suspend fun saveVisitWorkDraft(visitId: String, draft: VisitWorkDraft)
 
+    /**
+     * Guarda el informe técnico congelado de una atención ya cerrada.
+     * No toca `clientReport`: ese solo se escribe cuando el técnico lo pega o lo edita.
+     */
+    suspend fun saveTechnicalReportSnapshot(visitId: String, snapshot: String, generatedAt: Instant)
+
     suspend fun registerPayment(
         receiptId: String?,
         clientId: String,

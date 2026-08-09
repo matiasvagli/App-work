@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
                         settingsRepository = appContainer.reminderSettingsRepository,
                         electricalRuleConfigRepository = appContainer.electricalRuleConfigRepository,
                         reminderCoordinator = appContainer.reminderCoordinator,
+                        attentionReportCoordinator = appContainer.attentionReportCoordinator,
                         initialSharedClientDraft = sharedClientDraft,
                         initialVisitId = initialVisitId,
                     )
