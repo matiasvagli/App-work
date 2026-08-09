@@ -190,6 +190,8 @@ fun com.matiasdev.elecapp.features.inspections.domain.MainPanelMeasurementType.l
 }
 
 fun com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.label(): String = when (this) {
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.GENERAL -> "General (toda la casa)"
+    com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.PARTIAL -> "Parcial (varios sectores)"
     com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.LIGHTING -> "Iluminación"
     com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.OUTLETS -> "Tomacorrientes"
     com.matiasdev.elecapp.features.inspections.domain.CircuitDestination.AIR_CONDITIONING -> "Aire acondicionado"

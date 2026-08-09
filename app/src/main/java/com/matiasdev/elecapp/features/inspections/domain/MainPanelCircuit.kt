@@ -48,13 +48,19 @@ fun MainPanelCircuit.hasReportContent(): Boolean {
 
 fun MainPanelCircuit.reportCircuitName(index: Int): String {
     return when {
-        destination == CircuitDestination.OTHER && !destinationOther.isNullOrBlank() -> "Circuito ${index + 1} ($destinationOther)"
+        destination in circuitDestinationsWithFreeText && !destinationOther.isNullOrBlank() ->
+            "Circuito ${index + 1} ($destinationOther)"
         destination == CircuitDestination.UNIDENTIFIED -> "Circuito ${index + 1} sin identificar"
         else -> "Circuito ${index + 1} (${destination.reportLabel().lowercase()})"
     }
 }
 
+/** Destinos que se describen con texto libre en `destinationOther`. */
+val circuitDestinationsWithFreeText = setOf(CircuitDestination.OTHER, CircuitDestination.PARTIAL)
+
 private fun CircuitDestination.reportLabel(): String = when (this) {
+    CircuitDestination.GENERAL -> "General, toda la casa"
+    CircuitDestination.PARTIAL -> "Parcial"
     CircuitDestination.LIGHTING -> "Iluminación"
     CircuitDestination.OUTLETS -> "Tomacorrientes"
     CircuitDestination.AIR_CONDITIONING -> "Aire acondicionado"

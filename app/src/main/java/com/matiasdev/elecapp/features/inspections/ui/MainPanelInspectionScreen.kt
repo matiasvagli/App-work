@@ -38,6 +38,7 @@ import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.AccessStatus
 import com.matiasdev.elecapp.features.inspections.domain.BreakerCurve
 import com.matiasdev.elecapp.features.inspections.domain.CircuitDestination
+import com.matiasdev.elecapp.features.inspections.domain.circuitDestinationsWithFreeText
 import com.matiasdev.elecapp.features.inspections.domain.ConductorColorStatus
 import com.matiasdev.elecapp.features.inspections.domain.ConductorMaterial
 import com.matiasdev.elecapp.features.inspections.domain.DifferentialTestResult
@@ -261,8 +262,8 @@ private fun CircuitEditor(circuit: MainPanelCircuit, consumptionInput: String, v
         InspectionDropdownField("Identificación o destino", circuit.destination, CircuitDestination.entries.toList(), CircuitDestination::label) {
             viewModel.updateCircuit(circuit.copy(destination = it, destinationOther = null))
         }
-        if (circuit.destination == CircuitDestination.OTHER) {
-            InspectionTextField("Otro destino", circuit.destinationOther.orEmpty(), { viewModel.updateCircuit(circuit.copy(destinationOther = it.trim().ifBlank { null })) })
+        if (circuit.destination in circuitDestinationsWithFreeText) {
+            InspectionTextField("Qué alimenta", circuit.destinationOther.orEmpty(), { viewModel.updateCircuit(circuit.copy(destinationOther = it.ifBlank { null })) })
         }
         InspectionDropdownField("Térmica", circuit.breakerAmps?.toString() ?: circuit.breakerOtherAmps?.let { MAIN_PANEL_OTHER_VALUE }.orEmpty(), breakerOptions, ::ampOptionLabel) {
             viewModel.updateCircuit(
@@ -293,7 +294,7 @@ private fun CircuitEditor(circuit: MainPanelCircuit, consumptionInput: String, v
             viewModel.updateCircuit(circuit.copy(conductorMaterial = it, conductorMaterialOther = null))
         }
         if (circuit.conductorMaterial == ConductorMaterial.OTHER) {
-            InspectionTextField("Otro material", circuit.conductorMaterialOther.orEmpty(), { viewModel.updateCircuit(circuit.copy(conductorMaterialOther = it.trim().ifBlank { null })) })
+            InspectionTextField("Otro material", circuit.conductorMaterialOther.orEmpty(), { viewModel.updateCircuit(circuit.copy(conductorMaterialOther = it.ifBlank { null })) })
         }
         InspectionDropdownField("Origen del consumo", circuit.consumptionOrigin, consumptionOrigins, MeasurementOrigin::label) {
             viewModel.updateCircuit(circuit.copy(consumptionOrigin = it, consumptionAmps = if (it == MeasurementOrigin.NOT_VERIFIED) null else circuit.consumptionAmps))
@@ -301,7 +302,7 @@ private fun CircuitEditor(circuit: MainPanelCircuit, consumptionInput: String, v
         if (circuit.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED) {
             DecimalField("Consumo del circuito A", consumptionInput, { value -> viewModel.updateCircuitConsumption(circuit, value) }, null)
         }
-        InspectionTextField("Observación", circuit.notes.orEmpty(), { viewModel.updateCircuit(circuit.copy(notes = it.trim().ifBlank { null })) }, minLines = 2)
+        InspectionTextField("Observación", circuit.notes.orEmpty(), { viewModel.updateCircuit(circuit.copy(notes = it.ifBlank { null })) }, minLines = 2)
     }
 }
 

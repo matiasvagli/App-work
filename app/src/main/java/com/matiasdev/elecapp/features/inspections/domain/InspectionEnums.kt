@@ -122,6 +122,11 @@ enum class MeasurementOrigin {
 }
 
 enum class CircuitDestination {
+    /** Un solo circuito para toda la instalacion. */
+    GENERAL,
+
+    /** Cubre varios sectores; cuales, se describe en `destinationOther`. */
+    PARTIAL,
     LIGHTING,
     OUTLETS,
     AIR_CONDITIONING,
