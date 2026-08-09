@@ -8,12 +8,8 @@ import com.matiasdev.elecapp.features.visits.domain.Visit
 import java.time.Duration
 
 fun normalizePhoneForWhatsApp(phone: String): String? {
-    val trimmed = phone.trim()
-    if (trimmed.isBlank()) return null
-    val hasPlus = trimmed.startsWith("+")
-    val digits = trimmed.filter(Char::isDigit)
-    if (digits.isBlank()) return null
-    return if (hasPlus) digits else digits
+    val digits = phone.trim().filter(Char::isDigit)
+    return digits.ifBlank { null }
 }
 
 fun buildMapsQuery(address: String?, locality: String?): String? {
@@ -26,6 +22,12 @@ fun whatsappIntent(phone: String): Intent? {
     val normalizedPhone = normalizePhoneForWhatsApp(phone) ?: return null
     return Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$normalizedPhone"))
         .setPackage("com.whatsapp")
+}
+
+fun whatsappBusinessIntent(phone: String): Intent? {
+    val normalizedPhone = normalizePhoneForWhatsApp(phone) ?: return null
+    return Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$normalizedPhone"))
+        .setPackage("com.whatsapp.w4b")
 }
 
 fun browserWhatsappIntent(phone: String): Intent? {

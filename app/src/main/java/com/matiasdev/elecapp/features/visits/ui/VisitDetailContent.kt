@@ -25,6 +25,7 @@ import com.matiasdev.elecapp.core.external.browserMapsIntent
 import com.matiasdev.elecapp.core.external.browserWhatsappIntent
 import com.matiasdev.elecapp.core.external.mapsIntent
 import com.matiasdev.elecapp.core.external.tryStartActivity
+import com.matiasdev.elecapp.core.external.whatsappBusinessIntent
 import com.matiasdev.elecapp.core.external.whatsappIntent
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.materials.domain.MaterialListStatus
@@ -332,6 +333,7 @@ private fun SummaryLine(label: String, value: String) {
 
 private fun openWhatsapp(context: android.content.Context, phone: String?) {
     val opened = whatsappIntent(phone.orEmpty())?.let(context::tryStartActivity) == true ||
+        whatsappBusinessIntent(phone.orEmpty())?.let(context::tryStartActivity) == true ||
         browserWhatsappIntent(phone.orEmpty())?.let(context::tryStartActivity) == true
     if (!opened) Toast.makeText(context, "No se pudo abrir WhatsApp", Toast.LENGTH_SHORT).show()
 }

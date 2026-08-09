@@ -3,6 +3,7 @@ package com.matiasdev.elecapp.features.visits.ui
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.domain.Visit
 import com.matiasdev.elecapp.features.visits.domain.VisitStatus
+import com.matiasdev.elecapp.features.visits.domain.WorkHistoryItem
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,8 +11,13 @@ import kotlinx.coroutines.flow.map
 
 class FakeVisitRepository(
     initialVisits: List<Visit> = emptyList(),
+    initialWorkHistory: List<WorkHistoryItem> = emptyList(),
 ) : VisitRepository {
     private val visits = MutableStateFlow(initialVisits)
+
+    // El historial no se deriva de `visits`: WorkHistoryItem necesita datos de
+    // cliente y de cierre que este fake no guarda. Se siembra desde el test.
+    private val workHistory = MutableStateFlow(initialWorkHistory)
 
     override fun observeActiveVisitsForClient(clientId: String): Flow<List<Visit>> {
         return visits.map { values ->
@@ -59,6 +65,18 @@ class FakeVisitRepository(
             values
                 .filter { !it.isDeleted && it.status == VisitStatus.IN_PROGRESS }
                 .maxByOrNull { it.startedAt ?: it.updatedAt }
+        }
+    }
+
+    override fun observeCompletedWorkHistory(): Flow<List<WorkHistoryItem>> {
+        return workHistory.map { items -> items.sortedByDescending { it.completedAt } }
+    }
+
+    override fun observeCompletedWorkHistoryForClient(clientId: String): Flow<List<WorkHistoryItem>> {
+        return workHistory.map { items ->
+            items
+                .filter { it.clientId == clientId }
+                .sortedByDescending { it.completedAt }
         }
     }
 
