@@ -105,6 +105,15 @@ class AttentionReportsViewModel(
         }
     }
 
+    /**
+     * Manda la plantilla al Sharesheet en vez del portapapeles, para abrirla directo en la
+     * app de IA. Mismo texto que [copyAiPrompt]: cambia el canal, no el contenido.
+     */
+    fun shareAiPrompt() {
+        val report = _uiState.value.technicalReport ?: return
+        viewModelScope.launch { _events.emit(AttentionReportsEvent.Share(ClientReportPromptGenerator.generate(report))) }
+    }
+
     fun updateClientReport(value: String) {
         _uiState.update { it.copy(clientReport = value) }
     }

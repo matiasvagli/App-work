@@ -104,6 +104,7 @@ fun AttentionReportsScreen(
             onCopyTechnical = viewModel::copyTechnicalReport,
             onShareTechnical = viewModel::shareTechnicalReport,
             onCopyAiPrompt = viewModel::copyAiPrompt,
+            onShareAiPrompt = viewModel::shareAiPrompt,
             onRegenerate = viewModel::regenerateTechnicalReport,
             onClientReportChange = viewModel::updateClientReport,
             onSaveClientReport = viewModel::saveClientReport,
@@ -119,6 +120,7 @@ fun AttentionReportsContent(
     onCopyTechnical: () -> Unit,
     onShareTechnical: () -> Unit,
     onCopyAiPrompt: () -> Unit,
+    onShareAiPrompt: () -> Unit,
     onRegenerate: () -> Unit,
     onClientReportChange: (String) -> Unit,
     onSaveClientReport: () -> Unit,
@@ -140,6 +142,7 @@ fun AttentionReportsContent(
             ClientReportCard(
                 uiState = uiState,
                 onCopyAiPrompt = onCopyAiPrompt,
+                onShareAiPrompt = onShareAiPrompt,
                 onClientReportChange = onClientReportChange,
                 onSaveClientReport = onSaveClientReport,
                 onShareClientReport = onShareClientReport,
@@ -190,6 +193,7 @@ private fun TechnicalReportCard(
 private fun ClientReportCard(
     uiState: AttentionReportsUiState,
     onCopyAiPrompt: () -> Unit,
+    onShareAiPrompt: () -> Unit,
     onClientReportChange: (String) -> Unit,
     onSaveClientReport: () -> Unit,
     onShareClientReport: () -> Unit,
@@ -203,8 +207,13 @@ private fun ClientReportCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,
             )
-            OutlinedButton(onClick = onCopyAiPrompt, enabled = uiState.hasTechnicalReport) {
-                Text("Copiar plantilla para IA")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onCopyAiPrompt, enabled = uiState.hasTechnicalReport) {
+                    Text("Copiar plantilla")
+                }
+                OutlinedButton(onClick = onShareAiPrompt, enabled = uiState.hasTechnicalReport) {
+                    Text("Abrir en IA")
+                }
             }
             OutlinedTextField(
                 value = uiState.clientReport,
