@@ -51,5 +51,7 @@ fun WorkHistoryItemEntity.toDomain(): WorkHistoryItem = WorkHistoryItem(
     reason = reason,
     workType = workType,
     workDescription = workDescription,
+    hasTechnicalReport = hasTechnicalReport,
+    hasClientReport = hasClientReport,
     durationMinutes = durationMinutes,
 )

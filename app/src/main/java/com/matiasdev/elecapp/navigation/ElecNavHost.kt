@@ -320,6 +320,7 @@ fun ElecNavHost(
                 clientId = backStackEntry.arguments?.getString(AppRoutes.CLIENT_ID)?.takeIf { it.isNotBlank() },
                 onBackClick = { navController.navigateUp() },
                 onVisitClick = { navController.navigateSingleTop(AppRoutes.visitDetail(it)) },
+                onReportsClick = { navController.navigateSingleTop(AppRoutes.attentionReports(it)) },
             )
         }
         composable(

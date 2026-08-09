@@ -10,5 +10,8 @@ data class WorkHistoryItem(
     val reason: String,
     val workType: String?,
     val workDescription: String?,
+    /** Flags, no el texto: la lista no debe cargar un informe entero por fila. */
+    val hasTechnicalReport: Boolean = false,
+    val hasClientReport: Boolean = false,
     val durationMinutes: Long?,
 )

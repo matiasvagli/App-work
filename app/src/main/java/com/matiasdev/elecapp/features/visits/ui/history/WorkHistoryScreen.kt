@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,6 +47,7 @@ fun WorkHistoryScreen(
     clientId: String?,
     onBackClick: () -> Unit,
     onVisitClick: (String) -> Unit,
+    onReportsClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: WorkHistoryViewModel = viewModel(
         factory = WorkHistoryViewModelFactory(visitRepository, clientId),
@@ -70,6 +72,7 @@ fun WorkHistoryScreen(
         WorkHistoryContent(
             uiState = uiState,
             onVisitClick = onVisitClick,
+            onReportsClick = onReportsClick,
             modifier = Modifier.padding(padding),
         )
     }
@@ -79,6 +82,7 @@ fun WorkHistoryScreen(
 private fun WorkHistoryContent(
     uiState: WorkHistoryUiState,
     onVisitClick: (String) -> Unit,
+    onReportsClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     when {
@@ -102,6 +106,7 @@ private fun WorkHistoryContent(
                 WorkHistoryCard(
                     item = item,
                     onClick = { onVisitClick(item.visitId) },
+                    onReportsClick = { onReportsClick(item.visitId) },
                 )
             }
         }
@@ -109,7 +114,7 @@ private fun WorkHistoryContent(
 }
 
 @Composable
-private fun WorkHistoryCard(item: WorkHistoryItem, onClick: () -> Unit) {
+private fun WorkHistoryCard(item: WorkHistoryItem, onClick: () -> Unit, onReportsClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -145,6 +150,28 @@ private fun WorkHistoryCard(item: WorkHistoryItem, onClick: () -> Unit) {
             item.reason.takeIf(String::isNotBlank)?.let {
                 Text("Motivo: $it", color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
+            WorkHistoryReports(item, onReportsClick)
+        }
+    }
+}
+
+/**
+ * Muestra qué informes quedaron guardados en esta atención. Son flags que vienen del
+ * query, no el texto: la lista nunca carga un informe entero por fila.
+ */
+@Composable
+private fun WorkHistoryReports(item: WorkHistoryItem, onReportsClick: () -> Unit) {
+    if (!item.hasTechnicalReport && !item.hasClientReport) return
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (item.hasTechnicalReport) {
+            AssistChip(onClick = onReportsClick, label = { Text("Informe técnico") })
+        }
+        if (item.hasClientReport) {
+            AssistChip(onClick = onReportsClick, label = { Text("Informe al cliente") })
         }
     }
 }

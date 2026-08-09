@@ -66,6 +66,8 @@ interface VisitDao {
             v.reason AS reason,
             vc.work_type AS work_type,
             vc.work_performed AS work_description,
+            CASE WHEN vc.technical_report_snapshot IS NOT NULL AND TRIM(vc.technical_report_snapshot) != '' THEN 1 ELSE 0 END AS has_technical_report,
+            CASE WHEN vc.client_report IS NOT NULL AND TRIM(vc.client_report) != '' THEN 1 ELSE 0 END AS has_client_report,
             CASE
                 WHEN v.started_at IS NULL THEN NULL
                 WHEN ((v.completed_at - v.started_at) / 60000) < 0 THEN 0
@@ -92,6 +94,8 @@ interface VisitDao {
             v.reason AS reason,
             vc.work_type AS work_type,
             vc.work_performed AS work_description,
+            CASE WHEN vc.technical_report_snapshot IS NOT NULL AND TRIM(vc.technical_report_snapshot) != '' THEN 1 ELSE 0 END AS has_technical_report,
+            CASE WHEN vc.client_report IS NOT NULL AND TRIM(vc.client_report) != '' THEN 1 ELSE 0 END AS has_client_report,
             CASE
                 WHEN v.started_at IS NULL THEN NULL
                 WHEN ((v.completed_at - v.started_at) / 60000) < 0 THEN 0
