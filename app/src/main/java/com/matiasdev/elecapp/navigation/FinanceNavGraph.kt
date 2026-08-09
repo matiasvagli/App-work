@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import com.matiasdev.elecapp.features.clients.data.ClientRepository
 import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.finance.domain.AttentionReportCoordinator
+import com.matiasdev.elecapp.features.finance.ui.AttentionReportsScreen
 import com.matiasdev.elecapp.features.finance.ui.FinanceDashboardScreen
 import com.matiasdev.elecapp.features.finance.ui.QuickVisitScreen
 import com.matiasdev.elecapp.features.finance.ui.RegisterPaymentScreen
@@ -56,6 +57,17 @@ fun NavGraphBuilder.financeRoutes(
                 navController.popBackStack(AppRoutes.visitDetail(savedVisitId), inclusive = false)
                 if (receiptId != null) navController.navigate(AppRoutes.serviceReceiptDetail(receiptId)) { launchSingleTop = true }
             },
+        )
+    }
+    composable(AppRoutes.ATTENTION_REPORTS, AppRoutes.visitIdArguments) { backStackEntry ->
+        AttentionReportsScreen(
+            visitId = backStackEntry.arguments?.getString(AppRoutes.VISIT_ID).orEmpty(),
+            financeRepository = financeRepository,
+            visitRepository = visitRepository,
+            clientRepository = clientRepository,
+            inspectionRepository = inspectionRepository,
+            attentionReportCoordinator = attentionReportCoordinator,
+            onBackClick = { navController.navigateUp() },
         )
     }
     composable(AppRoutes.VISIT_WORK, AppRoutes.visitIdArguments) { backStackEntry ->

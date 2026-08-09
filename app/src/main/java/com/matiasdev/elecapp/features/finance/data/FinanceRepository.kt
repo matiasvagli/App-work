@@ -45,6 +45,12 @@ interface FinanceRepository {
      */
     suspend fun saveTechnicalReportSnapshot(visitId: String, snapshot: String, generatedAt: Instant)
 
+    /**
+     * Guarda el informe del cliente que el técnico pegó o editó.
+     * No toca el snapshot técnico ni su fecha de generación.
+     */
+    suspend fun saveClientReport(visitId: String, report: String?)
+
     suspend fun registerPayment(
         receiptId: String?,
         clientId: String,

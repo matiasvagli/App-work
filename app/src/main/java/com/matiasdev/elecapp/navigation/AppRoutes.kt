@@ -33,6 +33,7 @@ object AppRoutes {
     const val VISIT_DETAIL = "visits/{visitId}"
     const val VISIT_EDIT = "visits/{visitId}/edit"
     const val VISIT_WORK = "visits/{visitId}/work"
+    const val ATTENTION_REPORTS = "visits/{visitId}/reports"
     const val WORK_HISTORY = "visits/work-history?clientId={clientId}"
     const val VISIT_INSPECTION_SCOPE = "visits/{visitId}/inspection-scope"
     const val INSPECTION_OVERVIEW = "inspections/{inspectionId}"
@@ -181,6 +182,8 @@ object AppRoutes {
     fun visitCreate(clientId: String? = null): String = "visits/new?clientId=${clientId.orEmpty()}"
 
     fun visitDetail(visitId: String): String = "visits/$visitId"
+
+    fun attentionReports(visitId: String): String = "visits/$visitId/reports"
 
     fun visitEdit(visitId: String): String = "visits/$visitId/edit"
 

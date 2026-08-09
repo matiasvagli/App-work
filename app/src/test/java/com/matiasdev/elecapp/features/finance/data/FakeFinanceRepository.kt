@@ -29,6 +29,8 @@ class FakeFinanceRepository : FinanceRepository {
         private set
     var lastTechnicalReportSnapshot: Pair<String, String>? = null
         private set
+    var lastClientReport: Pair<String, String?>? = null
+        private set
     override fun observeReceipts(): Flow<List<ServiceReceipt>> = flowOf(emptyList())
     override fun observeReceiptsByClient(clientId: String): Flow<List<ServiceReceipt>> = flowOf(emptyList())
     override fun observeReceiptById(id: String): Flow<ServiceReceipt?> = flowOf(null)
@@ -52,6 +54,9 @@ class FakeFinanceRepository : FinanceRepository {
     }
     override suspend fun saveTechnicalReportSnapshot(visitId: String, snapshot: String, generatedAt: Instant) {
         lastTechnicalReportSnapshot = visitId to snapshot
+    }
+    override suspend fun saveClientReport(visitId: String, report: String?) {
+        lastClientReport = visitId to report
     }
     override suspend fun registerPayment(receiptId: String?, clientId: String, visitId: String?, draft: PaymentDraft): RegisterPaymentResult {
         return RegisterPaymentResult("payment", ServiceReceiptStatus.ISSUED)

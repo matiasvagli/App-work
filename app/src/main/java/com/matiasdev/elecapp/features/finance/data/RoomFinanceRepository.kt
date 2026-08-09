@@ -153,6 +153,14 @@ class RoomFinanceRepository(
         )
     }
 
+    override suspend fun saveClientReport(visitId: String, report: String?) {
+        completionDao.updateClientReport(
+            visitId = visitId,
+            report = report?.trim()?.takeIf(String::isNotBlank),
+            updatedAt = timeProvider.now().toEpochMilli(),
+        )
+    }
+
     override suspend fun registerPayment(
         receiptId: String?,
         clientId: String,

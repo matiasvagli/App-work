@@ -39,6 +39,20 @@ interface VisitCompletionDao {
         generatedAt: Long,
         updatedAt: Long,
     )
+
+    /**
+     * Actualiza solo el informe del cliente. Simétrico a [updateTechnicalReport]: ninguno
+     * de los dos puede escribir la columna del otro.
+     */
+    @Query(
+        """
+        UPDATE visit_completions
+        SET client_report = :report,
+            updated_at = :updatedAt
+        WHERE visit_id = :visitId AND is_deleted = 0
+        """,
+    )
+    suspend fun updateClientReport(visitId: String, report: String?, updatedAt: Long)
 }
 
 @Dao
