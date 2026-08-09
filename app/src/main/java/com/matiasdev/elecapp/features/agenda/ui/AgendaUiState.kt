@@ -5,14 +5,14 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 enum class AgendaMode(val label: String) {
+    CALENDAR("Calendario"),
     TODAY("Hoy"),
     UPCOMING("Próximas"),
-    CALENDAR("Calendario"),
 }
 
 data class AgendaUiState(
     val isLoading: Boolean = true,
-    val mode: AgendaMode = AgendaMode.TODAY,
+    val mode: AgendaMode = AgendaMode.CALENDAR,
     val selectedDate: LocalDate = LocalDate.now(),
     val visibleMonth: YearMonth = YearMonth.now(),
     val todayUpcoming: List<VisitAgendaItem> = emptyList(),
