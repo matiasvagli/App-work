@@ -12,6 +12,7 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionFindingGroups
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFindingProposalBuilder
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.InspectionValidation
 import java.time.Instant
@@ -44,6 +45,8 @@ data class FindingsUiState(
     val excludeDialogFindingId: String? = null,
     val descriptionError: String? = null,
     val status: InspectionStatus = InspectionStatus.DRAFT,
+    /** Define cual es la seccion siguiente: en relevamiento visual no es la misma. */
+    val scope: InspectionScope = InspectionScope.GENERAL_ASSESSMENT,
     val saved: Boolean = false,
     val errorMessage: String? = null,
 ) {
@@ -73,6 +76,7 @@ class FindingsViewModel(
                             notVerified = groups.notVerified,
                             manual = groups.manual,
                             status = aggregate?.inspection?.status ?: it.status,
+                            scope = aggregate?.inspection?.scope ?: it.scope,
                         )
                     }
                 }

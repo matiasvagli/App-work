@@ -60,6 +60,7 @@ import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
 import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
 import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.summary.label
 
@@ -70,7 +71,7 @@ fun FindingsScreen(
     inspectionId: String,
     onBackClick: () -> Unit,
     onPreviousClick: () -> Unit,
-    onNextClick: () -> Unit,
+    onNextClick: (InspectionScope) -> Unit,
     onHomeClick: () -> Unit,
     onAddToQuoteClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -101,7 +102,7 @@ fun FindingsScreen(
         if (uiState.isLoading) {
             CircularProgressIndicator(Modifier.padding(padding).padding(24.dp))
         } else {
-            FindingsContent(uiState, viewModel, onPreviousClick, onNextClick, onHomeClick, Modifier.padding(padding))
+            FindingsContent(uiState, viewModel, onPreviousClick, { onNextClick(uiState.scope) }, onHomeClick, Modifier.padding(padding))
         }
     }
     if (uiState.isEditorOpen) {

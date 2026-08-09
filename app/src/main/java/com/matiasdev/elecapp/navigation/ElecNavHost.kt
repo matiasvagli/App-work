@@ -24,6 +24,7 @@ import com.matiasdev.elecapp.features.finance.data.FinanceRepository
 import com.matiasdev.elecapp.features.finance.domain.AttentionReportCoordinator
 import com.matiasdev.elecapp.features.home.ui.HomeScreen
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
+import com.matiasdev.elecapp.features.inspections.domain.InspectionScope
 import com.matiasdev.elecapp.features.inspections.domain.InspectionSection
 import com.matiasdev.elecapp.features.inspections.ui.FindingsScreen
 import com.matiasdev.elecapp.features.inspections.ui.GroundingInspectionScreen
@@ -515,7 +516,16 @@ fun ElecNavHost(
                 inspectionId = inspectionId,
                 onBackClick = { navController.navigateUp() },
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionGrounding(inspectionId)) },
-                onNextClick = { navController.navigateSingleTop(AppRoutes.inspectionFinalReport(inspectionId)) },
+                onNextClick = { scope ->
+                    // El paso siguiente depende del alcance: el relevamiento visual no
+                    // tiene observacion tecnica, tiene inspeccion visual complementaria.
+                    val next = if (scope == InspectionScope.VISUAL_INSPECTION) {
+                        AppRoutes.inspectionVisualComplementary(inspectionId)
+                    } else {
+                        AppRoutes.inspectionTechnicalComment(inspectionId)
+                    }
+                    navController.navigateSingleTop(next)
+                },
                 onHomeClick = { navController.navigateHomeClearingStack() },
                 onAddToQuoteClick = { navController.navigate(AppRoutes.quoteCreate(inspectionId = inspectionId)) },
             )
