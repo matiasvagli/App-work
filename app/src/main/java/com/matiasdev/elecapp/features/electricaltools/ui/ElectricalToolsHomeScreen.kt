@@ -146,7 +146,7 @@ fun ElectricalToolsHomeContent(
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 100.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // Hero Banner Card
@@ -238,14 +238,15 @@ fun ElectricalToolsHomeContent(
                     Column(modifier = Modifier.weight(1f)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(
                                 text = tool.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f),
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
                             ElecBadge(
                                 text = tool.badgeText,
                                 containerColor = tool.badgeBg,
@@ -286,7 +287,7 @@ fun ElectricalToolsHomeContent(
                 columns = GridCells.Adaptive(150.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(((referenceTools.size + 1) / 2 * 110).dp),
+                    .height(((referenceTools.size + 1) / 2 * 135).dp),
                 userScrollEnabled = false,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
