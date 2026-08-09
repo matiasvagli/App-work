@@ -141,8 +141,11 @@ private fun MainPanelForm(
             InspectionDropdownField("Material", uiState.feederConductorMaterial, ConductorMaterial.entries.toList(), ConductorMaterial::label) {
                 viewModel.update { copy(feederConductorMaterial = it) }
             }
-            InspectionDropdownField("Origen del dato", uiState.feederDataOrigin, measurementOrigins, MeasurementOrigin::label) {
-                viewModel.update { copy(feederDataOrigin = it) }
+            // Solo tiene sentido preguntar el origen cuando hay algun dato cuyo origen declarar.
+            if (uiState.feederDistanceMeters.isNotBlank() || uiState.feederConductorSectionMm2 != null) {
+                InspectionDropdownField("Origen del dato", uiState.feederDataOrigin, measurementOrigins, MeasurementOrigin::label) {
+                    viewModel.update { copy(feederDataOrigin = it) }
+                }
             }
         }
         InspectionFormBlock("Tensión de entrada al tablero") {
