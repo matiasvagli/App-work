@@ -31,6 +31,12 @@ class ClientReportPromptGeneratorTest {
     }
 
     @Test
+    fun `prohibe interpretar que significa una medicion`() {
+        val prompt = ClientReportPromptGenerator.generate(technicalReport)
+        assertTrue(prompt.contains("No interpretes qué significa una medición"))
+    }
+
+    @Test
     fun `pide texto plano sin markdown`() {
         val prompt = ClientReportPromptGenerator.generate(technicalReport)
         assertTrue(prompt.contains("NADA de Markdown"))

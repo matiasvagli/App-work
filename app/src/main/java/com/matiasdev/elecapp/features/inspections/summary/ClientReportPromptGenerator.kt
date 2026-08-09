@@ -42,6 +42,14 @@ object ClientReportPromptGenerator {
         - No recomiendes nada que no esté en el informe técnico.
         - No minimices ni dramatices los hallazgos: si algo requiere revisión, decilo con
           claridad y sin alarmismo.
+        - No interpretes qué significa una medición. Podés explicar QUÉ ES un dispositivo
+          ("interruptor diferencial: dispositivo que protege a las personas de descargas"),
+          pero no qué INDICA un valor medido. Escribir "180 V (indica presencia aparente de
+          puesta a tierra)" es una conclusión técnica que el informe no hizo, y el informe
+          lo firma el electricista, no vos. Si el informe técnico ya trae una conclusión,
+          usá esa; si no la trae, poné el valor solo.
+        - No cierres recomendaciones remitiendo a algo que el cliente no puede ver. En vez
+          de "según lo señalado en el comentario del técnico", escribí qué hay que hacer.
 
         FORMATO (importante)
         - Texto plano. NADA de Markdown: sin numerales para títulos, sin asteriscos para
