@@ -102,7 +102,7 @@ fun FindingsScreen(
         if (uiState.isLoading) {
             CircularProgressIndicator(Modifier.padding(padding).padding(24.dp))
         } else {
-            FindingsContent(uiState, viewModel, onPreviousClick, { onNextClick(uiState.scope) }, onHomeClick, Modifier.padding(padding))
+            FindingsContent(uiState, viewModel, onPreviousClick, { viewModel.markFindingsReviewed(); onNextClick(uiState.scope) }, onHomeClick, Modifier.padding(padding))
         }
     }
     if (uiState.isEditorOpen) {

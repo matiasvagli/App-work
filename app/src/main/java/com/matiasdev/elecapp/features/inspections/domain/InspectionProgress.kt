@@ -41,9 +41,8 @@ object InspectionProgressCalculator {
                     visualPillarProgress(aggregate.pillar),
                     visualMainPanelProgress(aggregate.mainPanel),
                     groundingProgress(aggregate.grounding),
-                    findingsProgress(aggregate.findings),
+                    findingsProgress(aggregate.findings, inspection.findingsReviewedAt),
                     visualComplementaryProgress(inspection, aggregate.unverifiedItems),
-                    finalReportProgress(inspection),
                 ),
             )
         }
@@ -53,9 +52,8 @@ object InspectionProgressCalculator {
                     if (inspection.isPillarRelevantForSector()) add(pillarProgress(aggregate.pillar))
                     if (inspection.isMainPanelRelevantForSector()) add(mainPanelProgress(aggregate.mainPanel))
                     add(groundingProgress(aggregate.grounding))
-                    add(findingsProgress(aggregate.findings))
+                    add(findingsProgress(aggregate.findings, inspection.findingsReviewedAt))
                     add(technicalCommentProgress(inspection))
-                    add(finalReportProgress(inspection))
                 },
             )
         }
@@ -64,9 +62,8 @@ object InspectionProgressCalculator {
                 pillarProgress(aggregate.pillar),
                 mainPanelProgress(aggregate.mainPanel),
                 groundingProgress(aggregate.grounding),
-                findingsProgress(aggregate.findings),
+                findingsProgress(aggregate.findings, inspection.findingsReviewedAt),
                 technicalCommentProgress(inspection),
-                finalReportProgress(inspection),
             ),
         )
     }
@@ -157,12 +154,26 @@ object InspectionProgressCalculator {
         }
     }
 
-    private fun findingsProgress(findings: List<InspectionFinding>): InspectionSectionProgress {
-        return InspectionSectionProgress(
-            InspectionSection.FINDINGS,
-            if (findings.isEmpty()) InspectionSectionStatus.NOT_STARTED else InspectionSectionStatus.COMPLETE,
-            if (findings.isEmpty()) "" else "${findings.size} hallazgo(s)",
-        )
+    /**
+     * No encontrar hallazgos es un resultado válido de una inspección, distinto de no
+     * haber mirado la sección. Por eso la completitud mira si el técnico la revisó, no
+     * si la lista tiene elementos.
+     */
+    private fun findingsProgress(
+        findings: List<InspectionFinding>,
+        reviewedAt: java.time.Instant?,
+    ): InspectionSectionProgress {
+        val status = when {
+            findings.isNotEmpty() -> InspectionSectionStatus.COMPLETE
+            reviewedAt != null -> InspectionSectionStatus.COMPLETE
+            else -> InspectionSectionStatus.NOT_STARTED
+        }
+        val summary = when {
+            findings.isNotEmpty() -> "${findings.size} hallazgo(s)"
+            reviewedAt != null -> "Revisado, sin hallazgos"
+            else -> ""
+        }
+        return InspectionSectionProgress(InspectionSection.FINDINGS, status, summary)
     }
 
     private fun visualComplementaryProgress(

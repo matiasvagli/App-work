@@ -31,6 +31,7 @@ data class ElectricalInspectionEntity(
     @ColumnInfo(name = "access_limitations") val accessLimitations: String?,
     @ColumnInfo(name = "original_technical_comment") val originalTechnicalComment: String?,
     @ColumnInfo(name = "final_client_report") val finalClientReport: String?,
+    @ColumnInfo(name = "findings_reviewed_at") val findingsReviewedAt: Long? = null,
     @ColumnInfo(name = "started_at") val startedAt: Long,
     @ColumnInfo(name = "completed_at") val completedAt: Long?,
     @ColumnInfo(name = "created_at") val createdAt: Long,

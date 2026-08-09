@@ -156,6 +156,20 @@ class FindingsViewModel(
         }
     }
 
+    /**
+     * Deja registrado que el técnico pasó por hallazgos. Sin esto, salir sin agregar
+     * ninguno se veía igual que no haber entrado nunca: la sección quedaba incompleta,
+     * aunque "no encontré nada" es un resultado válido.
+     */
+    fun markFindingsReviewed() {
+        viewModelScope.launch(ioDispatcher) {
+            val inspection = repository.findAggregate(inspectionId)?.inspection ?: return@launch
+            if (inspection.findingsReviewedAt != null) return@launch
+            val now = Instant.now()
+            repository.saveInspection(inspection.copy(findingsReviewedAt = now, updatedAt = now))
+        }
+    }
+
     fun saveManual() {
         val state = _uiState.value
         val descriptionError = InspectionValidation.validateRequiredText(state.description, "La descripción")

@@ -89,6 +89,7 @@ fun ElectricalInspectionEntity.toDomain(): ElectricalInspection = ElectricalInsp
     accessLimitations = accessLimitations,
     originalTechnicalComment = originalTechnicalComment,
     finalClientReport = finalClientReport,
+    findingsReviewedAt = findingsReviewedAt?.let(java.time.Instant::ofEpochMilli),
     startedAt = Instant.ofEpochMilli(startedAt),
     completedAt = completedAt?.let(Instant::ofEpochMilli),
     createdAt = Instant.ofEpochMilli(createdAt),

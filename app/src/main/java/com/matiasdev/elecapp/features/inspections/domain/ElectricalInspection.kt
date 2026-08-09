@@ -27,4 +27,6 @@ data class ElectricalInspection(
     val createdAt: Instant,
     val updatedAt: Instant,
     val isDeleted: Boolean,
+    /** Cuándo el técnico revisó hallazgos. Null = no pasó por la sección todavía. */
+    val findingsReviewedAt: Instant? = null,
 )
