@@ -21,6 +21,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Construction
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -75,6 +77,8 @@ fun InspectionOverviewScreen(
     electricalRuleConfigRepository: ElectricalRuleConfigRepository,
     inspectionId: String,
     onBackClick: () -> Unit,
+    onVisitClick: (String) -> Unit,
+    onHomeClick: () -> Unit,
     onSectionClick: (InspectionSection) -> Unit,
     onCreateQuoteClick: (String, String) -> Unit,
     onCreateMaterialClick: (String, String) -> Unit,
@@ -121,6 +125,18 @@ fun InspectionOverviewScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    // Salidas del relevamiento sin perder la visita en curso: entrar a un
+                    // relevamiento no debe dejarte encerrado hasta terminarlo.
+                    uiState.visit?.let { visit ->
+                        IconButton(onClick = { onVisitClick(visit.id) }) {
+                            Icon(Icons.Default.Construction, contentDescription = "Ir a la visita")
+                        }
+                    }
+                    IconButton(onClick = onHomeClick) {
+                        Icon(Icons.Default.Home, contentDescription = "Ir al inicio")
                     }
                 },
             )

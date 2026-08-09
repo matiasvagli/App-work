@@ -464,6 +464,8 @@ fun ElecNavHost(
                 electricalRuleConfigRepository = electricalRuleConfigRepository,
                 inspectionId = inspectionId,
                 onBackClick = { navController.navigateUp() },
+                onVisitClick = { navController.navigateSingleTop(AppRoutes.visitDetail(it)) },
+                onHomeClick = { navController.navigateHomeClearingStack() },
                 onSectionClick = { section ->
                     navController.navigateSingleTop(inspectionSectionRoute(inspectionId, section))
                 },
