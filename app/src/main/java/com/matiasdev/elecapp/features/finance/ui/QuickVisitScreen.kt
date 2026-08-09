@@ -10,14 +10,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -34,9 +40,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -87,40 +94,119 @@ fun QuickVisitScreen(
     if (uiState.showActiveVisitWarning) ActiveVisitDialog(viewModel)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun QuickVisitContent(uiState: QuickVisitUiState, viewModel: QuickVisitViewModel, modifier: Modifier = Modifier) {
     val draft = uiState.draft
     Column(
-        modifier = modifier.verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 100.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Cliente", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                ModeRow("Existente", draft.clientMode == QuickVisitClientMode.EXISTING) {
-                    viewModel.selectMode(QuickVisitClientMode.EXISTING)
+        // Client Selection Card
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                    Text(
+                        text = "Cliente",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                 }
-                ModeRow("Crear rápido", draft.clientMode == QuickVisitClientMode.QUICK_CREATE) {
-                    viewModel.selectMode(QuickVisitClientMode.QUICK_CREATE)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    FilterChip(
+                        selected = draft.clientMode == QuickVisitClientMode.EXISTING,
+                        onClick = { viewModel.selectMode(QuickVisitClientMode.EXISTING) },
+                        label = { Text("Cliente Existente", fontWeight = FontWeight.SemiBold) },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
+                    FilterChip(
+                        selected = draft.clientMode == QuickVisitClientMode.QUICK_CREATE,
+                        onClick = { viewModel.selectMode(QuickVisitClientMode.QUICK_CREATE) },
+                        label = { Text("Crear Rápido", fontWeight = FontWeight.SemiBold) },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1f),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
                 }
+
                 if (draft.clientMode == QuickVisitClientMode.EXISTING) {
-                    uiState.clients.take(8).forEach { client ->
-                        FilterChip(
-                            selected = draft.selectedClientId == client.id,
-                            onClick = { viewModel.selectClient(client.id) },
-                            label = { Text(client.fullName) },
+                    if (uiState.clients.isEmpty()) {
+                        Text(
+                            text = "No hay clientes guardados",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    } else {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            uiState.clients.take(8).forEach { client ->
+                                FilterChip(
+                                    selected = draft.selectedClientId == client.id,
+                                    onClick = { viewModel.selectClient(client.id) },
+                                    label = { Text(client.fullName) },
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    ),
+                                )
+                            }
+                        }
                     }
                 }
-                uiState.validation.clientError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                uiState.validation.clientError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
             }
         }
+
         if (draft.clientMode == QuickVisitClientMode.QUICK_CREATE) QuickClientFields(uiState, viewModel)
+
         VisitReasonFields(uiState, viewModel)
-        uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button(onClick = viewModel::start, enabled = !uiState.isSaving && uiState.canStart, modifier = Modifier.fillMaxWidth()) {
+
+        uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
+
+        Button(
+            onClick = viewModel::start,
+            enabled = !uiState.isSaving && uiState.canStart,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            shape = RoundedCornerShape(12.dp),
+        ) {
             Icon(Icons.Default.PlayArrow, contentDescription = null)
-            Text("Iniciar atención", Modifier.padding(start = 8.dp))
+            Text("Iniciar Atención Ahora", modifier = Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -128,12 +214,51 @@ private fun QuickVisitContent(uiState: QuickVisitUiState, viewModel: QuickVisitV
 @Composable
 private fun QuickClientFields(uiState: QuickVisitUiState, viewModel: QuickVisitViewModel) {
     val draft = uiState.draft
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            OutlinedTextField(draft.quickClientName, { value -> viewModel.updateDraft { it.copy(quickClientName = value) } }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(draft.phone, { value -> viewModel.updateDraft { it.copy(phone = value) } }, label = { Text("Teléfono opcional") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(draft.address, { value -> viewModel.updateDraft { it.copy(address = value) } }, label = { Text("Dirección opcional") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(draft.locality, { value -> viewModel.updateDraft { it.copy(locality = value) } }, label = { Text("Localidad opcional") }, modifier = Modifier.fillMaxWidth())
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = "Datos del Nuevo Cliente",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            OutlinedTextField(
+                value = draft.quickClientName,
+                onValueChange = { value -> viewModel.updateDraft { it.copy(quickClientName = value) } },
+                label = { Text("Nombre y Apellido") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = draft.phone,
+                onValueChange = { value -> viewModel.updateDraft { it.copy(phone = value) } },
+                label = { Text("Teléfono (opcional)") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = draft.address,
+                onValueChange = { value -> viewModel.updateDraft { it.copy(address = value) } },
+                label = { Text("Dirección (opcional)") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                value = draft.locality,
+                onValueChange = { value -> viewModel.updateDraft { it.copy(locality = value) } },
+                label = { Text("Localidad (opcional)") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
@@ -142,24 +267,50 @@ private fun QuickClientFields(uiState: QuickVisitUiState, viewModel: QuickVisitV
 @Composable
 private fun VisitReasonFields(uiState: QuickVisitUiState, viewModel: QuickVisitViewModel) {
     val draft = uiState.draft
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Trabajo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("Tipo de atención", style = MaterialTheme.typography.labelLarge)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Motivo del Trabajo", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text("Tipo de atención", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
                 VisitAttentionType.entries.forEach { type ->
-                    FilterChip(selected = draft.attentionType == type, onClick = { viewModel.selectType(type) }, label = { Text(type.label) })
+                    FilterChip(
+                        selected = draft.attentionType == type,
+                        onClick = { viewModel.selectType(type) },
+                        label = { Text(type.label, fontWeight = if (draft.attentionType == type) FontWeight.Bold else FontWeight.Normal) },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
                 }
             }
             OutlinedTextField(
                 value = draft.briefDetail,
                 onValueChange = { value -> viewModel.updateDraft { it.copy(briefDetail = value) } },
                 label = { Text(if (draft.attentionType == VisitAttentionType.OTHER) "Detalle breve" else "Detalle breve (opcional)") },
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth(),
             )
-            uiState.validation.detailError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            OutlinedTextField(draft.estimatedDurationMinutes, { value -> viewModel.updateDraft { it.copy(estimatedDurationMinutes = value.filter(Char::isDigit)) } }, label = { Text("Duración estimada opcional") }, supportingText = { Text("Ayuda a organizar la agenda. No modifica el tiempo real trabajado.") }, modifier = Modifier.fillMaxWidth())
-            uiState.validation.durationError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            uiState.validation.detailError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
+            OutlinedTextField(
+                value = draft.estimatedDurationMinutes,
+                onValueChange = { value -> viewModel.updateDraft { it.copy(estimatedDurationMinutes = value.filter(Char::isDigit)) } },
+                label = { Text("Duración estimada opcional (minutos)") },
+                supportingText = { Text("Ayuda a organizar la agenda. No modifica el tiempo real trabajado.") },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            uiState.validation.durationError?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
         }
     }
 }

@@ -15,11 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -160,8 +167,11 @@ private fun VisitFormContent(
 ) {
     val context = LocalContext.current
     Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 100.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         VisitClientSelector(
             selectedClient = uiState.client,
@@ -173,43 +183,88 @@ private fun VisitFormContent(
             onChangeClient = actions.onChangeClient,
             onCreateClientClick = onCreateClientClick,
         )
+
         DateTimeFields(uiState, actions)
-        OutlinedTextField(
-            value = uiState.durationMinutes,
-            onValueChange = actions.onDurationChange,
+
+        // Work Details Card
+        ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Duración estimada en minutos") },
-            singleLine = true,
-            isError = uiState.durationError != null,
-            supportingText = uiState.durationError?.let { { Text(it) } },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        )
-        OutlinedTextField(
-            value = uiState.reason,
-            onValueChange = actions.onReasonChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Motivo") },
-            singleLine = true,
-            isError = uiState.reasonError != null,
-            supportingText = uiState.reasonError?.let { { Text(it) } },
-        )
-        OutlinedTextField(
-            value = uiState.notes,
-            onValueChange = actions.onNotesChange,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Notas") },
-            minLines = 4,
-        )
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                    Text(
+                        text = "Detalles del Trabajo",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+
+                OutlinedTextField(
+                    value = uiState.reason,
+                    onValueChange = actions.onReasonChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Motivo de la visita") },
+                    singleLine = true,
+                    isError = uiState.reasonError != null,
+                    supportingText = uiState.reasonError?.let { { Text(it) } },
+                    shape = RoundedCornerShape(12.dp),
+                )
+
+                OutlinedTextField(
+                    value = uiState.durationMinutes,
+                    onValueChange = actions.onDurationChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Duración estimada (minutos)") },
+                    singleLine = true,
+                    isError = uiState.durationError != null,
+                    supportingText = uiState.durationError?.let { { Text(it) } },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    shape = RoundedCornerShape(12.dp),
+                )
+
+                OutlinedTextField(
+                    value = uiState.notes,
+                    onValueChange = actions.onNotesChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Notas o descripción adicional") },
+                    minLines = 3,
+                    shape = RoundedCornerShape(12.dp),
+                )
+            }
+        }
+
         ReminderFields(uiState, notificationsAllowed(context), onNotificationPermissionNeeded, actions)
+
         uiState.errorMessage?.let { ErrorText(it) }
+
         Button(
             onClick = actions.onSaveClick,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
             enabled = !uiState.isSaving && uiState.hasRequiredData,
+            shape = RoundedCornerShape(12.dp),
         ) {
-            if (uiState.isSaving) CircularProgressIndicator() else {
+            if (uiState.isSaving) {
+                CircularProgressIndicator(modifier = Modifier.padding(4.dp))
+            } else {
                 Icon(Icons.Default.Check, contentDescription = null)
-                Text("Guardar", modifier = Modifier.padding(start = 8.dp))
+                Text("Guardar Visita", modifier = Modifier.padding(start = 8.dp), fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -218,25 +273,72 @@ private fun VisitFormContent(
 @Composable
 private fun DateTimeFields(uiState: VisitFormUiState, actions: VisitFormActions) {
     val context = LocalContext.current
-    OutlinedButton(onClick = {
-        DatePickerDialog(
-            context,
-            { _, year, month, day -> actions.onDateChange(java.time.LocalDate.of(year, month + 1, day)) },
-            uiState.date.year,
-            uiState.date.monthValue - 1,
-            uiState.date.dayOfMonth,
-        ).show()
-    }) { Text("Fecha: ${uiState.date.formatVisitDate()}") }
-    OutlinedButton(onClick = {
-        TimePickerDialog(
-            context,
-            { _, hour, minute -> actions.onTimeChange(java.time.LocalTime.of(hour, minute)) },
-            uiState.time.hour,
-            uiState.time.minute,
-            true,
-        ).show()
-    }) { Text("Hora: ${uiState.time.formatVisitTime()}") }
-    uiState.dateTimeError?.let { ErrorText(it) }
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.Event,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                Text(
+                    text = "Fecha y Hora de Visita",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        DatePickerDialog(
+                            context,
+                            { _, year, month, day -> actions.onDateChange(java.time.LocalDate.of(year, month + 1, day)) },
+                            uiState.date.year,
+                            uiState.date.monthValue - 1,
+                            uiState.date.dayOfMonth,
+                        ).show()
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("📅 ${uiState.date.formatVisitDate()}", fontWeight = FontWeight.SemiBold)
+                }
+
+                OutlinedButton(
+                    onClick = {
+                        TimePickerDialog(
+                            context,
+                            { _, hour, minute -> actions.onTimeChange(java.time.LocalTime.of(hour, minute)) },
+                            uiState.time.hour,
+                            uiState.time.minute,
+                            true,
+                        ).show()
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                ) {
+                    Text("⏰ ${uiState.time.formatVisitTime()}", fontWeight = FontWeight.SemiBold)
+                }
+            }
+            uiState.dateTimeError?.let { ErrorText(it) }
+        }
+    }
 }
 
 @Composable
@@ -246,40 +348,69 @@ private fun ReminderFields(
     onNotificationPermissionNeeded: () -> Unit,
     actions: VisitFormActions,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text("Recordatorios", style = MaterialTheme.typography.titleMedium)
-        if (!notificationsAreAllowed) {
-            Text("Las notificaciones están deshabilitadas. Se solicitará permiso al guardar recordatorios.")
-        }
-        ReminderSelectorField(
-            label = "Primer recordatorio",
-            value = uiState.firstReminder,
-            onOptionChange = {
-                if (it != ReminderOption.NONE) onNotificationPermissionNeeded()
-                actions.onFirstReminderOptionChange(it)
-            },
-            onCustomValueChange = actions.onFirstReminderCustomValueChange,
-            onUnitChange = actions.onFirstReminderUnitChange,
-        )
-        if (uiState.secondReminderEnabled) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Recordatorios",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            if (!notificationsAreAllowed) {
+                Text(
+                    text = "Las notificaciones están deshabilitadas. Se solicitará permiso al guardar recordatorios.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             ReminderSelectorField(
-                label = "Segundo recordatorio",
-                value = uiState.secondReminder,
+                label = "Primer recordatorio",
+                value = uiState.firstReminder,
                 onOptionChange = {
                     if (it != ReminderOption.NONE) onNotificationPermissionNeeded()
-                    actions.onSecondReminderOptionChange(it)
+                    actions.onFirstReminderOptionChange(it)
                 },
-                onCustomValueChange = actions.onSecondReminderCustomValueChange,
-                onUnitChange = actions.onSecondReminderUnitChange,
-                onRemove = actions.onRemoveSecondReminder,
+                onCustomValueChange = actions.onFirstReminderCustomValueChange,
+                onUnitChange = actions.onFirstReminderUnitChange,
             )
-        } else {
-            OutlinedButton(onClick = actions.onAddSecondReminder, modifier = Modifier.fillMaxWidth()) {
-                Text("Agregar segundo recordatorio")
+            if (uiState.secondReminderEnabled) {
+                ReminderSelectorField(
+                    label = "Segundo recordatorio",
+                    value = uiState.secondReminder,
+                    onOptionChange = {
+                        if (it != ReminderOption.NONE) onNotificationPermissionNeeded()
+                        actions.onSecondReminderOptionChange(it)
+                    },
+                    onCustomValueChange = actions.onSecondReminderCustomValueChange,
+                    onUnitChange = actions.onSecondReminderUnitChange,
+                    onRemove = actions.onRemoveSecondReminder,
+                )
+            } else {
+                OutlinedButton(
+                    onClick = actions.onAddSecondReminder,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                ) {
+                    Text("+ Agregar segundo recordatorio")
+                }
             }
+            Text(
+                text = "Resumen: ${uiState.reminderSummaryText()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            uiState.reminderError?.let { ErrorText(it) }
         }
-        Text("Resumen: ${uiState.reminderSummaryText()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        uiState.reminderError?.let { ErrorText(it) }
     }
 }
 
