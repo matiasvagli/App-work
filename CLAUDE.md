@@ -48,7 +48,7 @@ Transversales: `core/external` (Intents, contactos, texto compartido), `core/tim
 
 - **DI manual, sin Hilt.** `app/AppContainer.kt` construye la DB y todos los repositorios; `ElecNavHost` los recibe como parámetros y los pasa a cada `ViewModelFactory`. Un repositorio nuevo se agrega ahí y se propaga por firma — no hay service locator ni singletons ocultos.
 - **Interfaz + implementación Room.** Cada feature expone `XRepository` (interfaz en `data/`, tipos de dominio, `Flow` para lectura, `suspend` para escritura) y `RoomXRepository`. Los ViewModels dependen solo de la interfaz; los tests usan `Fake*Repository` en `app/src/test/.../data/` o `.../ui/`.
-- **La lógica de negocio vive en `domain/` como funciones/objects puros** (`QuoteCalculator`, `ReceiptCalculator`, `PaymentBalanceCalculator`, `FinanceMetricsCalculator`, `VisitWorkActions`, `ReminderRules`, evaluadores de `electricalrules`). Los ViewModels orquestan; no calculan. Si algo es difícil de testear sin Android, está en la capa equivocada.
+- **La lógica de negocio vive en `domain/` como funciones/objects puros** (`QuoteCalculator`, `ReceiptCalculator`, `PaymentBalanceCalculator`, `FinanceMetricsCalculator`, `AttentionReportStatus`, `VisitWorkActions`, `ReminderRules`, evaluadores de `electricalrules`). Los ViewModels orquestan; no calculan. Si algo es difícil de testear sin Android, está en la capa equivocada.
 - **ViewModel + `StateFlow<XUiState>`**, un `UiState` inmutable por pantalla, en su propio archivo. Eventos one-shot (snackbar, navegación, compartir) por `SharedFlow`, nunca dentro del state.
 - **Pantallas nuevas separan `XScreen` (conectada al ViewModel) de `XContent` (presentacional)** para poder hacer `@Preview` sin Room ni `AppContainer`.
 - **`TimeProvider` en vez de `Instant.now()`** en dominio y ViewModels, para poder testear tiempo.
@@ -56,7 +56,7 @@ Transversales: `core/external` (Intents, contactos, texto compartido), `core/tim
 
 ### Persistencia
 
-- Base `elec_app.db`, `AppDatabase` en `features/clients/data/` (por historia, no por pertenencia), **versión 18**, `exportSchema = true`.
+- Base `elec_app.db`, `AppDatabase` en `features/clients/data/` (por historia, no por pertenencia), **versión 20**, `exportSchema = true`.
 - **Migraciones explícitas siempre**; nunca `fallbackToDestructiveMigration`. Cada versión nueva vive en su propio archivo `AppMigrationsV<N>.kt` y se registra en `AppContainer`. El patrón vigente es aditivo: crear tablas/índices nuevos o agregar columnas *nullable*; no romper datos existentes.
 - **Borrado lógico en todo el modelo** (`is_deleted`). Por eso **no hay foreign keys físicas**: las relaciones son ids nullable + `JOIN`/`LEFT JOIN`, y todas las queries filtran `is_deleted = 0`.
 - Índices por `client_id`, `visit_id`, `inspection_id`, `status`, fechas y `is_deleted`.
@@ -93,4 +93,4 @@ Regla de producto: la clasificación automática es **orientativa** y no afirma 
 
 ## README
 
-`README.md` es la documentación funcional detallada (flujos, estados, fórmulas, QA manual, limitaciones) y está al día con el esquema v18. Al agregar una migración, documentarla ahí en "Room y migraciones": versión en la lista, tablas/columnas nuevas con sus índices, y el criterio del default elegido si la columna no es nullable. Mantener también "Limitaciones actuales" y "Próximos pasos" cuando una feature deja de ser pendiente.
+`README.md` es la documentación funcional detallada (flujos, estados, fórmulas, QA manual, limitaciones) y está al día con el esquema v20. Al agregar una migración, documentarla ahí en "Room y migraciones": versión en la lista, tablas/columnas nuevas con sus índices, y el criterio del default elegido si la columna no es nullable. Mantener también "Limitaciones actuales" y "Próximos pasos" cuando una feature deja de ser pendiente.

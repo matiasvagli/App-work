@@ -26,6 +26,7 @@ Clientes:
 - Detalle con acciones WhatsApp, llamada, email y Maps.
 - Importar desde contactos mediante selector del sistema.
 - Recibir texto compartido como notas de un nuevo cliente.
+- Listado, detalle y formulario rediseñados con tarjetas y jerarquía visual Material 3.
 
 Visitas:
 
@@ -48,6 +49,8 @@ Visitas:
 - Agregar al calendario mediante Intent, sin sincronización.
 - Recordatorios locales: ninguno, uno o dos por visita.
 - Desde el detalle de visita se puede iniciar, continuar o ver un relevamiento eléctrico.
+- Si la visita está `COMPLETED`, el detalle muestra el acceso "Informes" (técnico y para el cliente).
+- `VisitFormScreen`, `QuickVisitScreen` y el diálogo de finalización (`CompleteVisitDialog`, con las advertencias de validación integradas) están modernizados a Material 3.
 
 Relevamientos eléctricos:
 
@@ -60,6 +63,10 @@ Relevamientos eléctricos:
 - El listado permite buscar por cliente, domicilio, localidad o motivo de visita. No permite crear relevamientos sueltos; siempre siguen vinculados a una visita.
 - El informe final del cliente se pega o redacta manualmente y se guarda en `finalClientReport`; no reemplaza el comentario técnico original.
 - No envía información a internet.
+- La barra superior del overview permite salir hacia la visita en curso o hacia el inicio sin tener que terminar el relevamiento primero.
+- El botón Siguiente de hallazgos avanza según el alcance del relevamiento: visual va a inspección visual complementaria, el resto a observación técnica.
+- La sección de hallazgos se puede marcar completa sin cargar ninguno (`findings_reviewed_at`, v20): no encontrar nada es un resultado válido, distinto de no haber revisado la sección.
+- Circuitos del tablero: además de los destinos existentes, admite `GENERAL` (toda la instalación) y `PARTIAL` (varios sectores, descriptos en el campo de texto libre que también usa "Otro").
 
 Presupuestos:
 
@@ -85,9 +92,19 @@ Economía, comprobantes y cobros:
 - Los pagos cancelados o eliminados no suman al cobrado. Los comprobantes cancelados no entran en estadísticas.
 - Por defecto se bloquea el sobrepago; propinas o adicionales deben cargarse primero como ítem adicional.
 - El detalle de comprobante permite compartir texto por Android Sharesheet, sin abrir WhatsApp obligatoriamente y sin incluir notas internas.
-- El dashboard económico muestra período, trabajos completados, importe generado, cobrado, pendiente, ticket promedio e importe por hora.
+- El dashboard económico (`FinanceDashboardScreen`) se rediseñó con tarjetas M3, KPIs (trabajos completados, generado, cobrado, pendiente, ticket promedio, importe por hora) y un gráfico de barras dibujado con `Canvas`, sin librerías de charts.
 - `ClientDetail` agrega accesos compactos a comprobantes y cobros del cliente.
 - Home prioriza visita en curso, Atender ahora, próxima visita y acceso al módulo económico.
+
+Informes de atención:
+
+- Al cerrar una visita con relevamiento, `AttentionReportCoordinator` congela el informe técnico como snapshot en `visit_completions.technical_report_snapshot`. Antes se regeneraba en vivo y un informe ya entregado podía cambiar de conclusión si después se ajustaba un umbral de `electrical_rule_configs`.
+- Una atención sin relevamiento no genera snapshot; su registro en la historia clínica queda en los campos de trabajo del cierre. La generación nunca hace fallar el cierre: si falla, la atención igual queda cerrada y el informe se puede regenerar después.
+- `AttentionReportStatus` compara `reports_generated_at` contra el `updatedAt` más nuevo de las fuentes (relevamiento, secciones, mediciones, circuitos, hallazgos) y devuelve `NOT_GENERATED`, `UP_TO_DATE` o `STALE`. El informe nunca se regenera solo; `STALE` solo avisa para que el técnico decida.
+- Informe para el cliente: el técnico copia o comparte (Sharesheet) una plantilla con el informe técnico congelado más instrucciones (`ClientReportPromptGenerator`), la pega en la IA externa que use (ChatGPT, Gemini, la que sea), y pega la respuesta de vuelta en `AttentionReportsScreen`. La IA corre fuera de la app; ElecApp no llama a ningún servicio de red, solo arma el texto y usa clipboard/Sharesheet como con el resto de la app.
+- El prompt prohíbe inventar o completar valores, prohíbe interpretar qué indica una medición (solo explicar qué es un dispositivo) y pide texto plano sin Markdown porque el informe se lee en la app y se manda por WhatsApp. Cierra con un bloque “VALORES UTILIZADOS” para que verificar contra el informe técnico sea comparar diez segundos.
+- El DAO expone updates separados para informe técnico e informe del cliente: regenerar el técnico nunca pisa el del cliente, que es el único artefacto que no se puede reconstruir.
+- Accesible desde el detalle de visita completada (“Informes: Técnico y para el cliente”) y desde cada atención del historial clínico, que muestra si hay informe técnico y/o de cliente guardados sin cargar el texto en el listado.
 
 Decisiones monetarias:
 
@@ -119,6 +136,7 @@ Herramientas eléctricas:
 - Desde caída de tensión con clasificación de revisión se puede crear un hallazgo sugerido vinculado al relevamiento, con criterio técnico separado del cálculo original.
 - Copiar y compartir usan texto determinístico local. No hay IA, backend, PDF, fotos ni sincronización.
 - Herramientas marcadas como “Próximamente”: sección orientativa de conductor, luminotecnia, capacitancia, corrección de factor de potencia, consumo energético, protecciones y tablas técnicas.
+- Pantallas de herramientas eléctricas (home, referencia, historial, detalle, potencia/corriente/tensión y caída de tensión) modernizadas a Material 3.
 
 Agenda:
 
@@ -138,14 +156,14 @@ Arquitectura simple por feature:
 - `features/materials`: dominio, Room, repository, ViewModels, pantallas y generador de texto de listas.
 - `features/electricaltools`: dominio, Room, repository, calculadoras puras, ViewModels, pantallas, previews y generadores de texto.
 - `features/electricalrules`: umbrales técnicos configurables en Room, evaluadores de reglas y generación de hallazgos sugeridos.
-- `features/finance`: cierre de visita, comprobantes internos, pagos, calculadoras puras de importes y dashboard económico.
+- `features/finance`: cierre de visita, comprobantes internos, pagos, calculadoras puras de importes, dashboard económico e informes de atención (`AttentionReportCoordinator`, `AttentionReportStatus`).
 - `features/reminders`: entidad Room, reglas testeables, scheduler y receivers.
 - `features/settings`: preferencias locales de recordatorios con DataStore.
 - `features/home`: pantalla principal que prioriza visita en curso, atender ahora y accesos al resto de los módulos.
 - `core/external`: Intents externos, contactos y texto compartido.
 - `core/time`: `TimeProvider` inyectable para poder testear lógica que depende del reloj.
 - `core/ui`: theme y componentes compartidos.
-- `navigation`: rutas, `ElecNavHost` y subgrafos de documentos, economía y herramientas.
+- `navigation`: rutas, `ElecNavHost` y subgrafos de documentos, economía y herramientas. Las etiquetas de la barra inferior usan una sola línea con elipsis (`labelSmall`, 10.5sp) para que “Herramientas” no rompa el layout.
 - `app/AppContainer.kt`: armado manual de dependencias, sin Hilt.
 
 Equivalencias conceptuales con React Native:
@@ -187,6 +205,8 @@ Versiones:
 - v16: agrega datos de alimentador al tablero principal.
 - v17: agrega `grounding_inspections` y corrige la corriente máxima de cobre 2,5 mm².
 - v18: agrega cierre estructurado por campos a `visit_completions`.
+- v19: agrega `technical_report_snapshot`, `client_report` y `reports_generated_at` a `visit_completions` para congelar el informe de atención.
+- v20: agrega `electrical_inspections.findings_reviewed_at`.
 
 Tablas de v4:
 
@@ -283,9 +303,17 @@ Columnas de v18:
 
 - `visit_completions`: `work_type`, `work_sectors`, `work_items`, `work_tests`, `work_observations` y `technical_result`, para reemplazar el cierre de texto libre por un cierre estructurado por campos sin perder los cierres anteriores.
 
+Columnas de v19:
+
+- `visit_completions`: `technical_report_snapshot`, `client_report` y `reports_generated_at`. Hasta v18 el informe técnico se regeneraba en vivo desde datos que podían cambiar (umbrales editables), así que un informe ya entregado podía cambiar de conclusión. Las tres columnas son nullable: las atenciones cerradas antes de v19 quedan sin snapshot y se muestran como “informe no generado”.
+
+Columna de v20:
+
+- `electrical_inspections.findings_reviewed_at`: distingue “no pasé por hallazgos” de “pasé y no encontré nada”, porque hasta v19 la sección solo se marcaba completa si había al menos un hallazgo. Nullable: los relevamientos anteriores a v20 quedan sin revisar y se comportan como antes.
+
 No se usa `fallbackToDestructiveMigration`. La migración `3 -> 4` solo crea tablas e índices nuevos. La migración `4 -> 5` solo agrega columnas nullable a `visits`. La migración `5 -> 6` solo crea tablas e índices nuevos. La migración `6 -> 7` solo crea `technical_calculations` e índices. La migración `7 -> 8` solo crea `visit_work_sessions` e índices. La migración `8 -> 9` agrega columnas nullable y tablas nuevas, por lo que clientes, visitas, recordatorios, relevamientos, presupuestos, materiales, cálculos y sesiones existentes siguen intactos.
 
-De v9 en adelante se mantiene el mismo criterio aditivo: `9 -> 10`, `13 -> 14` y `16 -> 17` solo crean tablas e índices nuevos, y `10 -> 11`, `11 -> 12`, `12 -> 13`, `15 -> 16` y `17 -> 18` solo agregan columnas nullable o con default explícito. Los defaults se eligieron para no cambiar el significado de lo ya cargado: `GENERAL_ASSESSMENT` para el alcance previo al flujo por secciones, `REVIEWED` para secciones que ya se habían completado, y `UNKNOWN` / `NOT_TESTED` / `NOT_VERIFIED` para verificaciones que nunca existieron en esa versión.
+De v9 en adelante se mantiene el mismo criterio aditivo: `9 -> 10`, `13 -> 14` y `16 -> 17` solo crean tablas e índices nuevos, y `10 -> 11`, `11 -> 12`, `12 -> 13`, `15 -> 16`, `17 -> 18`, `18 -> 19` y `19 -> 20` solo agregan columnas nullable o con default explícito. Los defaults se eligieron para no cambiar el significado de lo ya cargado: `GENERAL_ASSESSMENT` para el alcance previo al flujo por secciones, `REVIEWED` para secciones que ya se habían completado, y `UNKNOWN` / `NOT_TESTED` / `NOT_VERIFIED` para verificaciones que nunca existieron en esa versión.
 
 Las dos migraciones que no son puramente aditivas son:
 
@@ -584,7 +612,7 @@ Reinicio:
 ## Limitaciones actuales
 
 - Sin backend, login, Firebase, Google Drive, backups ni sincronización.
-- Sin integración con servicios externos de red; el resumen solo se copia o comparte.
+- Sin integración con servicios externos de red; el resumen solo se copia o comparte. El flujo de informe para el cliente (ver "Informes de atención") no es una excepción: la IA corre en una app externa, ElecApp solo arma texto y usa clipboard/Sharesheet, igual que el resto de la app.
 - Sin Google Calendar API; solo Intent de creación de evento.
 - Sin servicio de cronómetro en segundo plano; el tiempo se deriva de timestamps.
 - Sin tarifa horaria ni facturación por tiempo trabajado.
