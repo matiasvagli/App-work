@@ -51,6 +51,7 @@ fun VisitDetailContent(
     onQuoteClick: () -> Unit,
     onMaterialClick: () -> Unit,
     onWorkClick: () -> Unit,
+    onReportsClick: () -> Unit,
     onStartVisitClick: () -> Unit,
     onPauseWorkClick: () -> Unit,
     onResumeWorkClick: () -> Unit,
@@ -70,7 +71,7 @@ fun VisitDetailContent(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item { VisitHeaderCard(uiState) }
-            item { VisitDocumentsCard(uiState, onWorkClick, onInspectionClick, onQuoteClick, onMaterialClick) }
+            item { VisitDocumentsCard(uiState, onWorkClick, onReportsClick, onInspectionClick, onQuoteClick, onMaterialClick) }
             item {
                 VisitPrimaryActions(
                     uiState = uiState,
@@ -223,6 +224,7 @@ private fun VisitQuickActions(
 private fun VisitDocumentsCard(
     uiState: VisitDetailUiState,
     onWorkClick: () -> Unit,
+    onReportsClick: () -> Unit,
     onInspectionClick: () -> Unit,
     onQuoteClick: () -> Unit,
     onMaterialClick: () -> Unit,
@@ -232,6 +234,9 @@ private fun VisitDocumentsCard(
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Trabajo y documentos", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             DocumentRow("Trabajo", workVisitLabel(visit), "Editar", onWorkClick)
+            if (visit.status == VisitStatus.COMPLETED) {
+                DocumentRow("Informes", "Técnico y para el cliente", "Ver", onReportsClick)
+            }
             DocumentRow("Relevamiento", inspectionVisitLabel(uiState.inspection?.status), if (uiState.inspection == null) "Iniciar" else "Abrir", onInspectionClick)
             DocumentRow("Presupuesto", quoteVisitLabel(uiState.quote?.status), if (uiState.quote == null) "Crear" else "Abrir", onQuoteClick)
             DocumentRow("Materiales", materialVisitLabel(uiState.materialList?.status), if (uiState.materialList == null) "Crear" else "Abrir", onMaterialClick)

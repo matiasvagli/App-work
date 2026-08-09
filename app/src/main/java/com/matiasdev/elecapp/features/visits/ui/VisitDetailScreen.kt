@@ -71,6 +71,7 @@ fun VisitDetailScreen(
     onReceiptClick: (String) -> Unit,
     onRegisterPaymentClick: (String, String, String?) -> Unit,
     onWorkClick: (String) -> Unit,
+    onReportsClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: VisitDetailViewModel = viewModel(
         factory = VisitDetailViewModelFactory(
@@ -141,6 +142,7 @@ fun VisitDetailScreen(
                 if (list != null) onMaterialClick(list.id) else if (visit != null && client != null) onCreateMaterialClick(visit.id, client.id)
             },
             onWorkClick = { uiState.visit?.id?.let(onWorkClick) },
+            onReportsClick = { uiState.visit?.id?.let(onReportsClick) },
             onStartVisitClick = viewModel::requestStartVisit,
             onPauseWorkClick = viewModel::pauseWork,
             onResumeWorkClick = viewModel::resumeWork,

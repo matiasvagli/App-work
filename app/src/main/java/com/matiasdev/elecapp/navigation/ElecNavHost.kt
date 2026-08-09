@@ -397,6 +397,7 @@ fun ElecNavHost(
                     navController.navigate(AppRoutes.registerPayment(receiptId, clientId, linkedVisitId))
                 },
                 onWorkClick = { navController.navigate(AppRoutes.visitWork(it)) },
+                onReportsClick = { navController.navigate(AppRoutes.attentionReports(it)) },
             )
         }
         composable(
