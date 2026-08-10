@@ -79,6 +79,26 @@ object ClientReportPromptGenerator {
         Si un nivel no tiene hallazgos, omití ese título en vez de escribir que está vacío.
         No muestres las etiquetas entre corchetes al cliente: se ven como los títulos.
 
+        CÁLCULOS AUTOMÁTICOS [AUTO]
+        Dentro de "MEDICIONES Y CÁLCULOS" el informe técnico puede traer líneas que empiezan
+        con [AUTO]. Son verificaciones que la app calculó sola con los datos relevados: la
+        caída de tensión entre el pilar y el tablero, la relación entre el consumo medido de
+        un circuito y su térmica, la compatibilidad entre la térmica y la sección del cable.
+        No son hallazgos y no traen etiqueta de nivel, pero son parte de lo que se encontró
+        en la visita. Tratalos así:
+        - Todo [AUTO] cuyo resultado no sea normal o correcto va sí o sí en "QUÉ SE ENCONTRÓ
+          Y POR QUÉ IMPORTA", como un punto propio, con los números que trae y con la
+          clasificación tal como está escrita ("crítica", "requiere revisión", "sin
+          clasificar"). No lo omitas por no ser un hallazgo: es justamente lo que el cliente
+          no puede ver por su cuenta.
+        - Como no traen etiqueta, no los metas bajo ninguno de los tres títulos de nivel ni
+          les inventes uno. Van bajo un cuarto título, al final de "QUÉ HAY QUE HACER":
+          "HAY QUE VERIFICARLO ANTES DE DEFINIR LA CORRECCIÓN". Ahí escribí qué hay que
+          verificar según lo que diga el propio detalle del cálculo, sin agregar nada.
+        - Si un mismo problema ya aparece como hallazgo con etiqueta, no lo dupliques: usá el
+          hallazgo y su nivel, y sumale los números del [AUTO] a la explicación.
+        - Si un [AUTO] dio normal o correcto, no lo listes.
+
         RECOMENDACIONES QUE SIRVAN
         - Cada recomendación dice QUÉ HAY QUE HACER, en imperativo y concreto. "Revisar" no
           es una recomendación cuando el informe técnico ya identificó qué está mal: en ese
@@ -107,19 +127,33 @@ object ClientReportPromptGenerator {
           (por ejemplo "interruptor diferencial"), explicalo en pocas palabras la primera vez.
 
         ESTRUCTURA
+        0. ENCABEZADO — arrancá con el título "INFORME DE VISITA TÉCNICA" y debajo, una por
+           línea, las líneas Cliente, Domicilio, Fecha y Motivo de la visita, copiadas tal
+           cual del encabezado del informe técnico. Corregí solo mayúsculas y acentos de
+           nombres propios. La que no esté en el informe técnico, omitila. Este encabezado
+           no lleva título de sección propio.
         1. TRABAJO REALIZADO — qué se hizo en la visita, redactado prolijo. El técnico
            escribe desde el celular en obra: corregí ortografía y puntuación, pero no
            agregues nada que no haya dicho.
         2. RESULTADO DE LA VISITA — si el trabajo pedido quedó resuelto.
-        3. ESTADO GENERAL OBSERVADO — resumen de lo encontrado, en dos o tres líneas.
+        3. ESTADO GENERAL OBSERVADO — resumen de lo encontrado, en dos o tres líneas,
+           redactado por vos. Esta sección se escribe de nuevo, no se copia: tomá el
+           "COMENTARIO ORIGINAL DEL ELECTRICISTA" y los "Estado general" de cada sección y
+           armá un párrafo prolijo y legible. El comentario del electricista está escrito
+           a las apuradas en obra y es una nota interna: respetá lo que dice y no le agregues
+           hechos, pero no lo pegues tal cual ni conserves su redacción. Las clasificaciones
+           por sección ("bueno", "regular") presentalas como orientativas; si el comentario
+           del electricista y una clasificación no coinciden, decí las dos cosas sin
+           resolverlas vos.
         4. MEDICIONES REALIZADAS — solo los valores que se midieron en la visita, con su
-           unidad. No listes acá datos de chapa o de relevamiento (la capacidad de una
-           térmica, la sección de un cable, una distancia): esos van adentro de la
-           observación que los usa, cuando explican el problema.
-        5. QUÉ SE ENCONTRÓ Y POR QUÉ IMPORTA — un punto por hallazgo, con la explicación de
-           qué significa para el cliente. Acá sí podés citar los datos que sostienen el
-           hallazgo.
-        6. QUÉ HAY QUE HACER — las recomendaciones agrupadas bajo los títulos de nivel.
+           unidad y con el punto donde se tomaron. No listes acá datos de chapa o de
+           relevamiento (la capacidad de una térmica, la sección de un cable, una distancia):
+           esos van adentro de la observación que los usa, cuando explican el problema.
+        5. QUÉ SE ENCONTRÓ Y POR QUÉ IMPORTA — un punto por hallazgo y un punto por cada
+           [AUTO] con resultado no normal, con la explicación de qué significa para el
+           cliente. Acá sí podés citar los datos que sostienen cada punto.
+        6. QUÉ HAY QUE HACER — las recomendaciones agrupadas bajo los títulos de nivel, y al
+           final el título de verificación pendiente si hubo cálculos [AUTO] sin resolver.
         7. ALCANCE Y LIMITACIONES — qué NO se verificó en esta visita y por qué el informe
            no es una certificación de la instalación.
 

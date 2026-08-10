@@ -93,6 +93,29 @@ class ClientReportPromptGeneratorTest {
     }
 
     @Test
+    fun `pide el encabezado con los datos del cliente antes de la primera seccion`() {
+        val prompt = promptText()
+        assertTrue(prompt.contains("INFORME DE VISITA TÉCNICA"))
+        assertTrue(prompt.contains("Cliente, Domicilio, Fecha y Motivo de la visita"))
+    }
+
+    @Test
+    fun `pide redactar de nuevo el estado general en vez de copiar el comentario del tecnico`() {
+        val prompt = promptText()
+        assertTrue(prompt.contains("Esta sección se escribe de nuevo, no se copia"))
+        assertTrue(prompt.contains("no lo pegues tal cual"))
+    }
+
+    @Test
+    fun `obliga a reportar los calculos automaticos sin inventarles nivel`() {
+        val prompt = promptText()
+        assertTrue(prompt.contains("CÁLCULOS AUTOMÁTICOS [AUTO]"))
+        assertTrue(prompt.contains("No lo omitas por no ser un hallazgo"))
+        assertTrue(prompt.contains("HAY QUE VERIFICARLO ANTES DE DEFINIR LA CORRECCIÓN"))
+        assertTrue(prompt.contains("Si un [AUTO] dio normal o correcto, no lo listes"))
+    }
+
+    @Test
     fun `el propio prompt no usa markdown que la IA pueda imitar`() {
         val prompt = ClientReportPromptGenerator.generate(technicalReport)
         assertFalse("el prompt no debe contener negritas markdown", prompt.contains("**"))
