@@ -28,6 +28,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -232,35 +233,39 @@ private fun CircuitList(uiState: MainPanelInspectionUiState, viewModel: MainPane
         return
     }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // key por id: la lista se reemplaza entera al recargar circuitos, y sin key los
+        // slots se identifican por posición y el editor abierto se recrea al reordenar.
         uiState.circuits.forEachIndexed { index, circuit ->
-            HorizontalDivider()
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = circuit.summary(index),
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = { viewModel.toggleCircuitExpanded(circuit.id) }) {
+            key(circuit.id) {
+                HorizontalDivider()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        text = if (circuit.id in uiState.expandedCircuitIds) "Contraer" else "Editar",
-                        maxLines = 1,
+                        text = circuit.summary(index),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
                     )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = { viewModel.toggleCircuitExpanded(circuit.id) }) {
+                        Text(
+                            text = if (circuit.id in uiState.expandedCircuitIds) "Contraer" else "Editar",
+                            maxLines = 1,
+                        )
+                    }
                 }
-            }
-            if (circuit.id in uiState.expandedCircuitIds) {
-                CircuitEditor(circuit, uiState.circuitConsumptionInputs[circuit.id].orEmpty(), viewModel)
+                if (circuit.id in uiState.expandedCircuitIds) {
+                    CircuitEditor(circuit, uiState.circuitInputs[circuit.id] ?: CircuitNumberInputs(), viewModel)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun CircuitEditor(circuit: MainPanelCircuit, consumptionInput: String, viewModel: MainPanelInspectionViewModel) {
+private fun CircuitEditor(circuit: MainPanelCircuit, inputs: CircuitNumberInputs, viewModel: MainPanelInspectionViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         InspectionDropdownField("Identificación o destino", circuit.destination, CircuitDestination.entries.toList(), CircuitDestination::label) {
             viewModel.updateCircuit(circuit.copy(destination = it, destinationOther = null))
@@ -277,7 +282,7 @@ private fun CircuitEditor(circuit: MainPanelCircuit, consumptionInput: String, v
             )
         }
         if (circuit.breakerOtherAmps != null) {
-            NumberField("Otra térmica", circuit.breakerOtherAmps.takeIf { it > 0 }?.toString().orEmpty(), { value -> viewModel.updateCircuit(circuit.copy(breakerAmps = null, breakerOtherAmps = value.toIntOrNull() ?: 0)) }, null)
+            NumberField("Otra térmica", inputs.breakerOther, { value -> viewModel.updateCircuitBreakerOther(circuit, value) }, null)
         }
         InspectionDropdownField("Curva", circuit.breakerCurve, BreakerCurve.entries.toList(), BreakerCurve::label) {
             viewModel.updateCircuit(circuit.copy(breakerCurve = it))
@@ -291,7 +296,7 @@ private fun CircuitEditor(circuit: MainPanelCircuit, consumptionInput: String, v
             )
         }
         if (circuit.conductorOtherSectionMm2 != null) {
-            DecimalField("Otra sección mm²", circuit.conductorOtherSectionMm2.takeIf { it > 0.0 }?.toString().orEmpty(), { value -> viewModel.updateCircuit(circuit.copy(conductorSectionMm2 = null, conductorOtherSectionMm2 = value.replace(",", ".").toDoubleOrNull() ?: 0.0)) }, null)
+            DecimalField("Otra sección mm²", inputs.sectionOther, { value -> viewModel.updateCircuitSectionOther(circuit, value) }, null)
         }
         InspectionDropdownField("Material del conductor", circuit.conductorMaterial, ConductorMaterial.entries.toList(), ConductorMaterial::label) {
             viewModel.updateCircuit(circuit.copy(conductorMaterial = it, conductorMaterialOther = null))
@@ -303,7 +308,7 @@ private fun CircuitEditor(circuit: MainPanelCircuit, consumptionInput: String, v
             viewModel.updateCircuit(circuit.copy(consumptionOrigin = it, consumptionAmps = if (it == MeasurementOrigin.NOT_VERIFIED) null else circuit.consumptionAmps))
         }
         if (circuit.consumptionOrigin != MeasurementOrigin.NOT_VERIFIED) {
-            DecimalField("Consumo del circuito A", consumptionInput, { value -> viewModel.updateCircuitConsumption(circuit, value) }, null)
+            DecimalField("Consumo del circuito A", inputs.consumption, { value -> viewModel.updateCircuitConsumption(circuit, value) }, null)
         }
         InspectionTextField("Observación", circuit.notes.orEmpty(), { viewModel.updateCircuit(circuit.copy(notes = it.ifBlank { null })) }, minLines = 2)
     }

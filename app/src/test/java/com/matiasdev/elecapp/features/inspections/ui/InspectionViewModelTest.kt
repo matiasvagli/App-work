@@ -567,12 +567,45 @@ class InspectionViewModelTest {
         val editable = repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()!!
 
         viewModel.updateCircuitConsumption(editable, "2")
-        assertEquals("2", viewModel.uiState.value.circuitConsumptionInputs[editable.id])
+        assertEquals("2", viewModel.uiState.value.circuitInputs[editable.id]?.consumption)
         assertEquals(2.0, repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()?.consumptionAmps)
 
         viewModel.updateCircuitConsumption(editable, "2,5")
-        assertEquals("2,5", viewModel.uiState.value.circuitConsumptionInputs[editable.id])
+        assertEquals("2,5", viewModel.uiState.value.circuitInputs[editable.id]?.consumption)
         assertEquals(2.5, repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()?.consumptionAmps)
+    }
+
+    @Test
+    fun `main panel circuit section keeps the half typed decimal instead of resetting it`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.updateCircuitCount("1")
+        val circuit = repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()!!
+
+        // "2," todavía no parsea: el campo tiene que seguir mostrando lo tipeado en vez
+        // de volver a "" y borrarle el número al técnico a mitad de camino.
+        viewModel.updateCircuitSectionOther(circuit, "2,")
+        assertEquals("2,", viewModel.uiState.value.circuitInputs[circuit.id]?.sectionOther)
+
+        viewModel.updateCircuitSectionOther(circuit, "2,5")
+        assertEquals("2,5", viewModel.uiState.value.circuitInputs[circuit.id]?.sectionOther)
+        assertEquals(2.5, repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()?.conductorOtherSectionMm2)
+    }
+
+    @Test
+    fun `main panel circuit edits land in the state without waiting for room`() = runTest(dispatcher) {
+        val repository = FakeInspectionRepository()
+        val inspection = repository.startOrGetInspection(testVisit(), testClient())
+        val viewModel = MainPanelInspectionViewModel(repository, inspection.id, dispatcher)
+
+        viewModel.updateCircuitCount("1")
+        val circuit = repository.findAggregate(inspection.id)?.mainPanelCircuits?.single()!!
+
+        viewModel.updateCircuit(circuit.copy(notes = "toma del lavadero"))
+
+        assertEquals("toma del lavadero", viewModel.uiState.value.circuits.single().notes)
     }
 
     @Test

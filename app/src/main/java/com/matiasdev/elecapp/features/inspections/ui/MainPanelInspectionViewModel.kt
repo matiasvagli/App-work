@@ -73,7 +73,7 @@ data class MainPanelInspectionUiState(
     val notes: String = "",
     val measurements: List<MainPanelMeasurement> = emptyList(),
     val circuits: List<MainPanelCircuit> = emptyList(),
-    val circuitConsumptionInputs: Map<String, String> = emptyMap(),
+    val circuitInputs: Map<String, CircuitNumberInputs> = emptyMap(),
     val expandedCircuitIds: Set<String> = emptySet(),
     val editingMeasurementId: String? = null,
     val measurementSection: MainPanelMeasurementSection = MainPanelMeasurementSection.INPUT_VOLTAGE,
@@ -140,6 +140,7 @@ class MainPanelInspectionViewModel(
                     notes = panel?.notes.orEmpty(),
                     measurements = aggregate?.mainPanelMeasurements.orEmpty(),
                     circuits = aggregate?.mainPanelCircuits.orEmpty(),
+                    circuitInputs = aggregate?.mainPanelCircuits.orEmpty().seedInputs(it.circuitInputs),
                     status = aggregate?.inspection?.status ?: it.status,
                 )
             }
@@ -246,19 +247,54 @@ class MainPanelInspectionViewModel(
         }
     }
 
+    /**
+     * Actualiza el circuito en memoria de forma síncrona y recién después persiste.
+     *
+     * Antes escribía en Room y volvía a leer el aggregate entero, así que el valor del
+     * campo se re-alimentaba desde la base después de cada tecla, con un salto de hilo
+     * de por medio: se perdían caracteres y el cursor saltaba.
+     */
     fun updateCircuit(circuit: MainPanelCircuit) {
-        viewModelScope.launch(ioDispatcher) {
-            repository.saveMainPanelCircuit(circuit.copy(updatedAt = Instant.now()))
-            refreshCollections()
+        val updated = circuit.copy(updatedAt = Instant.now())
+        _uiState.update { state ->
+            state.copy(
+                saved = false,
+                circuits = state.circuits.map { if (it.id == updated.id) updated else it },
+            )
         }
+        viewModelScope.launch(ioDispatcher) {
+            repository.saveMainPanelCircuit(updated)
+        }
+    }
+
+    fun updateCircuitBreakerOther(circuit: MainPanelCircuit, value: String) {
+        val filtered = value.filter(Char::isDigit)
+        updateCircuitInput(circuit.id) { copy(breakerOther = filtered) }
+        updateCircuit(circuit.copy(breakerAmps = null, breakerOtherAmps = filtered.toIntOrNull() ?: 0))
+    }
+
+    fun updateCircuitSectionOther(circuit: MainPanelCircuit, value: String) {
+        val filtered = value.filter { it.isDigit() || it == '.' || it == ',' }
+        updateCircuitInput(circuit.id) { copy(sectionOther = filtered) }
+        updateCircuit(
+            circuit.copy(
+                conductorSectionMm2 = null,
+                conductorOtherSectionMm2 = filtered.replace(",", ".").toDoubleOrNull() ?: 0.0,
+            ),
+        )
     }
 
     fun updateCircuitConsumption(circuit: MainPanelCircuit, value: String) {
         val filtered = value.filter { it.isDigit() || it == '.' || it == ',' }
-        _uiState.update {
-            it.copy(circuitConsumptionInputs = it.circuitConsumptionInputs + (circuit.id to filtered))
-        }
+        updateCircuitInput(circuit.id) { copy(consumption = filtered) }
         updateCircuit(circuit.copy(consumptionAmps = filtered.replace(",", ".").toDoubleOrNull()))
+    }
+
+    private fun updateCircuitInput(id: String, transform: CircuitNumberInputs.() -> CircuitNumberInputs) {
+        _uiState.update { state ->
+            val current = state.circuitInputs[id] ?: CircuitNumberInputs()
+            state.copy(circuitInputs = state.circuitInputs + (id to current.transform()))
+        }
     }
 
     fun editMeasurement(measurement: MainPanelMeasurement) {
@@ -372,9 +408,7 @@ class MainPanelInspectionViewModel(
             it.copy(
                 measurements = aggregate?.mainPanelMeasurements.orEmpty(),
                 circuits = circuits,
-                circuitConsumptionInputs = circuits.associate { circuit ->
-                    circuit.id to (it.circuitConsumptionInputs[circuit.id] ?: circuit.consumptionAmps?.toInputText().orEmpty())
-                },
+                circuitInputs = circuits.seedInputs(it.circuitInputs),
                 saved = true,
             )
         }
@@ -410,6 +444,32 @@ class MainPanelInspectionViewModel(
 private fun Double.toInputText(): String {
     val whole = toLong()
     return if (this == whole.toDouble()) whole.toString() else toString()
+}
+
+/**
+ * Texto crudo de los campos numéricos de un circuito.
+ *
+ * Lo que se muestra no puede derivarse del `Int`/`Double` guardado: escribir "2," o "2."
+ * no parsea, se guarda 0, y el campo borraría lo que el técnico está tipeando a mitad
+ * del número. El valor parseado va a Room; este texto es el que ve la pantalla.
+ */
+data class CircuitNumberInputs(
+    val breakerOther: String = "",
+    val sectionOther: String = "",
+    val consumption: String = "",
+)
+
+/** Siembra el texto de los circuitos desde lo guardado, sin pisar lo que se está tipeando. */
+private fun List<MainPanelCircuit>.seedInputs(
+    current: Map<String, CircuitNumberInputs>,
+): Map<String, CircuitNumberInputs> = associate { circuit ->
+    circuit.id to (
+        current[circuit.id] ?: CircuitNumberInputs(
+            breakerOther = circuit.breakerOtherAmps?.takeIf { it > 0 }?.toString().orEmpty(),
+            sectionOther = circuit.conductorOtherSectionMm2?.takeIf { it > 0.0 }?.toInputText().orEmpty(),
+            consumption = circuit.consumptionAmps?.toInputText().orEmpty(),
+        )
+        )
 }
 
 private fun MainPanelInspectionUiState.normalized(): MainPanelInspectionUiState {
