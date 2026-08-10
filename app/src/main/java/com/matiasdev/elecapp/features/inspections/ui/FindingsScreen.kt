@@ -57,6 +57,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
 import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
 import com.matiasdev.elecapp.features.inspections.domain.FindingSeverity
 import com.matiasdev.elecapp.features.inspections.domain.FindingSourceType
 import com.matiasdev.elecapp.features.inspections.domain.InspectionFinding
@@ -69,13 +70,16 @@ import com.matiasdev.elecapp.features.inspections.summary.label
 fun FindingsScreen(
     repository: InspectionRepository,
     inspectionId: String,
+    ruleConfigRepository: ElectricalRuleConfigRepository? = null,
     onBackClick: () -> Unit,
     onPreviousClick: () -> Unit,
     onNextClick: (InspectionScope) -> Unit,
     onHomeClick: () -> Unit,
     onAddToQuoteClick: () -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: FindingsViewModel = viewModel(factory = FindingsViewModelFactory(repository, inspectionId)),
+    viewModel: FindingsViewModel = viewModel(
+        factory = FindingsViewModelFactory(repository, inspectionId, ruleConfigRepository),
+    ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }

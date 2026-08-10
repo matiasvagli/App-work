@@ -2,6 +2,9 @@ package com.matiasdev.elecapp.features.inspections.domain
 
 import com.matiasdev.elecapp.features.electricalrules.domain.DefaultElectricalRuleConfigs
 import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleCode
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfig
+import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalClassification
+import com.matiasdev.elecapp.features.electricaltools.summary.TechnicalValueFormatter
 import java.time.Instant
 
 data class InspectionFindingGroups(
@@ -13,11 +16,14 @@ data class InspectionFindingGroups(
 )
 
 object InspectionFindingProposalBuilder {
-    fun buildGroups(aggregate: InspectionAggregate): InspectionFindingGroups {
+    fun buildGroups(
+        aggregate: InspectionAggregate,
+        rules: List<ElectricalRuleConfig> = DefaultElectricalRuleConfigs.all,
+    ): InspectionFindingGroups {
         val existingById = aggregate.findings.associateBy { it.id }
         val automatic = buildList {
             addAll(aggregate.confirmedObservationFindings())
-            addAll(aggregate.ruleSuggestionFindings())
+            addAll(aggregate.ruleSuggestionFindings(rules))
             addAll(aggregate.dataReviewFindings())
             addAll(aggregate.notVerifiedFindings())
         }.map { proposal ->
@@ -38,8 +44,11 @@ object InspectionFindingProposalBuilder {
         )
     }
 
-    fun mergeIntoAggregate(aggregate: InspectionAggregate): InspectionAggregate {
-        val groups = buildGroups(aggregate)
+    fun mergeIntoAggregate(
+        aggregate: InspectionAggregate,
+        rules: List<ElectricalRuleConfig> = DefaultElectricalRuleConfigs.all,
+    ): InspectionAggregate {
+        val groups = buildGroups(aggregate, rules)
         return aggregate.copy(
             findings = groups.confirmed + groups.suggested + groups.dataReview + groups.notVerified + groups.manual,
         )
@@ -88,10 +97,12 @@ private fun InspectionAggregate.confirmedObservationFindings(): List<InspectionF
     }
 }
 
-private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding> = buildList {
+private fun InspectionAggregate.ruleSuggestionFindings(
+    rules: List<ElectricalRuleConfig>,
+): List<InspectionFinding> = buildList {
     val now = Instant.now()
-    val min = DefaultElectricalRuleConfigs.all.firstOrNull { it.code == ElectricalRuleCode.MIN_SUPPLY_VOLTAGE }?.numericValue
-    val max = DefaultElectricalRuleConfigs.all.firstOrNull { it.code == ElectricalRuleCode.MAX_SUPPLY_VOLTAGE }?.numericValue
+    val min = rules.firstOrNull { it.code == ElectricalRuleCode.MIN_SUPPLY_VOLTAGE }?.numericValue
+    val max = rules.firstOrNull { it.code == ElectricalRuleCode.MAX_SUPPLY_VOLTAGE }?.numericValue
     val voltageMeasurements = pillarMeasurements
         .filter { it.type.isVoltageMeasurement() }
         .map { it.id to Triple(it.value, it.unit, "Pilar y acometida") } +
@@ -149,9 +160,10 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
                 )
             }
         }
+    addAll(feederVoltageDropFindings(rules, now))
     grounding?.let { grounding ->
         val resistance = grounding.resistanceOhms
-        val limit = DefaultElectricalRuleConfigs.all.firstOrNull {
+        val limit = rules.firstOrNull {
             it.code == ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS && it.enabled
         }?.numericValue
         if (
@@ -178,6 +190,101 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
                 ),
             )
         }
+    }
+}
+
+/**
+ * Hallazgos de la caída de tensión del alimentador pilar-tablero.
+ *
+ * Antes esto vivía solo como cálculo [AUTO] dentro de "MEDICIONES Y CÁLCULOS": el informe
+ * decía "8,1 % · crítico" pero nadie lo levantaba como hallazgo, así que no llegaba a la
+ * lista de acciones ni lo contaba el overview. Una caída por encima del umbral configurado
+ * es un hallazgo como cualquier otro; lo que cambia es que sale de una regla, no de una
+ * observación del técnico, y por eso entra como sugerencia pendiente de validación.
+ *
+ * Son tres situaciones distintas y excluyentes en su origen:
+ * - La medida supera el umbral: es el caso principal, hay dos tensiones medidas.
+ * - Sin mediciones para comparar, la estimada supera el umbral: la acción es medir, no
+ *   corregir, porque todavía no hay una caída real registrada.
+ * - La medida es muy superior a la estimada: la sección del cable no explica la caída, así
+ *   que apunta al recorrido (empalmes, bornes, continuidad) y convive con la primera.
+ */
+private fun InspectionAggregate.feederVoltageDropFindings(
+    rules: List<ElectricalRuleConfig>,
+    now: Instant,
+): List<InspectionFinding> = buildList {
+    val measured = InspectionFeederVoltageDrop.measured(this@feederVoltageDropFindings, rules)
+    val estimated = InspectionFeederVoltageDrop.estimated(this@feederVoltageDropFindings, rules)
+    if (measured != null && measured.classification == TechnicalClassification.CRITICAL_REVIEW) {
+        add(
+            proposal(
+                id = "auto:rule:feeder_voltage_drop:measured",
+                category = FindingCategory.CONDUCTORS,
+                severity = FindingSeverity.PRIORITY,
+                description = "La caída de tensión entre el pilar y el tablero principal es de " +
+                    "${TechnicalValueFormatter.format(measured.percent)} %, por encima del máximo configurado " +
+                    "(${TechnicalValueFormatter.format(measured.limitPercent)} %). Pilar ${TechnicalValueFormatter.format(measured.sourceVoltageVolts)} V, " +
+                    "tablero ${TechnicalValueFormatter.format(measured.destinationVoltageVolts)} V, " +
+                    "diferencia ${TechnicalValueFormatter.format(measured.differenceVolts)} V.",
+                sectionName = "Pilar y acometida",
+                now = now,
+                sourceType = FindingSourceType.RULE_SUGGESTION,
+                sourceEntityId = inspection.id,
+                sourceValue = measured.percent,
+                sourceUnit = "%",
+                ruleCode = ElectricalRuleCode.MAX_FEEDER_VOLTAGE_DROP_PERCENT.name,
+                recommendation = InspectionFindingRecommendations.FEEDER_VOLTAGE_DROP_ABOVE_LIMIT,
+                includeInReport = true,
+                reviewStatus = FindingReviewStatus.PENDING,
+            ),
+        )
+    }
+    if (measured == null && estimated != null && estimated.classification == TechnicalClassification.CRITICAL_REVIEW) {
+        add(
+            proposal(
+                id = "auto:rule:feeder_voltage_drop:estimated",
+                category = FindingCategory.CONDUCTORS,
+                severity = FindingSeverity.RECOMMENDED,
+                description = "La caída de tensión estimada del alimentador es de " +
+                    "${TechnicalValueFormatter.format(estimated.result.voltageDropPercent)} %, por encima del máximo " +
+                    "configurado (${TechnicalValueFormatter.format(estimated.limitPercent)} %). Estimada con " +
+                    "${TechnicalValueFormatter.format(estimated.lengthMeters)} m, ${TechnicalValueFormatter.format(estimated.sectionMm2)} mm² y " +
+                    "${TechnicalValueFormatter.format(estimated.currentAmps)} A. No se registraron mediciones de tensión en " +
+                    "el pilar y el tablero para confirmarla.",
+                sectionName = "Pilar y acometida",
+                now = now,
+                sourceType = FindingSourceType.RULE_SUGGESTION,
+                sourceEntityId = inspection.id,
+                sourceValue = estimated.result.voltageDropPercent,
+                sourceUnit = "%",
+                ruleCode = ElectricalRuleCode.MAX_FEEDER_VOLTAGE_DROP_PERCENT.name,
+                recommendation = InspectionFindingRecommendations.FEEDER_VOLTAGE_DROP_ESTIMATED_ABOVE_LIMIT,
+                includeInReport = true,
+                reviewStatus = FindingReviewStatus.PENDING,
+            ),
+        )
+    }
+    FeederVoltageDropEvaluator.compare(measured, estimated)?.let { review ->
+        add(
+            proposal(
+                id = "auto:rule:feeder_voltage_drop:review",
+                category = FindingCategory.CONDUCTORS,
+                severity = FindingSeverity.PRIORITY,
+                description = "La caída de tensión medida entre el pilar y el tablero " +
+                    "(${TechnicalValueFormatter.format(review.measuredPercent)} %) es muy superior a la estimada para los " +
+                    "datos relevados (${TechnicalValueFormatter.format(review.estimatedPercent)} %).",
+                sectionName = "Pilar y acometida",
+                now = now,
+                sourceType = FindingSourceType.RULE_SUGGESTION,
+                sourceEntityId = inspection.id,
+                sourceValue = review.measuredPercent,
+                sourceUnit = "%",
+                ruleCode = "FEEDER_VOLTAGE_DROP_VS_ESTIMATE",
+                recommendation = InspectionFindingRecommendations.FEEDER_VOLTAGE_DROP_HIGHER_THAN_ESTIMATED,
+                includeInReport = true,
+                reviewStatus = FindingReviewStatus.PENDING,
+            ),
+        )
     }
 }
 

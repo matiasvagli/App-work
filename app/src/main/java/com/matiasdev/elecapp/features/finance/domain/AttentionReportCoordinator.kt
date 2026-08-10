@@ -52,6 +52,7 @@ class AttentionReportCoordinator(
             visit = visit,
             visitCompletion = completion,
             autoCalculations = AutoInspectionCalculationBuilder.build(aggregate, rules),
+            rules = rules,
         )
         if (snapshot.isBlank()) return false
 

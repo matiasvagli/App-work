@@ -3,6 +3,8 @@ package com.matiasdev.elecapp.features.inspections.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.matiasdev.elecapp.features.electricalrules.domain.DefaultElectricalRuleConfigs
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfigRepository
 import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 import com.matiasdev.elecapp.features.inspections.domain.FindingCategory
 import com.matiasdev.elecapp.features.inspections.domain.FindingReviewStatus
@@ -23,6 +25,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -57,16 +61,25 @@ class FindingsViewModel(
     private val repository: InspectionRepository,
     private val inspectionId: String,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    /**
+     * Los umbrales configurables entran acá porque hay hallazgos que salen de una regla
+     * (caída de tensión, rango de tensión, resistencia de tierra). Sin esto la pantalla
+     * usaría los defaults y podría mostrar una lista distinta a la del informe, que sí
+     * lee los umbrales guardados.
+     */
+    private val ruleConfigRepository: ElectricalRuleConfigRepository? = null,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(FindingsUiState())
     val uiState: StateFlow<FindingsUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch(ioDispatcher) {
-            repository.observeAggregate(inspectionId)
+            val rulesFlow = ruleConfigRepository?.observeAll() ?: flowOf(DefaultElectricalRuleConfigs.all)
+            combine(repository.observeAggregate(inspectionId), rulesFlow) { aggregate, rules -> aggregate to rules }
                 .catch { error -> _uiState.update { it.copy(isLoading = false, errorMessage = error.message) } }
-                .collect { aggregate ->
-                    val groups = aggregate?.let(InspectionFindingProposalBuilder::buildGroups) ?: InspectionFindingGroups()
+                .collect { (aggregate, rules) ->
+                    val groups = aggregate?.let { InspectionFindingProposalBuilder.buildGroups(it, rules) }
+                        ?: InspectionFindingGroups()
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -276,7 +289,13 @@ private fun FindingCategory.labelForTitle(): String = when (this) {
 class FindingsViewModelFactory(
     private val repository: InspectionRepository,
     private val inspectionId: String,
+    private val ruleConfigRepository: ElectricalRuleConfigRepository? = null,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = FindingsViewModel(repository, inspectionId) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T =
+        FindingsViewModel(
+            repository = repository,
+            inspectionId = inspectionId,
+            ruleConfigRepository = ruleConfigRepository,
+        ) as T
 }

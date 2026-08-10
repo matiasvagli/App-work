@@ -73,4 +73,18 @@ object InspectionFindingRecommendations {
     const val CIRCUIT_CONSUMPTION_ABOVE_BREAKER =
         "Redistribuir las cargas del circuito o adecuar la protección y el conductor a la carga " +
             "real, y verificar que la térmica actúe correctamente."
+
+    const val FEEDER_VOLTAGE_DROP_ABOVE_LIMIT =
+        "Verificar la sección real, la longitud y el estado del conductor que alimenta el tablero " +
+            "desde el pilar, y redimensionarlo si corresponde. Con una caída de tensión de este " +
+            "orden los artefactos reciben menos tensión de la que necesitan para funcionar bien."
+
+    const val FEEDER_VOLTAGE_DROP_ESTIMATED_ABOVE_LIMIT =
+        "Medir la tensión en el pilar y en el tablero para confirmar la caída estimada antes de " +
+            "definir la corrección del alimentador."
+
+    const val FEEDER_VOLTAGE_DROP_HIGHER_THAN_ESTIMATED =
+        "Verificar conexiones, empalmes, bornes, continuidad, sección efectiva y longitud real del " +
+            "conductor entre el pilar y el tablero. La caída medida es muy superior a la que " +
+            "corresponde a los datos relevados, así que la causa puede no ser la sección del cable."
 }

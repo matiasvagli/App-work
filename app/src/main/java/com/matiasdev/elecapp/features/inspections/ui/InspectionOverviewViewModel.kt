@@ -81,7 +81,7 @@ class InspectionOverviewViewModel(
                             } else {
                                 false
                             },
-                            progress = aggregate?.let(InspectionProgressCalculator::calculate),
+                            progress = aggregate?.let { InspectionProgressCalculator.calculate(it, rules) },
                             errorMessage = if (aggregate == null) "Relevamiento no encontrado" else null,
                         )
                     }

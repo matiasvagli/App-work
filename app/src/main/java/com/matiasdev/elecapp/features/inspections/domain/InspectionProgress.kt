@@ -1,5 +1,8 @@
 package com.matiasdev.elecapp.features.inspections.domain
 
+import com.matiasdev.elecapp.features.electricalrules.domain.DefaultElectricalRuleConfigs
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfig
+
 enum class InspectionSectionStatus {
     NOT_STARTED,
     INCOMPLETE,
@@ -33,7 +36,10 @@ data class InspectionProgress(
 }
 
 object InspectionProgressCalculator {
-    fun calculate(aggregate: InspectionAggregate): InspectionProgress {
+    fun calculate(
+        aggregate: InspectionAggregate,
+        rules: List<ElectricalRuleConfig> = DefaultElectricalRuleConfigs.all,
+    ): InspectionProgress {
         val inspection = aggregate.inspection
         if (inspection.scope == InspectionScope.VISUAL_INSPECTION) {
             return InspectionProgress(
@@ -41,7 +47,7 @@ object InspectionProgressCalculator {
                     visualPillarProgress(aggregate.pillar),
                     visualMainPanelProgress(aggregate.mainPanel),
                     groundingProgress(aggregate.grounding),
-                    findingsProgress(aggregate, inspection.findingsReviewedAt),
+                    findingsProgress(aggregate, inspection.findingsReviewedAt, rules),
                     visualComplementaryProgress(inspection, aggregate.unverifiedItems),
                 ),
             )
@@ -52,7 +58,7 @@ object InspectionProgressCalculator {
                     if (inspection.isPillarRelevantForSector()) add(pillarProgress(aggregate.pillar))
                     if (inspection.isMainPanelRelevantForSector()) add(mainPanelProgress(aggregate.mainPanel))
                     add(groundingProgress(aggregate.grounding))
-                    add(findingsProgress(aggregate, inspection.findingsReviewedAt))
+                    add(findingsProgress(aggregate, inspection.findingsReviewedAt, rules))
                     add(technicalCommentProgress(inspection))
                 },
             )
@@ -62,7 +68,7 @@ object InspectionProgressCalculator {
                 pillarProgress(aggregate.pillar),
                 mainPanelProgress(aggregate.mainPanel),
                 groundingProgress(aggregate.grounding),
-                findingsProgress(aggregate, inspection.findingsReviewedAt),
+                findingsProgress(aggregate, inspection.findingsReviewedAt, rules),
                 technicalCommentProgress(inspection),
             ),
         )
@@ -167,8 +173,9 @@ object InspectionProgressCalculator {
     private fun findingsProgress(
         aggregate: InspectionAggregate,
         reviewedAt: java.time.Instant?,
+        rules: List<ElectricalRuleConfig>,
     ): InspectionSectionProgress {
-        val findings = InspectionFindingProposalBuilder.mergeIntoAggregate(aggregate).findings.filter {
+        val findings = InspectionFindingProposalBuilder.mergeIntoAggregate(aggregate, rules).findings.filter {
             it.includeInReport &&
                 it.sourceType != FindingSourceType.NOT_VERIFIED &&
                 it.sourceType != FindingSourceType.DATA_REVIEW

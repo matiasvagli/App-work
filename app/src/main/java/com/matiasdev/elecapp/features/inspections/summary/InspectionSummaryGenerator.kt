@@ -1,5 +1,7 @@
 package com.matiasdev.elecapp.features.inspections.summary
 
+import com.matiasdev.elecapp.features.electricalrules.domain.DefaultElectricalRuleConfigs
+import com.matiasdev.elecapp.features.electricalrules.domain.ElectricalRuleConfig
 import com.matiasdev.elecapp.features.inspections.domain.ElectricalInspection
 import com.matiasdev.elecapp.features.electricaltools.domain.TechnicalCalculation
 import com.matiasdev.elecapp.features.electricaltools.summary.TechnicalCalculationTextGenerator
@@ -37,8 +39,9 @@ object InspectionSummaryGenerator {
         visitCompletion: VisitCompletion? = null,
         calculations: List<TechnicalCalculation> = aggregate.calculations,
         autoCalculations: List<AutoInspectionCalculation> = emptyList(),
+        rules: List<ElectricalRuleConfig> = DefaultElectricalRuleConfigs.all,
     ): String {
-        val aggregateWithFindings = InspectionFindingProposalBuilder.mergeIntoAggregate(aggregate)
+        val aggregateWithFindings = InspectionFindingProposalBuilder.mergeIntoAggregate(aggregate, rules)
         val inspection = aggregateWithFindings.inspection
         if (inspection.scope == InspectionScope.VISUAL_INSPECTION) {
             return generateVisualInspection(aggregateWithFindings, visit, zoneId, visitCompletion, calculations, autoCalculations)

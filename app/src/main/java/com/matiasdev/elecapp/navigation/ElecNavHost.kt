@@ -536,6 +536,7 @@ fun ElecNavHost(
             FindingsScreen(
                 repository = inspectionRepository,
                 inspectionId = inspectionId,
+                ruleConfigRepository = electricalRuleConfigRepository,
                 onBackClick = { navController.navigateUp() },
                 onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionGrounding(inspectionId)) },
                 onNextClick = { scope ->
