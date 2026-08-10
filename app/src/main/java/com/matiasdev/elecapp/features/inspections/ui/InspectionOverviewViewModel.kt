@@ -88,8 +88,10 @@ class InspectionOverviewViewModel(
                 }
         }
         viewModelScope.launch(ioDispatcher) {
-            inspectionRepository.observeAggregate(inspectionId)
-                .map { it?.inspection?.visitId }
+            // Solo hace falta el visitId: con observeAggregate esta pantalla abría el
+            // aggregate dos veces, o sea dieciocho consultas de Room en vez de nueve.
+            inspectionRepository.observeInspectionById(inspectionId)
+                .map { it?.visitId }
                 .distinctUntilChanged()
                 .flatMapLatest { visitId ->
                     if (visitId == null || financeRepository == null) flowOf(null) else financeRepository.observeVisitCompletion(visitId)

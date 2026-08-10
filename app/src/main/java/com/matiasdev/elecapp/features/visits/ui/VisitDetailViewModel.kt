@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -95,13 +96,11 @@ class VisitDetailViewModel(
                 _uiState.update { it.copy(completion = completion) }
             }
         }
-        viewModelScope.launch(ioDispatcher) {
-            financeRepository.observeReceiptByVisitId(visitId).collect { receipt ->
-                _uiState.update { it.copy(receipt = receipt) }
-            }
-        }
+        // El comprobante se observaba dos veces, una para el propio comprobante y otra
+        // para colgarle los pagos. Una sola suscripción alimenta las dos cosas.
         viewModelScope.launch(ioDispatcher) {
             financeRepository.observeReceiptByVisitId(visitId)
+                .onEach { receipt -> _uiState.update { it.copy(receipt = receipt) } }
                 .flatMapLatest { receipt -> receipt?.let { financeRepository.observePayments(it.id) } ?: flowOf(emptyList()) }
                 .collect { payments -> _uiState.update { it.copy(payments = payments) } }
         }

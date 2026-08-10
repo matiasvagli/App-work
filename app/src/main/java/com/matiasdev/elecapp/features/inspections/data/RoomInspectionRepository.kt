@@ -41,6 +41,10 @@ class RoomInspectionRepository(
         return dao.observeActiveInspectionForVisit(visitId).map { it?.toDomain() }
     }
 
+    override fun observeInspectionById(inspectionId: String): Flow<ElectricalInspection?> {
+        return dao.observeActiveInspectionById(inspectionId).map { it?.toDomain() }
+    }
+
     override fun observeAggregate(inspectionId: String): Flow<InspectionAggregate?> {
         return dao.observeActiveInspectionById(inspectionId).flatMapLatest { inspection ->
             if (inspection == null) {

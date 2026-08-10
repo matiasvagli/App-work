@@ -69,6 +69,10 @@ class FakeInspectionRepository : InspectionRepository {
         return inspections.map { values -> values.firstOrNull { it.visitId == visitId && !it.isDeleted } }
     }
 
+    override fun observeInspectionById(inspectionId: String): Flow<ElectricalInspection?> {
+        return inspections.map { values -> values.firstOrNull { it.id == inspectionId && !it.isDeleted } }
+    }
+
     override fun observeAggregate(inspectionId: String): Flow<InspectionAggregate?> {
         return kotlinx.coroutines.flow.combine(inspections, aggregateVersion) { values, _ ->
             aggregateFor(values.firstOrNull { it.id == inspectionId && !it.isDeleted })

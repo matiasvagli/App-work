@@ -24,6 +24,12 @@ interface InspectionRepository {
 
     fun observeActiveInspectionForVisit(visitId: String): Flow<ElectricalInspection?>
 
+    /**
+     * Solo la cabecera del relevamiento. `observeAggregate` abre nueve consultas: para
+     * quien únicamente necesita un dato de la inspección, esto es una sola.
+     */
+    fun observeInspectionById(inspectionId: String): Flow<ElectricalInspection?>
+
     fun observeAggregate(inspectionId: String): Flow<InspectionAggregate?>
 
     suspend fun findAggregate(inspectionId: String): InspectionAggregate?
