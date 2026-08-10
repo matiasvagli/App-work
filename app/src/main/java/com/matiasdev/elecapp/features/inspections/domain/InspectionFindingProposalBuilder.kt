@@ -65,10 +65,13 @@ private fun InspectionAggregate.confirmedObservationFindings(): List<InspectionF
             add(proposal("auto:obs:pillar:conductors", FindingCategory.PILLAR, FindingSeverity.PRIORITY, "Conductores observados con deterioro o riesgo visible.", "Pilar y acometida", now, recommendation = InspectionFindingRecommendations.PILLAR_CONDUCTORS))
         }
         if (pillar.protectionCompatibility == ProtectionCompatibility.INCOMPATIBLE) {
-            add(proposal("auto:obs:pillar:compatibility", FindingCategory.PROTECTIONS, FindingSeverity.PRIORITY, "Compatibilidad protección/conductor marcada como incompatible.", "Pilar y acometida", now, recommendation = InspectionFindingRecommendations.PILLAR_PROTECTION_COMPATIBILITY))
+            add(proposal("auto:obs:pillar:compatibility", FindingCategory.PROTECTIONS, FindingSeverity.PRIORITY, "Compatibilidad protección/conductor marcada como incompatible.", "Pilar y acometida", now, recommendation = InspectionFindingRecommendations.PROTECTION_COMPATIBILITY))
         }
     }
     mainPanel?.let { panel ->
+        if (panel.protectionCompatibility == ProtectionCompatibility.INCOMPATIBLE) {
+            add(proposal("auto:obs:panel:compatibility", FindingCategory.PROTECTIONS, FindingSeverity.PRIORITY, "Compatibilidad protección/conductor marcada como incompatible en el tablero principal.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PROTECTION_COMPATIBILITY))
+        }
         if (panel.differentialPresent == YesNoUnknown.NO) {
             add(proposal("auto:obs:panel:differential_missing", FindingCategory.PROTECTIONS, FindingSeverity.URGENT, "No se observó interruptor diferencial en el tablero principal.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_DIFFERENTIAL_MISSING))
         }

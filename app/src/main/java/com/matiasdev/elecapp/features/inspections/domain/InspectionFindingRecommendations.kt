@@ -17,7 +17,7 @@ object InspectionFindingRecommendations {
     const val PILLAR_CONDUCTORS =
         "Reemplazar los conductores deteriorados del pilar y la acometida."
 
-    const val PILLAR_PROTECTION_COMPATIBILITY =
+    const val PROTECTION_COMPATIBILITY =
         "Adecuar la protección a la sección del conductor: reemplazar la térmica por una de " +
             "corriente acorde al cable instalado, o reemplazar el conductor por uno de sección " +
             "acorde a la protección. Mientras no coincidan, la térmica puede no actuar antes de " +

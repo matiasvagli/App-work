@@ -128,6 +128,8 @@ object ClientReportPromptGenerator {
         CONTROL PARA EL TÉCNICO
         Fuera del bloque de código, después del informe, agregá esta sección. No es parte
         del informe y el cliente no la recibe: el técnico la usa para verificar de un vistazo.
+        Dejá una línea en blanco entre la última línea del informe y este bloque: pegado al
+        final del texto se lo lleva puesto el que copia y termina en el WhatsApp del cliente.
 
         CONTROL PARA EL TÉCNICO (no forma parte del informe)
         - Listá únicamente los valores que sostienen una observación o una recomendación, con

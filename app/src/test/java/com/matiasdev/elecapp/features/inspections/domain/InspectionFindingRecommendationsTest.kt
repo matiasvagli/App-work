@@ -104,6 +104,16 @@ class InspectionFindingRecommendationsTest {
     }
 
     @Test
+    fun `la incompatibilidad proteccion-conductor genera hallazgo tambien en el tablero`() {
+        val finding = confirmedFinding("auto:obs:panel:compatibility") {
+            it.copy(protectionCompatibility = ProtectionCompatibility.INCOMPATIBLE)
+        }
+
+        assertEquals(FindingSeverity.PRIORITY, finding.severity)
+        assertEquals(InspectionFindingRecommendations.PROTECTION_COMPATIBILITY, finding.recommendation)
+    }
+
+    @Test
     fun `el overview cuenta los hallazgos automaticos aunque no esten guardados en Room`() {
         val base = aggregateWithEveryObservation()
         val aggregate = base.copy(
