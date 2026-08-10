@@ -67,6 +67,8 @@ Relevamientos eléctricos:
 - El botón Siguiente de hallazgos avanza según el alcance del relevamiento: visual va a inspección visual complementaria, el resto a observación técnica.
 - La sección de hallazgos se puede marcar completa sin cargar ninguno (`findings_reviewed_at`, v20): no encontrar nada es un resultado válido, distinto de no haber revisado la sección.
 - Circuitos del tablero: además de los destinos existentes, admite `GENERAL` (toda la instalación) y `PARTIAL` (varios sectores, descriptos en el campo de texto libre que también usa "Otro").
+- Cada hallazgo automático trae su recomendación desde el dominio (`InspectionFindingRecommendations`), no desde el prompt de la IA: la acción forma parte del informe técnico que firma el electricista. Un hallazgo confirmado lleva la acción concreta (reemplazar, instalar, adecuar); una sugerencia de regla pendiente de validación lleva la verificación. Si el hallazgo ya estaba guardado, se actualiza la recomendación pero se respeta la severidad que haya dejado el técnico.
+- Diferencial ausente o con prueba manual fallida se clasifican como `URGENT`: en ambos casos la instalación queda sin protección contra descargas.
 
 Presupuestos:
 

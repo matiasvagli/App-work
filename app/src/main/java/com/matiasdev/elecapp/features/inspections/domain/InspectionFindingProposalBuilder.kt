@@ -62,26 +62,26 @@ private fun InspectionAggregate.confirmedObservationFindings(): List<InspectionF
     val now = Instant.now()
     pillar?.let { pillar ->
         if (pillar.conductorCondition in listOf(ConductorCondition.DETERIORATED, ConductorCondition.VISIBLE_RISK)) {
-            add(proposal("auto:obs:pillar:conductors", FindingCategory.PILLAR, FindingSeverity.PRIORITY, "Conductores observados con deterioro o riesgo visible.", "Pilar y acometida", now))
+            add(proposal("auto:obs:pillar:conductors", FindingCategory.PILLAR, FindingSeverity.PRIORITY, "Conductores observados con deterioro o riesgo visible.", "Pilar y acometida", now, recommendation = InspectionFindingRecommendations.PILLAR_CONDUCTORS))
         }
         if (pillar.protectionCompatibility == ProtectionCompatibility.INCOMPATIBLE) {
-            add(proposal("auto:obs:pillar:compatibility", FindingCategory.PROTECTIONS, FindingSeverity.PRIORITY, "Compatibilidad protección/conductor marcada como incompatible.", "Pilar y acometida", now))
+            add(proposal("auto:obs:pillar:compatibility", FindingCategory.PROTECTIONS, FindingSeverity.PRIORITY, "Compatibilidad protección/conductor marcada como incompatible.", "Pilar y acometida", now, recommendation = InspectionFindingRecommendations.PILLAR_PROTECTION_COMPATIBILITY))
         }
     }
     mainPanel?.let { panel ->
         if (panel.differentialPresent == YesNoUnknown.NO) {
-            add(proposal("auto:obs:panel:differential_missing", FindingCategory.PROTECTIONS, FindingSeverity.PRIORITY, "No se observó interruptor diferencial en el tablero principal.", "Tablero principal", now))
+            add(proposal("auto:obs:panel:differential_missing", FindingCategory.PROTECTIONS, FindingSeverity.URGENT, "No se observó interruptor diferencial en el tablero principal.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_DIFFERENTIAL_MISSING))
         }
         if (panel.differentialTestResult == DifferentialTestResult.FAILED) {
-            add(proposal("auto:obs:panel:differential_failed", FindingCategory.PROTECTIONS, FindingSeverity.PRIORITY, "La prueba manual del interruptor diferencial fue fallida.", "Tablero principal", now))
+            add(proposal("auto:obs:panel:differential_failed", FindingCategory.PROTECTIONS, FindingSeverity.URGENT, "La prueba manual del interruptor diferencial fue fallida.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_DIFFERENTIAL_FAILED))
         }
-        if (panel.improvisedConnections == YesNoUnknown.YES) add(proposal("auto:obs:panel:improvised", FindingCategory.MAIN_PANEL, FindingSeverity.PRIORITY, "Se observaron empalmes o conexiones improvisadas.", "Tablero principal", now))
-        if (panel.overheatingSigns == YesNoUnknown.YES) add(proposal("auto:obs:panel:overheating", FindingCategory.VISIBLE_RISK, FindingSeverity.URGENT, "Se observaron signos de calentamiento o recalentamiento.", "Tablero principal", now))
-        if (panel.exposedPartsOrDamagedInsulation == YesNoUnknown.YES) add(proposal("auto:obs:panel:exposed", FindingCategory.VISIBLE_RISK, FindingSeverity.URGENT, "Se observaron partes expuestas, aislación dañada o riesgo de contacto.", "Tablero principal", now))
-        if (panel.conductorColorStatus == ConductorColorStatus.INCORRECT_OR_MIXED) add(proposal("auto:obs:panel:colors", FindingCategory.CONDUCTORS, FindingSeverity.RECOMMENDED, "Colores de conductores incorrectos o mezclados.", "Tablero principal", now))
-        if (panel.groundBarPresent == YesNoUnknown.NO) add(proposal("auto:obs:panel:ground_bar_missing", FindingCategory.GROUNDING, FindingSeverity.PRIORITY, "No se observó bornera de tierra en el tablero principal.", "Tablero principal", now))
-        if (panel.neutralAndGroundSeparated == YesNoUnknown.NO) add(proposal("auto:obs:panel:neutral_ground", FindingCategory.MAIN_PANEL, FindingSeverity.PRIORITY, "Neutro y tierra no se encuentran separados.", "Tablero principal", now))
-        if (panel.protectionConductorsPresent == YesNoPartialUnknown.NO) add(proposal("auto:obs:panel:protection_conductors", FindingCategory.GROUNDING, FindingSeverity.PRIORITY, "No se observaron conductores de protección.", "Tablero principal", now))
+        if (panel.improvisedConnections == YesNoUnknown.YES) add(proposal("auto:obs:panel:improvised", FindingCategory.MAIN_PANEL, FindingSeverity.PRIORITY, "Se observaron empalmes o conexiones improvisadas.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_IMPROVISED_CONNECTIONS))
+        if (panel.overheatingSigns == YesNoUnknown.YES) add(proposal("auto:obs:panel:overheating", FindingCategory.VISIBLE_RISK, FindingSeverity.URGENT, "Se observaron signos de calentamiento o recalentamiento.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_OVERHEATING))
+        if (panel.exposedPartsOrDamagedInsulation == YesNoUnknown.YES) add(proposal("auto:obs:panel:exposed", FindingCategory.VISIBLE_RISK, FindingSeverity.URGENT, "Se observaron partes expuestas, aislación dañada o riesgo de contacto.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_EXPOSED_PARTS))
+        if (panel.conductorColorStatus == ConductorColorStatus.INCORRECT_OR_MIXED) add(proposal("auto:obs:panel:colors", FindingCategory.CONDUCTORS, FindingSeverity.RECOMMENDED, "Colores de conductores incorrectos o mezclados.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_CONDUCTOR_COLORS))
+        if (panel.groundBarPresent == YesNoUnknown.NO) add(proposal("auto:obs:panel:ground_bar_missing", FindingCategory.GROUNDING, FindingSeverity.PRIORITY, "No se observó bornera de tierra en el tablero principal.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_GROUND_BAR_MISSING))
+        if (panel.neutralAndGroundSeparated == YesNoUnknown.NO) add(proposal("auto:obs:panel:neutral_ground", FindingCategory.MAIN_PANEL, FindingSeverity.PRIORITY, "Neutro y tierra no se encuentran separados.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_NEUTRAL_GROUND_NOT_SEPARATED))
+        if (panel.protectionConductorsPresent == YesNoPartialUnknown.NO) add(proposal("auto:obs:panel:protection_conductors", FindingCategory.GROUNDING, FindingSeverity.PRIORITY, "No se observaron conductores de protección.", "Tablero principal", now, recommendation = InspectionFindingRecommendations.PANEL_PROTECTION_CONDUCTORS_MISSING))
     }
 }
 
@@ -114,6 +114,7 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
                     sourceValue = value,
                     sourceUnit = unit,
                     ruleCode = "SUPPLY_VOLTAGE_RANGE",
+                    recommendation = InspectionFindingRecommendations.SUPPLY_VOLTAGE_OUT_OF_RANGE,
                     includeInReport = true,
                     reviewStatus = FindingReviewStatus.PENDING,
                 ),
@@ -138,6 +139,7 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
                         sourceValue = it.value,
                         sourceUnit = it.unit,
                         ruleCode = "PROTECTION_CONDUCTOR_QUICK_CHECK",
+                        recommendation = InspectionFindingRecommendations.PROTECTION_CONDUCTOR_QUICK_CHECK,
                         includeInReport = true,
                         reviewStatus = FindingReviewStatus.PENDING,
                     ),
@@ -167,6 +169,7 @@ private fun InspectionAggregate.ruleSuggestionFindings(): List<InspectionFinding
                     sourceValue = resistance,
                     sourceUnit = "Ω",
                     ruleCode = ElectricalRuleCode.MAX_GROUND_RESISTANCE_OHMS.name,
+                    recommendation = InspectionFindingRecommendations.GROUND_RESISTANCE_ABOVE_LIMIT,
                     includeInReport = true,
                     reviewStatus = FindingReviewStatus.PENDING,
                 ),
@@ -220,6 +223,7 @@ private fun InspectionAggregate.dataReviewFindings(): List<InspectionFinding> = 
                     sourceValue = consumption,
                     sourceUnit = "A",
                     ruleCode = "CIRCUIT_CONSUMPTION_BREAKER",
+                    recommendation = InspectionFindingRecommendations.CIRCUIT_CONSUMPTION_ABOVE_BREAKER,
                     includeInReport = true,
                     reviewStatus = FindingReviewStatus.PENDING,
                 ),
@@ -283,6 +287,7 @@ private fun InspectionAggregate.proposal(
     sourceValue: Double? = null,
     sourceUnit: String? = null,
     ruleCode: String? = null,
+    recommendation: String? = null,
     includeInReport: Boolean = sourceType == FindingSourceType.OBSERVATION_CONFIRMED || sourceType == FindingSourceType.NOT_VERIFIED,
     reviewStatus: FindingReviewStatus = if (sourceType == FindingSourceType.OBSERVATION_CONFIRMED) FindingReviewStatus.CONFIRMED else FindingReviewStatus.PENDING,
 ): InspectionFinding {
@@ -293,7 +298,7 @@ private fun InspectionAggregate.proposal(
         severity = severity,
         title = sectionName,
         description = description,
-        recommendation = null,
+        recommendation = recommendation,
         sourceType = sourceType,
         sourceSection = sectionName.toInspectionSection(),
         sourceEntityId = sourceEntityId,
