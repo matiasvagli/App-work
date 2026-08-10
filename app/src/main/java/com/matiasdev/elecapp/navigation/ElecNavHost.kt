@@ -483,7 +483,16 @@ fun ElecNavHost(
                     navController.navigate(route)
                 },
                 onCalculationClick = { navController.navigateSingleTop(AppRoutes.technicalCalculationDetail(it)) },
-                onCompletionFinished = { navController.navigateHomeClearingStack() },
+                onCompletionFinished = { visitId ->
+                    if (visitId == null) {
+                        navController.navigateHomeClearingStack()
+                    } else {
+                        navController.navigate(AppRoutes.visitDetail(visitId)) {
+                            popUpTo(AppRoutes.HOME) { inclusive = false }
+                            launchSingleTop = true
+                        }
+                    }
+                },
             )
         }
         composable(AppRoutes.INSPECTION_GENERAL, AppRoutes.inspectionIdArguments) { backStackEntry ->

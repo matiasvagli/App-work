@@ -84,7 +84,7 @@ fun InspectionOverviewScreen(
     onCreateMaterialClick: (String, String) -> Unit,
     onAddCalculationClick: (String, String, String, InspectionManualCalculationType) -> Unit,
     onCalculationClick: (String) -> Unit,
-    onCompletionFinished: () -> Unit,
+    onCompletionFinished: (String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InspectionOverviewViewModel = viewModel(
         factory = InspectionOverviewViewModelFactory(
@@ -112,7 +112,9 @@ fun InspectionOverviewScreen(
     LaunchedEffect(uiState.navigateHomeAfterCompletion) {
         if (uiState.navigateHomeAfterCompletion) {
             viewModel.onCompletionNavigationHandled()
-            onCompletionFinished()
+            // Terminar el relevamiento devuelve al trabajo, no al inicio: la visita es
+            // desde donde se sigue cobrando y donde están los informes de la atención.
+            onCompletionFinished(uiState.aggregate?.inspection?.visitId)
         }
     }
 

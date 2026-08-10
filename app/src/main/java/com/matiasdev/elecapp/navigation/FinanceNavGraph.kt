@@ -100,12 +100,11 @@ fun NavGraphBuilder.financeRoutes(
         ServiceReceiptDetailScreen(
             financeRepository = financeRepository,
             clientRepository = clientRepository,
-            inspectionRepository = inspectionRepository,
             receiptId = backStackEntry.arguments?.getString(AppRoutes.RECEIPT_ID).orEmpty(),
             onBackClick = { navController.navigateUp() },
             onHomeClick = { navController.navigateHome() },
             onVisitClick = { navController.navigate(AppRoutes.visitDetail(it)) { launchSingleTop = true } },
-            onFullReportClick = { navController.navigate(AppRoutes.inspectionOverview(it)) { launchSingleTop = true } },
+            onWorkReportsClick = { navController.navigate(AppRoutes.attentionReports(it)) { launchSingleTop = true } },
             onRegisterPaymentClick = { receiptId, clientId, visitId ->
                 navController.navigate(AppRoutes.registerPayment(receiptId, clientId, visitId))
             },

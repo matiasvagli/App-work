@@ -46,7 +46,6 @@ import com.matiasdev.elecapp.features.finance.domain.PaymentBalanceCalculator
 import com.matiasdev.elecapp.features.finance.domain.PaymentMethod
 import com.matiasdev.elecapp.features.finance.domain.ServiceReceipt
 import com.matiasdev.elecapp.features.finance.domain.displayNumber
-import com.matiasdev.elecapp.features.inspections.data.InspectionRepository
 
 
 
@@ -77,15 +76,14 @@ fun ServiceReceiptListScreen(
 fun ServiceReceiptDetailScreen(
     financeRepository: FinanceRepository,
     clientRepository: ClientRepository,
-    inspectionRepository: InspectionRepository,
     receiptId: String,
     onBackClick: () -> Unit,
     onHomeClick: () -> Unit,
     onVisitClick: (String) -> Unit,
-    onFullReportClick: (String) -> Unit,
+    onWorkReportsClick: (String) -> Unit,
     onRegisterPaymentClick: (String, String, String?) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: ReceiptDetailViewModel = viewModel(factory = ReceiptDetailViewModelFactory(financeRepository, clientRepository, inspectionRepository, receiptId)),
+    viewModel: ReceiptDetailViewModel = viewModel(factory = ReceiptDetailViewModelFactory(financeRepository, clientRepository, receiptId)),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -113,7 +111,7 @@ fun ServiceReceiptDetailScreen(
         LazyColumn(Modifier.padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (receipt == null) item { Text("Comprobante no encontrado") } else {
                 item { ReceiptHeader(receipt, uiState.client?.fullName, uiState.payments) }
-                item { ReceiptContextActions(uiState, onVisitClick, onFullReportClick) }
+                item { ReceiptContextActions(uiState, onVisitClick, onWorkReportsClick) }
                 item { ItemsCard(uiState.items) }
                 item { PaymentsCard(uiState) { onRegisterPaymentClick(receipt.id, receipt.clientId, receipt.visitId) } }
             }
@@ -167,18 +165,18 @@ private fun ReceiptRow(receipt: ServiceReceipt, onReceiptClick: (String) -> Unit
 }
 
 @Composable
-private fun ReceiptContextActions(uiState: ReceiptDetailUiState, onVisitClick: (String) -> Unit, onFullReportClick: (String) -> Unit) {
-    val visitId = uiState.receipt?.visitId
-    if (visitId == null && uiState.inspectionId == null) return
+/**
+ * Los informes de la atención cuelgan de la visita, no del relevamiento, así que el
+ * acceso directo desde el cobro va a la visita: ahí están el informe técnico y el que se
+ * manda al cliente.
+ */
+private fun ReceiptContextActions(uiState: ReceiptDetailUiState, onVisitClick: (String) -> Unit, onWorkReportsClick: (String) -> Unit) {
+    val visitId = uiState.receipt?.visitId ?: return
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("Trabajo e informe", fontWeight = FontWeight.SemiBold)
-            visitId?.let {
-                OutlinedButton(onClick = { onVisitClick(it) }, modifier = Modifier.fillMaxWidth()) { Text("Ver visita") }
-            }
-            uiState.inspectionId?.let {
-                Button(onClick = { onFullReportClick(it) }, modifier = Modifier.fillMaxWidth()) { Text("Ver informe completo") }
-            }
+            OutlinedButton(onClick = { onVisitClick(visitId) }, modifier = Modifier.fillMaxWidth()) { Text("Ver visita") }
+            Button(onClick = { onWorkReportsClick(visitId) }, modifier = Modifier.fillMaxWidth()) { Text("Ver trabajo") }
         }
     }
 }
