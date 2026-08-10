@@ -42,6 +42,10 @@ Relevamientos:
 - Listado -> overview -> atrás: vuelve a listado.
 - Visita -> relevamiento -> atrás: vuelve a visita.
 - Sección -> guardar -> overview: vuelve al overview.
+- Hallazgos -> Siguiente -> observaciones: la sección de observaciones tiene barra inferior con Atrás, Inicio y Terminar.
+- Observaciones -> Terminar o Guardar: vuelve al overview, nunca a hallazgos.
+- Overview -> recorrer secciones -> volver: una sola pulsación de atrás sale del relevamiento, sin overviews apilados.
+- Overview: la tarjeta de hallazgos muestra la misma cantidad que la pantalla de hallazgos, incluidos los automáticos.
 
 Presupuestos:
 

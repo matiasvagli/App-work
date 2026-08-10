@@ -544,10 +544,26 @@ fun ElecNavHost(
             )
         }
         composable(AppRoutes.INSPECTION_VISUAL_COMPLEMENTARY, AppRoutes.inspectionIdArguments) { backStackEntry ->
-            VisualInspectionComplementaryScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
+            val inspectionId = backStackEntry.inspectionId()
+            VisualInspectionComplementaryScreen(
+                repository = inspectionRepository,
+                inspectionId = inspectionId,
+                onBackClick = { navController.navigateUp() },
+                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionFindings(inspectionId)) },
+                onSaved = { navController.navigateToInspectionOverview(inspectionId) },
+                onHomeClick = { navController.navigateHomeClearingStack() },
+            )
         }
         composable(AppRoutes.INSPECTION_TECHNICAL_COMMENT, AppRoutes.inspectionIdArguments) { backStackEntry ->
-            InspectionTechnicalCommentScreen(inspectionRepository, backStackEntry.inspectionId(), { navController.navigateUp() })
+            val inspectionId = backStackEntry.inspectionId()
+            InspectionTechnicalCommentScreen(
+                repository = inspectionRepository,
+                inspectionId = inspectionId,
+                onBackClick = { navController.navigateUp() },
+                onPreviousClick = { navController.navigateSingleTop(AppRoutes.inspectionFindings(inspectionId)) },
+                onSaved = { navController.navigateToInspectionOverview(inspectionId) },
+                onHomeClick = { navController.navigateHomeClearingStack() },
+            )
         }
         composable(AppRoutes.INSPECTION_FINAL_REPORT, AppRoutes.inspectionIdArguments) { backStackEntry ->
             val inspectionId = backStackEntry.inspectionId()
@@ -586,6 +602,18 @@ private fun inspectionSectionRoute(inspectionId: String, section: InspectionSect
 
 private fun androidx.navigation.NavHostController.navigateSingleTop(route: String) {
     navigate(route) { launchSingleTop = true }
+}
+
+/**
+ * Vuelve al overview del relevamiento limpiando las secciones que quedaron apiladas.
+ * Sin el `popUpTo`, ir y volver entre secciones deja copias del overview en el stack y
+ * salir con la flecha exige apretarla una vez por cada paso recorrido.
+ */
+private fun androidx.navigation.NavHostController.navigateToInspectionOverview(inspectionId: String) {
+    navigate(AppRoutes.inspectionOverview(inspectionId)) {
+        popUpTo(AppRoutes.INSPECTION_OVERVIEW) { inclusive = false }
+        launchSingleTop = true
+    }
 }
 
 private fun androidx.navigation.NavHostController.navigateHomeClearingStack() {

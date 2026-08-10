@@ -65,6 +65,8 @@ Relevamientos eléctricos:
 - No envía información a internet.
 - La barra superior del overview permite salir hacia la visita en curso o hacia el inicio sin tener que terminar el relevamiento primero.
 - El botón Siguiente de hallazgos avanza según el alcance del relevamiento: visual va a inspección visual complementaria, el resto a observación técnica.
+- Observación técnica y observaciones complementarias son las secciones terminales: tienen barra inferior con Atrás, Inicio y Terminar, y al guardar vuelven al overview limpiando las secciones apiladas. Antes volvían a hallazgos, que era de donde venían, y el flujo quedaba en bucle.
+- La tarjeta de hallazgos del overview cuenta los hallazgos automáticos, que se derivan del relevamiento en cada lectura y no están guardados en Room.
 - La sección de hallazgos se puede marcar completa sin cargar ninguno (`findings_reviewed_at`, v20): no encontrar nada es un resultado válido, distinto de no haber revisado la sección.
 - Circuitos del tablero: además de los destinos existentes, admite `GENERAL` (toda la instalación) y `PARTIAL` (varios sectores, descriptos en el campo de texto libre que también usa "Otro").
 - Cada hallazgo automático trae su recomendación desde el dominio (`InspectionFindingRecommendations`), no desde el prompt de la IA: la acción forma parte del informe técnico que firma el electricista. Un hallazgo confirmado lleva la acción concreta (reemplazar, instalar, adecuar); una sugerencia de regla pendiente de validación lleva la verificación. Si el hallazgo ya estaba guardado, se actualiza la recomendación pero se respeta la severidad que haya dejado el técnico.

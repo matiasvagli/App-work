@@ -41,7 +41,7 @@ object InspectionProgressCalculator {
                     visualPillarProgress(aggregate.pillar),
                     visualMainPanelProgress(aggregate.mainPanel),
                     groundingProgress(aggregate.grounding),
-                    findingsProgress(aggregate.findings, inspection.findingsReviewedAt),
+                    findingsProgress(aggregate, inspection.findingsReviewedAt),
                     visualComplementaryProgress(inspection, aggregate.unverifiedItems),
                 ),
             )
@@ -52,7 +52,7 @@ object InspectionProgressCalculator {
                     if (inspection.isPillarRelevantForSector()) add(pillarProgress(aggregate.pillar))
                     if (inspection.isMainPanelRelevantForSector()) add(mainPanelProgress(aggregate.mainPanel))
                     add(groundingProgress(aggregate.grounding))
-                    add(findingsProgress(aggregate.findings, inspection.findingsReviewedAt))
+                    add(findingsProgress(aggregate, inspection.findingsReviewedAt))
                     add(technicalCommentProgress(inspection))
                 },
             )
@@ -62,7 +62,7 @@ object InspectionProgressCalculator {
                 pillarProgress(aggregate.pillar),
                 mainPanelProgress(aggregate.mainPanel),
                 groundingProgress(aggregate.grounding),
-                findingsProgress(aggregate.findings, inspection.findingsReviewedAt),
+                findingsProgress(aggregate, inspection.findingsReviewedAt),
                 technicalCommentProgress(inspection),
             ),
         )
@@ -158,11 +158,21 @@ object InspectionProgressCalculator {
      * No encontrar hallazgos es un resultado válido de una inspección, distinto de no
      * haber mirado la sección. Por eso la completitud mira si el técnico la revisó, no
      * si la lista tiene elementos.
+     *
+     * Cuenta los mismos hallazgos que va a mostrar la pantalla de hallazgos y que va a
+     * salir en el informe: los automáticos se derivan del aggregate en cada lectura y no
+     * están guardados en Room, así que mirar `aggregate.findings` crudo hacía que el
+     * overview dijera "Revisado, sin hallazgos" con la pantalla de hallazgos llena.
      */
     private fun findingsProgress(
-        findings: List<InspectionFinding>,
+        aggregate: InspectionAggregate,
         reviewedAt: java.time.Instant?,
     ): InspectionSectionProgress {
+        val findings = InspectionFindingProposalBuilder.mergeIntoAggregate(aggregate).findings.filter {
+            it.includeInReport &&
+                it.sourceType != FindingSourceType.NOT_VERIFIED &&
+                it.sourceType != FindingSourceType.DATA_REVIEW
+        }
         val status = when {
             findings.isNotEmpty() -> InspectionSectionStatus.COMPLETE
             reviewedAt != null -> InspectionSectionStatus.COMPLETE

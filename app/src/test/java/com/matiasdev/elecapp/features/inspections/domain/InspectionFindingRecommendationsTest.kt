@@ -103,6 +103,24 @@ class InspectionFindingRecommendationsTest {
         assertTrue(summary.contains("Recomendación: ${InspectionFindingRecommendations.PANEL_DIFFERENTIAL_FAILED}"))
     }
 
+    @Test
+    fun `el overview cuenta los hallazgos automaticos aunque no esten guardados en Room`() {
+        val base = aggregateWithEveryObservation()
+        val aggregate = base.copy(
+            inspection = base.inspection.copy(findingsReviewedAt = Instant.parse("2026-08-04T15:00:00Z")),
+        )
+
+        val findings = InspectionProgressCalculator.calculate(aggregate)
+            .sections
+            .first { it.section == InspectionSection.FINDINGS }
+
+        assertEquals(InspectionSectionStatus.COMPLETE, findings.status)
+        assertTrue(
+            "el overview seguía diciendo '${findings.summary}' con la pantalla de hallazgos llena",
+            findings.summary.endsWith("hallazgo(s)"),
+        )
+    }
+
     private fun confirmedFinding(
         id: String,
         panel: (MainPanelInspection) -> MainPanelInspection,

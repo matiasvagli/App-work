@@ -32,12 +32,21 @@ import com.matiasdev.elecapp.features.inspections.domain.InspectionStatus
 import com.matiasdev.elecapp.features.inspections.domain.UnverifiedItemType
 import com.matiasdev.elecapp.features.inspections.summary.label
 
+/**
+ * Observaciones y no verificados: última sección del relevamiento visual.
+ *
+ * Guardar vuelve al overview, no a la pantalla anterior. Volver atrás dejaba al técnico
+ * rebotando entre hallazgos y observaciones sin salida hacia adelante.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VisualInspectionComplementaryScreen(
     repository: InspectionRepository,
     inspectionId: String,
     onBackClick: () -> Unit,
+    onPreviousClick: () -> Unit,
+    onSaved: () -> Unit,
+    onHomeClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: VisualInspectionComplementaryViewModel = viewModel(
         factory = VisualInspectionComplementaryViewModelFactory(repository, inspectionId),
@@ -45,7 +54,7 @@ fun VisualInspectionComplementaryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(uiState.saved) {
-        if (uiState.saved) onBackClick()
+        if (uiState.saved) onSaved()
     }
     Scaffold(
         modifier = modifier,
@@ -57,6 +66,15 @@ fun VisualInspectionComplementaryScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
+            )
+        },
+        bottomBar = {
+            InspectionSectionNavigation(
+                onPreviousClick = onPreviousClick,
+                onNextClick = { if (uiState.status == InspectionStatus.DRAFT) viewModel.save() else onSaved() },
+                onHomeClick = onHomeClick,
+                nextLabel = "Terminar",
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
         },
     ) { padding ->
