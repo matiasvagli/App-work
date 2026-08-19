@@ -1,6 +1,7 @@
 .gradle/
 .gradle-dist/
 .android-sdk/
+.android/
 build/
 local.properties
 
@@ -12,3 +13,4 @@ app/build/
 # Permisos y ajustes locales de Claude Code; los agentes del proyecto sí se versionan.
 .claude/settings.local.json
 .claude/settings.local.json.tmp.*
+hs_err_pid*.log

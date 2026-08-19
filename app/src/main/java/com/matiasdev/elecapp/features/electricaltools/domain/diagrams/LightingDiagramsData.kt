@@ -1,0 +1,145 @@
+package com.matiasdev.elecapp.features.electricaltools.domain.diagrams
+
+import com.matiasdev.elecapp.features.electricaltools.domain.ComponentTerminal
+import com.matiasdev.elecapp.features.electricaltools.domain.DiagramType
+import com.matiasdev.elecapp.features.electricaltools.domain.ElectricalDiagram
+import com.matiasdev.elecapp.features.electricaltools.domain.WiringConnectionStep
+
+val photocellDiagram = ElectricalDiagram(
+    id = "fotocelula-crepuscular",
+    type = DiagramType.PHOTOCELL,
+    title = "Prácticas de Fotocontrol / Fotocélulas",
+    subtitle = "Conexionado de modelos tipo Hongo/NEMA, Universal con sonda exterior (AL-1502) y Compacto fijo apto LED.",
+    category = "Iluminación Exterior",
+    badgeText = "220V AC",
+    requiredVoltage = "220 Vca",
+    safetyVoltageNote = "Relé interno para conmutación de fase directa.",
+    requiredComponents = listOf(
+        "Fotocontrol tipo Hongo / NEMA (con zócalo de conexión)",
+        "Fotocontrol Universal electrónico con sensor exterior (tipo AL-1502)",
+        "Fotocontrol Compacto fijo de posición vertical (Apto LED)",
+        "Luminarias exteriores o reflectores LED",
+        "Interruptor manual bipolar opcional para corte de mantenimiento",
+    ),
+    terminalLegend = listOf(
+        ComponentTerminal("Cable NEGRO", "Línea / Fase (L)", "Entrada de Fase directa de 220V (o Marrón según norma)."),
+        ComponentTerminal("Cable BLANCO / AZUL", "Neutro común (N)", "Neutro de alimentación interna del sensor y alimentación de la lámpara."),
+        ComponentTerminal("Cable ROJO / GRIS", "Carga / Retorno (L')", "Salida conmutada por relé hacia el borne central de la luminaria."),
+    ),
+    stepByStepGuide = listOf(
+        WiringConnectionStep(
+            stepNumber = 1,
+            title = "Entrada de Fase (L) al Fotocontrol",
+            wireName = "Fase (Negro / Castaño)",
+            wireColorHex = 0xFF212121,
+            fromTerminal = "Línea de alimentación 220V",
+            toTerminal = "Cable NEGRO del fotocontrol",
+            description = "Conectar la fase de red al cable negro de entrada del fotocontrol.",
+        ),
+        WiringConnectionStep(
+            stepNumber = 2,
+            title = "Conexión de Neutro (N) común",
+            wireName = "Neutro (Blanco / Celeste)",
+            wireColorHex = 0xFF03A9F4,
+            fromTerminal = "Neutro de red",
+            toTerminal = "Cable BLANCO/AZUL del fotocontrol + Neutro de luminaria",
+            description = "El neutro es común: alimenta el circuito electrónico y continúa directo al casquillo de la luminaria.",
+        ),
+        WiringConnectionStep(
+            stepNumber = 3,
+            title = "Retorno de Carga a la Luminaria",
+            wireName = "Retorno conmutado (Rojo / Gris)",
+            wireColorHex = 0xFFD32F2F,
+            fromTerminal = "Cable ROJO (o GRIS) del fotocontrol",
+            toTerminal = "Borne de Fase / Retorno de la lámpara",
+            description = "Conectar el cable de salida del fotocontrol a la luminaria.",
+        ),
+        WiringConnectionStep(
+            stepNumber = 4,
+            title = "Puesta a Tierra de la Luminaria",
+            wireName = "Puesta a Tierra (Verde-Amarillo)",
+            wireColorHex = 0xFF4CAF50,
+            fromTerminal = "Barra de tierra (PE)",
+            toTerminal = "Carcasa metálica de la luminaria",
+            description = "Conectar el conductor PE a la bornera de tierra de la luminaria para protección.",
+        ),
+    ),
+    practicalTips = listOf(
+        "MODELO HONGO / NEMA: Cable Negro = Fase (L), Blanco = Neutro (N), Rojo = Carga (Retorno a luminaria). El zócalo permite reemplazo rápido girando la caperuza.",
+        "MODELO UNIVERSAL CON SONDA (AL-1502): El cuerpo principal se monta en tablero o caja estanca y el ojo sensor exterior se orienta hacia afuera.",
+        "MODELO COMPACTO FIJO: Respetar OBLIGATORIAMENTE la POSICIÓN VERTICAL con los cables saliendo hacia abajo para evitar que ingrese agua de lluvia al interior y garantizar el ángulo de luz.",
+        "EVITAR RETROALIMENTACIÓN: Nunca ubicar el sensor donde reciba el haz directo de la propia lámpara que comanda para evitar el parpadeo oscilatorio nocturno.",
+    ),
+    securityWarning = "Cortar siempre la energía eléctrica desde el tablero seccional antes de intervenir el conexionado exterior.",
+    aeaReference = "AEA 90364-7-771 / IRAM 2183 (Sección mínima de conductores para iluminación: 1,5 mm²).",
+)
+
+val motionSensorDiagram = ElectricalDiagram(
+    id = "detector-movimiento-pir",
+    type = DiagramType.MOTION_SENSOR,
+    title = "Sensor de Movimiento PIR para Luces",
+    subtitle = "Conexionado directo, calibración de perillas (TIME, LUX, SENS), área de detección y reflectores con sensor.",
+    category = "Iluminación y Confort",
+    badgeText = "220V AC",
+    requiredVoltage = "120V / 230Vca 50/60Hz",
+    safetyVoltageNote = "Relé conmutador interno accionado por lente piroeléctrico PIR.",
+    requiredComponents = listOf(
+        "Sensor de movimiento PIR (de pared orientable, de embutir en techo o reflector con PIR integrado)",
+        "Lámpara / Panel LED / Reflector",
+        "Interruptor manual de bypass opcional",
+        "Conductores normalizados (Fase Marrón, Neutro Celeste, Retorno Rojo/Naranja)",
+    ),
+    terminalLegend = listOf(
+        ComponentTerminal("Borne L", "Fase (Alimentación)", "Llegada de Fase directa de red 220V (Marrón / Negro)."),
+        ComponentTerminal("Borne N", "Neutro (Alimentación)", "Llegada de Neutro para alimentar la electrónica del sensor y común a la lámpara (Celeste)."),
+        ComponentTerminal("Borne L' (Salida)", "Salida Conmutada a Lámpara", "Retorno que energiza la luminaria al detectar movimiento (Rojo / Blanco)."),
+        ComponentTerminal("Lente PIR + LED", "Elemento Sensor", "Ventana fresnel infrarroja con LED indicador de detección de presencia."),
+    ),
+    stepByStepGuide = listOf(
+        WiringConnectionStep(
+            stepNumber = 1,
+            title = "Llegada de Fase (L) al Sensor",
+            wireName = "Fase (Marrón / Negro)",
+            wireColorHex = 0xFF795548,
+            fromTerminal = "Línea de alimentación 220V",
+            toTerminal = "Borne 'L' del sensor de movimiento",
+            description = "Conectar la fase permanente al borne L del sensor.",
+        ),
+        WiringConnectionStep(
+            stepNumber = 2,
+            title = "Llegada de Neutro (N) al Sensor y Lámpara",
+            wireName = "Neutro (Celeste / Azul)",
+            wireColorHex = 0xFF03A9F4,
+            fromTerminal = "Neutro general de la caja",
+            toTerminal = "Borne 'N' del sensor + Neutro de la lámpara",
+            description = "El neutro alimenta el sensor y se conecta en paralelo al casquillo de la luminaria.",
+        ),
+        WiringConnectionStep(
+            stepNumber = 3,
+            title = "Salida conmutada L' hacia la Lámpara",
+            wireName = "Retorno de carga (Rojo / Blanco)",
+            wireColorHex = 0xFFE53935,
+            fromTerminal = "Borne 'L'' / 'SALIDA' del sensor",
+            toTerminal = "Borne central (Fase) de la lámpara ⊗",
+            description = "Conectar la salida del sensor directo al borne de fase de la luminaria.",
+        ),
+        WiringConnectionStep(
+            stepNumber = 4,
+            title = "Conexión de 2 o más sensores en paralelo (Opcional)",
+            wireName = "Puente de salidas L'",
+            wireColorHex = 0xFFE53935,
+            fromTerminal = "Borne L' del Sensor 1",
+            toTerminal = "Borne L' del Sensor 2",
+            description = "En pasillos largos o accesos dobles, unir las salidas L' de todos los sensores en paralelo hacia las mismas luces.",
+        ),
+    ),
+    practicalTips = listOf(
+        "PERILLA TIME (TIEMPO): MÍN a MÁX. Ajusta el tiempo que la luz permanece encendida luego del último movimiento (ej. de 10 seg a 7 min).",
+        "PERILLA LUX (LUMINOSIDAD): MÍN (Luna) a MÁX (Sol). Ajusta el nivel de luz ambiente para activar el sensor (solo de noche o todo el día).",
+        "PERILLA SENS (SENSIBILIDAD): MÍN a MÁX. Regula el alcance de detección en metros (máximo hasta 12 metros de distancia).",
+        "ÁREA DE DETECCIÓN: Cono de cobertura hasta 12 metros. Altura de instalación recomendada: entre 2 m y 4 m.",
+        "MODELOS DISPONIBLES: Sensores orientables de pared (con articulación), sensores 360° para techo y reflectores LED con sensor PIR incorporado.",
+    ),
+    securityWarning = "No exceder la potencia nominal del relé (típicamente máx 300W-400W LED o 1200W incandescente).",
+    aeaReference = "Reglamentación AEA 90364-7-771 - Circuitos de iluminación de uso general (IUG).",
+)
