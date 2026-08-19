@@ -31,6 +31,12 @@ class QuoteCalculatorTest {
     }
 
     @Test
+    fun `line total or zero tolerates incomplete input instead of throwing`() {
+        assertEquals(0L, QuoteCalculator.lineTotalOrZero(0.0, 25_000L))
+        assertEquals(37_500L, QuoteCalculator.lineTotalOrZero(1.5, 25_000L))
+    }
+
+    @Test
     fun `invalid quantity and discounts are rejected`() {
         assertThrows(IllegalArgumentException::class.java) { QuoteCalculator.lineTotal(0.0, 1L) }
         assertThrows(IllegalArgumentException::class.java) {

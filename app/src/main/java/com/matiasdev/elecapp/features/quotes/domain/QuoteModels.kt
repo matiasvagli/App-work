@@ -78,6 +78,7 @@ enum class DiscountType {
 enum class QuoteItemType {
     LABOR,
     SERVICE,
+    MATERIAL,
     OTHER,
 }
 

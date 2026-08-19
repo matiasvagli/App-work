@@ -66,7 +66,8 @@ class QuoteFormViewModel(
 
     fun addItem(type: QuoteItemType) {
         _uiState.update { state ->
-            state.copy(items = state.items + newItem(type))
+            val item = newItem(type)
+            state.copy(items = state.items + item, expandedItemIds = state.expandedItemIds + item.id)
         }
     }
 
@@ -74,14 +75,24 @@ class QuoteFormViewModel(
         _uiState.update { state -> state.copy(items = state.items.map { if (it.id == id) transform(it) else it }) }
     }
 
-    fun duplicateItem(id: String) {
+    fun toggleItemExpanded(id: String) {
         _uiState.update { state ->
-            val item = state.items.firstOrNull { it.id == id } ?: return@update state
-            state.copy(items = state.items + item.copy(id = UUID.randomUUID().toString()))
+            val expanded = state.expandedItemIds
+            state.copy(expandedItemIds = if (id in expanded) expanded - id else expanded + id)
         }
     }
 
-    fun removeItem(id: String) = _uiState.update { state -> state.copy(items = state.items.filterNot { it.id == id }) }
+    fun duplicateItem(id: String) {
+        _uiState.update { state ->
+            val item = state.items.firstOrNull { it.id == id } ?: return@update state
+            val copy = item.copy(id = UUID.randomUUID().toString())
+            state.copy(items = state.items + copy, expandedItemIds = state.expandedItemIds + copy.id)
+        }
+    }
+
+    fun removeItem(id: String) = _uiState.update { state ->
+        state.copy(items = state.items.filterNot { it.id == id }, expandedItemIds = state.expandedItemIds - id)
+    }
 
     fun moveItem(id: String, offset: Int) {
         _uiState.update { state ->

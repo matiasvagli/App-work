@@ -19,6 +19,7 @@ data class QuoteFormUiState(
     val description: String = "",
     val currency: QuoteCurrency = QuoteCurrency.ARS,
     val items: List<QuoteItemFormState> = emptyList(),
+    val expandedItemIds: Set<String> = emptySet(),
     val discountType: DiscountType = DiscountType.NONE,
     val discountInput: String = "",
     val validUntilInput: String = "",

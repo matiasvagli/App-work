@@ -18,6 +18,7 @@ fun QuoteStatus.label(): String = when (this) {
 fun QuoteItemType.label(): String = when (this) {
     QuoteItemType.LABOR -> "Mano de obra"
     QuoteItemType.SERVICE -> "Servicio"
+    QuoteItemType.MATERIAL -> "Material"
     QuoteItemType.OTHER -> "Otro"
 }
 

@@ -15,6 +15,12 @@ object QuoteCalculator {
         return (quantity * unitPriceAmount).roundToLong()
     }
 
+    /** Like [lineTotal] but tolerant of still-being-typed input, for live previews in the UI. */
+    fun lineTotalOrZero(quantity: Double, unitPriceAmount: Long): Long {
+        if (quantity <= 0.0 || unitPriceAmount < 0L) return 0L
+        return lineTotal(quantity, unitPriceAmount)
+    }
+
     fun totals(
         items: List<QuoteItem>,
         discountType: DiscountType,

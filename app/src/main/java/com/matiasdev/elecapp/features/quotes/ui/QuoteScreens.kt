@@ -152,7 +152,9 @@ fun QuoteFormScreen(
             item { ClientSelector(uiState, viewModel) }
             item { QuoteFields(uiState, viewModel) }
             item { QuoteItemButtons(viewModel) }
-            items(uiState.items, key = { it.id }) { item -> QuoteItemEditor(item, viewModel) }
+            items(uiState.items, key = { it.id }) { item ->
+                QuoteItemRow(item, item.id in uiState.expandedItemIds, uiState.currency, viewModel)
+            }
             item { QuoteDiscountFields(uiState, viewModel) }
             item {
                 uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
