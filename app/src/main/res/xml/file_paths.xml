@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Solo se expone la carpeta de documentos de consulta. El resto del almacenamiento interno
+    (base de datos incluida) queda fuera del alcance del FileProvider a propósito.
+-->
+<paths>
+    <files-path
+        name="reference_docs"
+        path="reference_docs/" />
+</paths>

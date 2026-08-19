@@ -25,6 +25,7 @@ import com.matiasdev.elecapp.features.clients.data.MIGRATION_16_17
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_17_18
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_18_19
 import com.matiasdev.elecapp.features.clients.data.MIGRATION_19_20
+import com.matiasdev.elecapp.features.clients.data.MIGRATION_20_21
 import com.matiasdev.elecapp.features.clients.data.RoomClientRepository
 import com.matiasdev.elecapp.features.electricalrules.data.RoomElectricalRuleConfigRepository
 import com.matiasdev.elecapp.features.electricalrules.data.insertDefaultElectricalRuleConfigsIgnoringExisting
@@ -40,11 +41,17 @@ import com.matiasdev.elecapp.features.materials.data.MaterialRepository
 import com.matiasdev.elecapp.features.materials.data.RoomMaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
 import com.matiasdev.elecapp.features.quotes.data.RoomQuoteRepository
+import com.matiasdev.elecapp.features.referencedocs.data.ReferenceDocumentRepository
+import com.matiasdev.elecapp.features.referencedocs.data.ReferenceDocumentStorage
+import com.matiasdev.elecapp.features.referencedocs.data.RoomReferenceDocumentRepository
 import com.matiasdev.elecapp.features.reminders.data.RoomVisitReminderRepository
 import com.matiasdev.elecapp.features.reminders.data.VisitReminderRepository
 import com.matiasdev.elecapp.features.reminders.scheduling.VisitReminderScheduler
 import com.matiasdev.elecapp.features.reminders.scheduling.ReminderCoordinator
+import com.matiasdev.elecapp.core.time.SystemTimeProvider
+import com.matiasdev.elecapp.features.settings.data.AppDataReset
 import com.matiasdev.elecapp.features.settings.data.DataStoreReminderSettingsRepository
+import com.matiasdev.elecapp.features.settings.data.DemoDataSeeder
 import com.matiasdev.elecapp.features.settings.data.ReminderSettingsRepository
 import com.matiasdev.elecapp.features.visits.data.RoomVisitRepository
 import com.matiasdev.elecapp.features.visits.data.RoomVisitWorkSessionRepository
@@ -76,6 +83,7 @@ class AppContainer(context: Context) {
         MIGRATION_17_18,
         MIGRATION_18_19,
         MIGRATION_19_20,
+        MIGRATION_20_21,
     ).addCallback(
         object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
@@ -138,12 +146,35 @@ class AppContainer(context: Context) {
         dao = database.electricalRuleConfigDao(),
     )
 
+    val referenceDocumentRepository: ReferenceDocumentRepository = RoomReferenceDocumentRepository(
+        dao = database.referenceDocumentDao(),
+    )
+
+    val referenceDocumentStorage = ReferenceDocumentStorage(
+        context = context.applicationContext,
+    )
+
     val reminderSettingsRepository: ReminderSettingsRepository = DataStoreReminderSettingsRepository(
         context = context.applicationContext,
     )
 
+    val demoDataSeeder = DemoDataSeeder(
+        clientRepository = clientRepository,
+        visitRepository = visitRepository,
+        financeRepository = financeRepository,
+        quoteRepository = quoteRepository,
+        timeProvider = SystemTimeProvider,
+    )
+
     val reminderScheduler = VisitReminderScheduler(
         context = context.applicationContext,
+    )
+
+    val appDataReset = AppDataReset(
+        database = database,
+        reminderRepository = reminderRepository,
+        scheduler = reminderScheduler,
+        referenceDocumentStorage = referenceDocumentStorage,
     )
 
     val attentionReportCoordinator = AttentionReportCoordinator(

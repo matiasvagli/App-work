@@ -9,6 +9,7 @@ object AppRoutes {
     const val AGENDA = "agenda"
     const val SETTINGS = "settings"
     const val ELECTRICAL_RULES_SETTINGS = "settings/electrical-rules"
+    const val DATA_TOOLS_SETTINGS = "settings/data-tools"
     const val CLIENTS = "clients"
     const val INSPECTIONS = "inspections"
     const val QUOTES = "quotes"
@@ -24,6 +25,9 @@ object AppRoutes {
     const val ELECTRICAL_TOOLS_VOLTAGE_DROP = "tools/electrical/voltage-drop?clientId={clientId}&visitId={visitId}&inspectionId={inspectionId}&duplicateId={duplicateId}"
     const val ELECTRICAL_TOOLS_HISTORY = "tools/electrical/history"
     const val ELECTRICAL_TOOLS_REFERENCE = "tools/electrical/reference/{tool}"
+    const val ELECTRICAL_TOOLS_DOCUMENTS = "tools/electrical/documents"
+    const val ELECTRICAL_DIAGRAMS = "tools/electrical/diagrams"
+    const val ELECTRICAL_DIAGRAM_DETAIL = "tools/electrical/diagrams/{diagramId}"
     const val TECHNICAL_CALCULATION_DETAIL = "tools/electrical/calculations/{calculationId}"
     const val CLIENT_CREATE = "clients/new?fullName={fullName}&phone={phone}&phones={phones}&email={email}&notes={notes}&source={source}"
     const val CLIENT_DETAIL = "clients/{clientId}"
@@ -58,6 +62,7 @@ object AppRoutes {
     const val MATERIAL_LIST_ID = "materialListId"
     const val RECEIPT_ID = "receiptId"
     const val CALCULATION_ID = "calculationId"
+    const val DIAGRAM_ID = "diagramId"
     const val DUPLICATE_ID = "duplicateId"
     const val NOTES = "notes"
     const val PHONE = "phone"
@@ -98,6 +103,8 @@ object AppRoutes {
     val materialListIdArguments = listOf(navArgument(MATERIAL_LIST_ID) { type = NavType.StringType })
 
     val technicalCalculationIdArguments = listOf(navArgument(CALCULATION_ID) { type = NavType.StringType })
+
+    val diagramIdArguments = listOf(navArgument(DIAGRAM_ID) { type = NavType.StringType })
 
     val clientCreateArguments = listOf(
         navArgument(FULL_NAME) {
@@ -251,6 +258,12 @@ object AppRoutes {
     }
 
     fun electricalToolsReference(tool: String): String = "tools/electrical/reference/$tool"
+
+    fun electricalToolsDocuments(): String = "tools/electrical/documents"
+
+    fun electricalDiagrams(): String = "tools/electrical/diagrams"
+
+    fun electricalDiagramDetail(diagramId: String): String = "tools/electrical/diagrams/$diagramId"
 
     fun technicalCalculationDetail(calculationId: String): String = "tools/electrical/calculations/$calculationId"
 

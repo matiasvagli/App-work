@@ -32,6 +32,8 @@ import com.matiasdev.elecapp.features.materials.data.MaterialListEntity
 import com.matiasdev.elecapp.features.quotes.data.QuoteDao
 import com.matiasdev.elecapp.features.quotes.data.QuoteEntity
 import com.matiasdev.elecapp.features.quotes.data.QuoteItemEntity
+import com.matiasdev.elecapp.features.referencedocs.data.ReferenceDocumentDao
+import com.matiasdev.elecapp.features.referencedocs.data.ReferenceDocumentEntity
 import com.matiasdev.elecapp.features.reminders.data.VisitReminderDao
 import com.matiasdev.elecapp.features.reminders.data.VisitReminderEntity
 import com.matiasdev.elecapp.features.visits.data.VisitDao
@@ -65,8 +67,9 @@ import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionEntity
         PaymentEntity::class,
         ReceiptSequenceEntity::class,
         ElectricalRuleConfigEntity::class,
+        ReferenceDocumentEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -97,4 +100,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun receiptSequenceDao(): ReceiptSequenceDao
 
     abstract fun electricalRuleConfigDao(): ElectricalRuleConfigDao
+
+    abstract fun referenceDocumentDao(): ReferenceDocumentDao
 }

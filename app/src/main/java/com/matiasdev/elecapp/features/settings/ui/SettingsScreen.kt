@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +50,7 @@ fun SettingsScreen(
     repository: ReminderSettingsRepository,
     onBackClick: () -> Unit,
     onElectricalRulesClick: () -> Unit,
+    onDataToolsClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = viewModel(factory = SettingsViewModelFactory(repository)),
 ) {
@@ -84,6 +86,23 @@ fun SettingsScreen(
                         Text("Criterios eléctricos", style = MaterialTheme.typography.titleSmall)
                         Text(
                             "Configurá los límites utilizados para analizar mediciones y protecciones.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+            Text("Datos", style = MaterialTheme.typography.titleMedium)
+            Card(onClick = onDataToolsClick, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Icon(Icons.Default.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Datos y pruebas", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "Cargá datos de ejemplo, enviá un comentario o borrá todo para empezar de cero.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -213,6 +213,7 @@ Versiones:
 - v18: agrega cierre estructurado por campos a `visit_completions`.
 - v19: agrega `technical_report_snapshot`, `client_report` y `reports_generated_at` a `visit_completions` para congelar el informe de atención.
 - v20: agrega `electrical_inspections.findings_reviewed_at`.
+- v21: agrega `reference_documents` para PDF de consulta importados por el técnico.
 
 Tablas de v4:
 
@@ -317,9 +318,13 @@ Columna de v20:
 
 - `electrical_inspections.findings_reviewed_at`: distingue “no pasé por hallazgos” de “pasé y no encontré nada”, porque hasta v19 la sección solo se marcaba completa si había al menos un hallazgo. Nullable: los relevamientos anteriores a v20 quedan sin revisar y se comportan como antes.
 
+Tabla de v21:
+
+- `reference_documents`: metadato de los PDF de consulta importados (`title`, `file_name`, `source_url`, `size_bytes`, `imported_at`, `is_deleted`), con índices por `imported_at` y `is_deleted`. El archivo no se guarda en la base: vive en `files/reference_docs/<id>/<nombre>.pdf`. Tabla nueva, no toca datos existentes.
+
 No se usa `fallbackToDestructiveMigration`. La migración `3 -> 4` solo crea tablas e índices nuevos. La migración `4 -> 5` solo agrega columnas nullable a `visits`. La migración `5 -> 6` solo crea tablas e índices nuevos. La migración `6 -> 7` solo crea `technical_calculations` e índices. La migración `7 -> 8` solo crea `visit_work_sessions` e índices. La migración `8 -> 9` agrega columnas nullable y tablas nuevas, por lo que clientes, visitas, recordatorios, relevamientos, presupuestos, materiales, cálculos y sesiones existentes siguen intactos.
 
-De v9 en adelante se mantiene el mismo criterio aditivo: `9 -> 10`, `13 -> 14` y `16 -> 17` solo crean tablas e índices nuevos, y `10 -> 11`, `11 -> 12`, `12 -> 13`, `15 -> 16`, `17 -> 18`, `18 -> 19` y `19 -> 20` solo agregan columnas nullable o con default explícito. Los defaults se eligieron para no cambiar el significado de lo ya cargado: `GENERAL_ASSESSMENT` para el alcance previo al flujo por secciones, `REVIEWED` para secciones que ya se habían completado, y `UNKNOWN` / `NOT_TESTED` / `NOT_VERIFIED` para verificaciones que nunca existieron en esa versión.
+De v9 en adelante se mantiene el mismo criterio aditivo: `9 -> 10`, `13 -> 14`, `16 -> 17` y `20 -> 21` solo crean tablas e índices nuevos, y `10 -> 11`, `11 -> 12`, `12 -> 13`, `15 -> 16`, `17 -> 18`, `18 -> 19` y `19 -> 20` solo agregan columnas nullable o con default explícito. Los defaults se eligieron para no cambiar el significado de lo ya cargado: `GENERAL_ASSESSMENT` para el alcance previo al flujo por secciones, `REVIEWED` para secciones que ya se habían completado, y `UNKNOWN` / `NOT_TESTED` / `NOT_VERIFIED` para verificaciones que nunca existieron en esa versión.
 
 Las dos migraciones que no son puramente aditivas son:
 
@@ -386,6 +391,27 @@ Limitaciones:
 Previews:
 
 - Las pantallas nuevas separan `Screen` conectada a ViewModel y `Content` presentacional.
+
+## Documentos de consulta
+
+Herramientas eléctricas -> Documentos de consulta guarda PDF de referencia (listas de precios, normas, catálogos) para leerlos en obra sin internet.
+
+Flujo:
+
+1. La pantalla muestra la fuente sugerida (AAIERIC, costos de mano de obra) con su dirección.
+2. “Abrir sitio” lanza el navegador por Intent. La app no descarga nada: no tiene permiso de red ni lo va a tener.
+3. El técnico baja el PDF y lo importa con “Importar PDF”, que usa el Storage Access Framework (sin permisos de almacenamiento).
+4. El archivo se **copia** a `files/reference_docs/<id>/`. No se guarda la URI del selector: si apuntara a Descargas, limpiar el teléfono la dejaría rota y recuperar el documento exigiría internet.
+5. Tocar un documento lo abre con el visor de PDF del sistema, vía `FileProvider` y `ACTION_VIEW` con `FLAG_GRANT_READ_URI_PERMISSION`.
+
+Decisiones:
+
+- **No se extraen los precios del PDF.** `PdfRenderer` solo rasteriza a imagen; sacar texto exigiría una librería de parsing (PdfBox, iText) y un scraper del sitio se rompería con cada cambio de formato, quedando desactualizado en silencio. El documento se muestra tal cual, a modo informativo.
+- **No hay visor propio ni búsqueda dentro del PDF**, por lo mismo. Abrirlo afuera evita todo el manejo de bitmaps y memoria.
+- Se valida la firma `%PDF` del archivo importado: el selector filtra por MIME, pero el MIME lo declara el origen.
+- Un documento importado hace 60 días o más se marca como posiblemente desactualizado. Solo avisa; el criterio de cuándo sirve un valor es del técnico. Las listas de referencia se publican por mes.
+- Borrar un documento hace borrado lógico de la fila y borrado real del archivo, para no acumular copias huérfanas en almacenamiento interno.
+- `FileProvider` expone únicamente `files/reference_docs/`; el resto del almacenamiento interno queda fuera de su alcance.
 
 ## QA manual sugerida para economía
 
@@ -625,10 +651,11 @@ Reinicio:
 - Sin alarmas exactas garantizadas.
 - Sin notificaciones con acciones rápidas; tocar la notificación abre el detalle de visita.
 - Sin tests instrumented de migración; los schemas Room quedan exportados.
-- Sin PDF, fotos, facturación fiscal, señas, caja, backup, backend, login ni sincronización.
+- Sin generación de PDF, fotos, facturación fiscal, señas, caja, backup, backend, login ni sincronización. Los PDF de consulta se importan a mano y se abren con un visor externo; la app no los genera, no los descarga ni les extrae texto.
 - Comprobantes y cobros existen, pero son internos: no hay factura fiscal, AFIP/ARCA, CAE, IVA ni notas de crédito.
 - Presupuestos: no incluyen materiales como ítems y no manejan cobros.
 - Materiales: sin catálogo editable ni historial de precios.
+- Documentos de consulta: sin visor propio, sin búsqueda dentro del PDF y sin precios estructurados; depende de que el teléfono tenga alguna app que abra PDF.
 - Relevamientos: sin ambientes, fotos ni PDF. Circuitos, mediciones de pilar y tablero y puesta a tierra ya están, pero sin mediciones avanzadas.
 
 ## Próximos pasos
@@ -640,6 +667,7 @@ Reinicio:
 - Backup/export manual.
 - Catálogo editable.
 - Historial de precios.
+- Catálogo de precios de mano de obra estructurado y editable, con ajuste masivo por porcentaje.
 - Señas y caja.
 - Tarifa horaria a partir del tiempo trabajado.
 - Backend y sincronización futura.

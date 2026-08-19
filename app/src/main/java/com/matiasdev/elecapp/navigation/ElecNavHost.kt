@@ -40,10 +40,15 @@ import com.matiasdev.elecapp.features.inspections.ui.PillarInspectionScreen
 import com.matiasdev.elecapp.features.inspections.ui.VisualInspectionComplementaryScreen
 import com.matiasdev.elecapp.features.materials.data.MaterialRepository
 import com.matiasdev.elecapp.features.quotes.data.QuoteRepository
+import com.matiasdev.elecapp.features.referencedocs.data.ReferenceDocumentRepository
+import com.matiasdev.elecapp.features.referencedocs.data.ReferenceDocumentStorage
 import com.matiasdev.elecapp.features.reminders.data.VisitReminderRepository
 import com.matiasdev.elecapp.features.reminders.scheduling.ReminderCoordinator
+import com.matiasdev.elecapp.features.settings.data.AppDataReset
+import com.matiasdev.elecapp.features.settings.data.DemoDataSeeder
 import com.matiasdev.elecapp.features.settings.data.ReminderSettingsRepository
 import com.matiasdev.elecapp.features.settings.ui.SettingsScreen
+import com.matiasdev.elecapp.features.settings.ui.datatools.DataToolsScreen
 import com.matiasdev.elecapp.features.visits.data.VisitRepository
 import com.matiasdev.elecapp.features.visits.data.VisitWorkSessionRepository
 import com.matiasdev.elecapp.features.visits.ui.ClientVisitsScreen
@@ -81,6 +86,10 @@ fun ElecNavHost(
     reminderRepository: VisitReminderRepository,
     settingsRepository: ReminderSettingsRepository,
     electricalRuleConfigRepository: ElectricalRuleConfigRepository,
+    referenceDocumentRepository: ReferenceDocumentRepository,
+    referenceDocumentStorage: ReferenceDocumentStorage,
+    demoDataSeeder: DemoDataSeeder,
+    appDataReset: AppDataReset,
     reminderCoordinator: ReminderCoordinator,
     attentionReportCoordinator: AttentionReportCoordinator,
     initialSharedClientDraft: SharedClientDraft? = null,
@@ -221,6 +230,8 @@ fun ElecNavHost(
             inspectionRepository,
             technicalCalculationRepository,
             electricalRuleConfigRepository,
+            referenceDocumentRepository,
+            referenceDocumentStorage,
         )
         documentRoutes(navController, clientRepository, visitRepository, inspectionRepository, quoteRepository, materialRepository)
         financeRoutes(navController, clientRepository, visitRepository, workSessionRepository, financeRepository, inspectionRepository, attentionReportCoordinator)
@@ -229,11 +240,19 @@ fun ElecNavHost(
                 repository = settingsRepository,
                 onBackClick = { navController.navigateUp() },
                 onElectricalRulesClick = { navController.navigateSingleTop(AppRoutes.ELECTRICAL_RULES_SETTINGS) },
+                onDataToolsClick = { navController.navigateSingleTop(AppRoutes.DATA_TOOLS_SETTINGS) },
             )
         }
         composable(AppRoutes.ELECTRICAL_RULES_SETTINGS) {
             ElectricalRulesSettingsScreen(
                 repository = electricalRuleConfigRepository,
+                onBackClick = { navController.navigateUp() },
+            )
+        }
+        composable(AppRoutes.DATA_TOOLS_SETTINGS) {
+            DataToolsScreen(
+                seeder = demoDataSeeder,
+                reset = appDataReset,
                 onBackClick = { navController.navigateUp() },
             )
         }

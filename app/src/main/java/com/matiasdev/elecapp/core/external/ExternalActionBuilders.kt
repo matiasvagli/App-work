@@ -56,6 +56,30 @@ fun browserMapsIntent(address: String?, locality: String?): Intent? {
     )
 }
 
+fun browserIntent(url: String): Intent {
+    return Intent(Intent.ACTION_VIEW, Uri.parse(url))
+}
+
+/** Sharesheet de texto plano, el único canal de salida de la app. */
+fun shareTextIntent(text: String, chooserTitle: String): Intent {
+    val send = Intent(Intent.ACTION_SEND)
+        .setType("text/plain")
+        .putExtra(Intent.EXTRA_TEXT, text)
+    return Intent.createChooser(send, chooserTitle)
+}
+
+/**
+ * Abre un PDF propio con el visor que tenga el teléfono.
+ *
+ * La URI llega de un FileProvider, así que hay que ceder permiso de lectura explícito: la app
+ * que recibe el intent no puede leer el almacenamiento interno de ElecApp por su cuenta.
+ */
+fun viewPdfIntent(uri: Uri): Intent {
+    return Intent(Intent.ACTION_VIEW)
+        .setDataAndType(uri, "application/pdf")
+        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+}
+
 fun calendarInsertIntent(client: Client, visit: Visit): Intent {
     val duration = visit.estimatedDurationMinutes?.let { Duration.ofMinutes(it.toLong()) }
     val description = listOfNotNull(

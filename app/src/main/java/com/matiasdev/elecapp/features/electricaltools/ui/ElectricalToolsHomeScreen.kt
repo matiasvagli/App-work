@@ -29,7 +29,10 @@ import androidx.compose.material.icons.filled.EnergySavingsLeaf
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.LineAxis
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Schema
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.TableChart
 import androidx.compose.material3.Card
@@ -63,6 +66,8 @@ fun ElectricalToolsHomeScreen(
     onPowerClick: () -> Unit,
     onVoltageDropClick: () -> Unit,
     onHistoryClick: () -> Unit,
+    onDiagramsClick: () -> Unit,
+    onDocumentsClick: () -> Unit,
     onReferenceClick: (ReferenceTool) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -84,6 +89,8 @@ fun ElectricalToolsHomeScreen(
             onPowerClick = onPowerClick,
             onVoltageDropClick = onVoltageDropClick,
             onHistoryClick = onHistoryClick,
+            onDiagramsClick = onDiagramsClick,
+            onDocumentsClick = onDocumentsClick,
             onReferenceClick = onReferenceClick,
             modifier = Modifier.padding(padding),
         )
@@ -95,10 +102,23 @@ fun ElectricalToolsHomeContent(
     onPowerClick: () -> Unit,
     onVoltageDropClick: () -> Unit,
     onHistoryClick: () -> Unit,
+    onDiagramsClick: () -> Unit,
+    onDocumentsClick: () -> Unit,
     onReferenceClick: (ReferenceTool) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val primaryTools = listOf(
+        PrimaryToolCard(
+            title = "Diagramas de instalación",
+            subtitle = "Guías visuales paso a paso de fotocélulas, sensores PIR, combinación y bombas.",
+            badgeText = "Guías",
+            badgeBg = Color(0xFFEDE7F6),
+            badgeTextColor = Color(0xFF4A148C),
+            icon = Icons.Default.Schema,
+            iconBg = Color(0xFFF3E5F5),
+            iconTint = Color(0xFF7B1FA2),
+            action = onDiagramsClick,
+        ),
         PrimaryToolCard(
             title = "Potencia, corriente y tensión",
             subtitle = "Cálculo de ley de Ohm, AC monofásica y trifásica con cosφ y eficiencia.",
@@ -122,6 +142,17 @@ fun ElectricalToolsHomeContent(
             action = onVoltageDropClick,
         ),
         PrimaryToolCard(
+            title = "Documentos de consulta",
+            subtitle = "Listas de precios, normas y catálogos en PDF, guardados para consultar sin internet.",
+            badgeText = "PDF",
+            badgeBg = Color(0xFFFFEBEE),
+            badgeTextColor = Color(0xFFC62828),
+            icon = Icons.Default.PictureAsPdf,
+            iconBg = Color(0xFFFFEBEE),
+            iconTint = Color(0xFFC62828),
+            action = onDocumentsClick,
+        ),
+        PrimaryToolCard(
             title = "Historial de cálculos",
             subtitle = "Consulta, copia, duplicación y exportación de registros guardados.",
             badgeText = "Guardados",
@@ -140,7 +171,9 @@ fun ElectricalToolsHomeContent(
         ReferenceToolItem("Capacitancia", "Compensación kVAr", Icons.Default.PieChart, Color(0xFFE8EAF6), Color(0xFF283593)) { onReferenceClick(ReferenceTool.CAPACITANCE) },
         ReferenceToolItem("Factor de potencia", "Corrección cosφ", Icons.Default.EnergySavingsLeaf, Color(0xFFE8F5E9), Color(0xFF2E7D32)) { onReferenceClick(ReferenceTool.POWER_FACTOR) },
         ReferenceToolItem("Consumo energético", "Estimación kWh y $", Icons.Default.EnergySavingsLeaf, Color(0xFFF1F8E9), Color(0xFF33691E)) { onReferenceClick(ReferenceTool.ENERGY) },
+        ReferenceToolItem("Fórmulas básicas (V, I, R, P)", "Ley de Ohm y Potencia", Icons.Default.Calculate, Color(0xFFE8F5E9), Color(0xFF2E7D32)) { onReferenceClick(ReferenceTool.BASIC_FORMULAS) },
         ReferenceToolItem("Protecciones", "Calibre orientativo", Icons.Default.Shield, Color(0xFFFFEBEE), Color(0xFFC62828)) { onReferenceClick(ReferenceTool.PROTECTION) },
+        ReferenceToolItem("Código de resistencias", "Decodificador 4 y 5 bandas", Icons.Default.Palette, Color(0xFFFFF3E0), Color(0xFFE65100)) { onReferenceClick(ReferenceTool.RESISTOR_COLOR) },
         ReferenceToolItem("Tablas técnicas", "Referencia rápida", Icons.Default.TableChart, Color(0xFFF3E5F5), Color(0xFF6A1B9A)) { onReferenceClick(ReferenceTool.TABLES) },
     )
 
@@ -339,35 +372,25 @@ fun ElectricalToolsHomeContent(
 }
 
 private data class PrimaryToolCard(
-    val title: String,
-    val subtitle: String,
-    val badgeText: String,
-    val badgeBg: Color,
-    val badgeTextColor: Color,
-    val icon: ImageVector,
-    val iconBg: Color,
-    val iconTint: Color,
-    val action: () -> Unit,
+    val title: String, val subtitle: String, val badgeText: String,
+    val badgeBg: Color, val badgeTextColor: Color, val icon: ImageVector,
+    val iconBg: Color, val iconTint: Color, val action: () -> Unit,
 )
 
 private data class ReferenceToolItem(
-    val title: String,
-    val subtitle: String,
-    val icon: ImageVector,
-    val iconBg: Color,
-    val iconTint: Color,
-    val action: () -> Unit,
+    val title: String, val subtitle: String, val icon: ImageVector,
+    val iconBg: Color, val iconTint: Color, val action: () -> Unit,
 )
 
 enum class ReferenceTool {
-    CONDUCTOR, LIGHTING, CAPACITANCE, POWER_FACTOR, ENERGY, PROTECTION, TABLES,
+    CONDUCTOR, LIGHTING, CAPACITANCE, POWER_FACTOR, ENERGY, BASIC_FORMULAS, PROTECTION, RESISTOR_COLOR, TABLES,
 }
 
 @Preview(showBackground = true)
 @Composable
 private fun ElectricalToolsHomePreview() {
     ElecAppTheme {
-        ElectricalToolsHomeContent({}, {}, {}, {})
+        ElectricalToolsHomeContent({}, {}, {}, {}, {}, {})
     }
 }
 
